@@ -3,7 +3,7 @@
 <package format="3">
   <name>uav_bridge</name>
   <version>0.0.0</version>
-  <description>Bridge nodes for UAV simulation topics between Gazebo and ROS 2.</description>
+  <description>Shared UAV bridge and control nodes for hardware and simulation.</description>
   <maintainer email="litianshun.cn@gmail.com">litianshun</maintainer>
   <license>GPL-3.0-only</license>
 
@@ -19,11 +19,7 @@
   <depend>tf2_ros</depend>
   <depend>quadrotor_msgs</depend>
   <depend>px4_msgs</depend>
-  <build_depend>gz-transport13</build_depend>
-  <build_depend>gz-msgs10</build_depend>
   <build_depend>libopencv-dev</build_depend>
-  <exec_depend>gz-transport13</exec_depend>
-  <exec_depend>gz-msgs10</exec_depend>
   <exec_depend>libopencv-dev</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
