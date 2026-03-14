@@ -80,7 +80,8 @@ public:
         telemetry_.height_source = msg->height_source;
         telemetry_.terminal_trigger_source = msg->terminal_trigger_source;
         telemetry_.height_valid = msg->height_valid;
-        telemetry_.raw_flow_fresh = msg->raw_flow_fresh;
+        telemetry_.height_measurement_source = msg->height_measurement_source;
+        telemetry_.height_measurement_fresh = msg->height_measurement_fresh;
         telemetry_.height_measurement_m = msg->height_measurement_m;
         telemetry_.control_height_m = msg->control_height_m;
         telemetry_.err_u_norm_filtered = msg->err_u_norm_filtered;
@@ -134,7 +135,8 @@ private:
     std::string height_source{"ODOM"};
     std::string terminal_trigger_source{"NONE"};
     bool height_valid{false};
-    bool raw_flow_fresh{false};
+    std::string height_measurement_source{"NONE"};
+    bool height_measurement_fresh{false};
     float height_measurement_m{0.0f};
     float control_height_m{0.0f};
     float err_u_norm_filtered{0.0f};
@@ -446,10 +448,11 @@ private:
         telemetry_.height_source.c_str()));
     drawLine(
       cv::format(
-        "FLOW=%.2f valid=%s fresh=%s",
+        "RANGE=%.2f src=%s valid=%s fresh=%s",
         telemetry_.height_measurement_m,
+        telemetry_.height_measurement_source.c_str(),
         telemetry_.height_valid ? "Y" : "N",
-        telemetry_.raw_flow_fresh ? "Y" : "N"));
+        telemetry_.height_measurement_fresh ? "Y" : "N"));
     drawLine("TERM: " + telemetry_.terminal_trigger_source);
     drawLine(cv::format("ERR n=(%.4f, %.4f)", observation.err_u_norm, observation.err_v_norm));
     drawLine(

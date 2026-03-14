@@ -8,8 +8,8 @@
 2. `PHASE: ...`
 3. `TAG: DETECTED/MISSING`
 4. `TAG_Z=... src=... conf=...`
-5. `H_CTRL=... H_MEAS=... src=...`
-6. `FLOW=... valid=... fresh=...`
+5. `H_CTRL=... src=...`
+6. `RANGE=... src=... valid=... fresh=...`
 7. `TERM: ...`
 8. `ERR n=(..., ...)`
 9. `ERR_F=(..., ...)`
@@ -28,24 +28,27 @@
 
 - `H_CTRL`
   - 控制器当前真正用于 `z` 闭环的高度
-  - 该值优先来自光流测距，测距失效时会回退到 odom
+  - 该值优先来自测距高度，测距失效时会回退到 odom
 
-- `H_MEAS`
-  - 最近一次收到的高度测量原始值
-  - 是否真的用于控制要结合 `src` 和控制相位一起看
-
-- `FLOW ... fresh=...`
-  - `fresh=Y` 表示原始光流测距当前满足 timeout/min/max 校验，可用于终端对齐触发判定
-  - 该判定不等同于 `H_CTRL` 是否正在使用 `FLOW_RANGE`
+- `RANGE`
+  - 最近一次收到的原始高度测量值
+  - `src=DISTANCE_SENSOR_IN` 表示直接读取 `/uav/fmu/in/distance_sensor`
+  - `src=PX4_DIST_BOTTOM[...]` 表示读取 PX4 `vehicle_local_position.dist_bottom`
+  - `valid=Y` 表示该测量当前通过控制器校验并可用于 `H_CTRL`
+  - `fresh=Y` 表示该原始高度测量当前满足 timeout/min/max 校验，可用于 terminal 触发判定
+  - 该判定不等同于 `H_CTRL` 是否正在使用 `RANGE_MEASUREMENT`
 
 - `TERM`
   - 当前终端对齐触发源
-  - `FLOW_RANGE` 表示 terminal 由连续满足阈值的原始光流测距触发
+  - `RANGE_MEASUREMENT` 表示 terminal 由连续满足阈值的原始高度测量触发
   - `NONE` 表示当前还未满足 terminal 触发条件
 
 - `src`
-  - `FLOW_RANGE` 表示当前 `z` 控制使用光流测距高度
-  - `ODOM` 表示当前 `z` 控制退回到 odom 高度
+  - 在 `H_CTRL` 行里:
+    - `RANGE_MEASUREMENT` 表示当前 `z` 控制使用测距高度
+    - `ODOM` 表示当前 `z` 控制退回到 odom 高度
+  - 在 `RANGE` 行里:
+    - 表示原始高度测量来自哪里
 
 - `ERR n`
   - 当前帧原始归一化像面误差
@@ -85,4 +88,4 @@
 - `LERR` 才是当前对齐判据对应的真实米制偏差
 - 启动搜索后，控制器会先拉到 `search_height_m` 并在该高度完成对齐与稳定保持
 - 控制器允许短时漏检，只有连续 miss 达到阈值或有效观测超时，才会退出当前视觉跟踪阶段
-- 下降阶段一旦 `FLOW_RANGE` 测距进入 `terminal_entry_height_m` 以下，控制器会停止继续下降，执行最后一次对齐，然后触发 `LAND`
+- 下降阶段一旦原始高度测量连续进入 `terminal_entry_height_m` 以下，控制器会停止继续下降，执行最后一次对齐，然后触发 `LAND`

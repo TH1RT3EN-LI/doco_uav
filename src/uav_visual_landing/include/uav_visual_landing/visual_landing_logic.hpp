@@ -52,7 +52,7 @@ inline const char * heightSourceName(HeightSource source)
     case HeightSource::Odom:
       return "ODOM";
     case HeightSource::FlowRange:
-      return "FLOW_RANGE";
+      return "RANGE_MEASUREMENT";
   }
   return "ODOM";
 }

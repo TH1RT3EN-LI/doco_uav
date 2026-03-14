@@ -36,6 +36,7 @@ def generate_launch_description():
     camera_hfov_rad = LaunchConfiguration("camera_hfov_rad")
     camera_info_url = LaunchConfiguration("camera_info_url")
     fmu_namespace = LaunchConfiguration("fmu_namespace")
+    height_measurement_mode = LaunchConfiguration("height_measurement_mode")
 
     visual_landing_config = os.path.join(visual_landing_share, "config", "visual_landing_stable.yaml")
     hw_camera_launch = IncludeLaunchDescription(
@@ -142,7 +143,9 @@ def generate_launch_description():
             {"controller_state_topic": "/uav/visual_landing/controller_state"},
             {"hold_service": "/uav/control/command/hold"},
             {"land_service": "/uav/control/command/land"},
+            {"height_measurement_mode": height_measurement_mode},
             {"range_topic": distance_sensor_topic},
+            {"vehicle_local_position_topic": vehicle_local_position_topic},
             {"start_service": "/uav/visual_landing/command/start"},
             {"stop_service": "/uav/visual_landing/command/stop"},
         ],
@@ -173,6 +176,7 @@ def generate_launch_description():
         DeclareLaunchArgument("camera_hfov_rad", default_value="1.3962634"),
         DeclareLaunchArgument("camera_info_url", default_value=""),
         DeclareLaunchArgument("fmu_namespace", default_value="/uav/fmu"),
+        DeclareLaunchArgument("height_measurement_mode", default_value="vehicle_local_position"),
         hw_camera_launch,
         uav_state_bridge,
         uav_control,

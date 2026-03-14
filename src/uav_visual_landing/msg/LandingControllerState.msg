@@ -8,6 +8,8 @@ string height_source
 string terminal_trigger_source
 float32 odom_height_m
 bool height_valid
+string height_measurement_source
+bool height_measurement_fresh
 bool raw_flow_fresh
 float32 height_measurement_m
 float32 control_height_m
