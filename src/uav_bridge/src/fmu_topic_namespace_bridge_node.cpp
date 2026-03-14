@@ -18,7 +18,8 @@ namespace uav_bridge
 class FmuTopicNamespaceBridgeNode : public rclcpp::Node
 {
 public:
-  FmuTopicNamespaceBridgeNode() : Node("fmu_topic_namespace_bridge")
+  FmuTopicNamespaceBridgeNode()
+  : Node("fmu_topic_namespace_bridge")
   {
     this->declare_parameter<std::string>("namespaced_fmu_prefix", "/uav/fmu");
     this->declare_parameter<std::string>("global_fmu_prefix", "/fmu");
@@ -52,6 +53,8 @@ public:
 
     bridgeGlobalToNamespaced<px4_msgs::msg::VehicleLocalPosition>(
       "/out/vehicle_local_position", sensor_qos);
+    bridgeGlobalToNamespaced<px4_msgs::msg::DistanceSensor>(
+      "/out/distance_sensor", sensor_qos);
     bridgeGlobalToNamespaced<px4_msgs::msg::VehicleStatus>(
       "/out/vehicle_status", sensor_qos);
     bridgeGlobalToNamespaced<px4_msgs::msg::VehicleOdometry>(

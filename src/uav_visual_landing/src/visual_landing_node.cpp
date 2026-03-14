@@ -358,7 +358,7 @@ private:
     height_measurement_m_ = msg.current_distance;
     height_measurement_stamp_ = this->now();
     has_height_measurement_ = true;
-    height_measurement_source_ = "DISTANCE_SENSOR_IN";
+    height_measurement_source_ = "DISTANCE_SENSOR_RAW";
   }
 
   void onVehicleLocalPositionHeightMeasurement(const px4_msgs::msg::VehicleLocalPosition & msg)

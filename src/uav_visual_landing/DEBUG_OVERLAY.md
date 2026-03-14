@@ -32,7 +32,9 @@
 
 - `RANGE`
   - 最近一次收到的原始高度测量值
-  - `src=DISTANCE_SENSOR_IN` 表示直接读取 `/uav/fmu/in/distance_sensor`
+  - `src=DISTANCE_SENSOR_RAW` 表示直接读取原始 `DistanceSensor`
+  - 仿真里通常来自 `/uav/fmu/in/distance_sensor`
+  - 真机 raw 模式下通常来自 `/uav/fmu/out/distance_sensor`
   - `src=PX4_DIST_BOTTOM[...]` 表示读取 PX4 `vehicle_local_position.dist_bottom`
   - `valid=Y` 表示该测量当前通过控制器校验并可用于 `H_CTRL`
   - `fresh=Y` 表示该原始高度测量当前满足 timeout/min/max 校验，可用于 terminal 触发判定

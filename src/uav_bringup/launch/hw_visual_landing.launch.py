@@ -74,7 +74,7 @@ def generate_launch_description():
     offboard_mode_topic = [fmu_namespace, "/in/offboard_control_mode"]
     trajectory_setpoint_topic = [fmu_namespace, "/in/trajectory_setpoint"]
     vehicle_command_topic = [fmu_namespace, "/in/vehicle_command"]
-    distance_sensor_topic = [fmu_namespace, "/in/distance_sensor"]
+    distance_sensor_topic = [fmu_namespace, "/out/distance_sensor"]
 
     uav_state_bridge = Node(
         package="uav_bridge",
@@ -176,7 +176,7 @@ def generate_launch_description():
         DeclareLaunchArgument("camera_hfov_rad", default_value="1.3962634"),
         DeclareLaunchArgument("camera_info_url", default_value=""),
         DeclareLaunchArgument("fmu_namespace", default_value="/uav/fmu"),
-        DeclareLaunchArgument("height_measurement_mode", default_value="vehicle_local_position"),
+        DeclareLaunchArgument("height_measurement_mode", default_value="distance_sensor"),
         hw_camera_launch,
         uav_state_bridge,
         uav_control,
