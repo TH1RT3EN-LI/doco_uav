@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
@@ -31,6 +32,7 @@ public:
     this->declare_parameter<std::string>("camera_name", "uav_mono_camera");
     this->declare_parameter<std::string>("image_topic", "/uav/camera/image_raw");
     this->declare_parameter<std::string>("camera_info_topic", "/uav/camera/camera_info");
+    this->declare_parameter<std::string>("camera_info_url", "");
     this->declare_parameter<std::string>("distortion_model", "plumb_bob");
     this->declare_parameter<int>("image_width", 640);
     this->declare_parameter<int>("image_height", 480);
@@ -47,6 +49,7 @@ public:
     fourcc_ = this->get_parameter("fourcc").as_string();
     frame_id_ = this->get_parameter("frame_id").as_string();
     camera_name_ = this->get_parameter("camera_name").as_string();
+    camera_info_url_ = this->get_parameter("camera_info_url").as_string();
     distortion_model_ = this->get_parameter("distortion_model").as_string();
     requested_width_ = std::max(1, static_cast<int>(this->get_parameter("image_width").as_int()));
     requested_height_ = std::max(1, static_cast<int>(this->get_parameter("image_height").as_int()));
@@ -65,6 +68,7 @@ public:
     camera_info_pub_ = this->create_publisher<sensor_msgs::msg::CameraInfo>(
       camera_info_topic, rclcpp::SensorDataQoS());
 
+    loadCameraCalibration();
     openCapture();
 
     const auto timer_period = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -74,11 +78,124 @@ public:
 
     RCLCPP_INFO(
       this->get_logger(),
-      "mono_camera_source_node: device=%s image=%s camera_info=%s frame_id=%s",
-      device_.c_str(), image_topic.c_str(), camera_info_topic.c_str(), frame_id_.c_str());
+      "mono_camera_source_node: device=%s image=%s camera_info=%s frame_id=%s calibration=%s",
+      device_.c_str(), image_topic.c_str(), camera_info_topic.c_str(), frame_id_.c_str(),
+      has_calibration_ ? calibration_path_.c_str() : "<generated>");
   }
 
 private:
+  static std::string resolveCalibrationPath(const std::string & camera_info_url)
+  {
+    constexpr const char kFilePrefix[] = "file://";
+    if (camera_info_url.rfind(kFilePrefix, 0) == 0U) {
+      return camera_info_url.substr(sizeof(kFilePrefix) - 1U);
+    }
+    return camera_info_url;
+  }
+
+  static std::vector<double> readYamlArray(
+    const cv::FileNode & parent,
+    const char * key)
+  {
+    std::vector<double> values;
+    if (parent.empty()) {
+      return values;
+    }
+
+    const cv::FileNode node = parent[key];
+    if (node.empty()) {
+      return values;
+    }
+
+    const cv::FileNode data_node = node["data"].empty() ? node : node["data"];
+    if (data_node.type() != cv::FileNode::SEQ) {
+      return values;
+    }
+
+    values.reserve(data_node.size());
+    for (const auto & element : data_node) {
+      values.push_back(static_cast<double>(element));
+    }
+    return values;
+  }
+
+  void loadCameraCalibration()
+  {
+    has_calibration_ = false;
+    calibration_path_.clear();
+    calibration_width_ = 0;
+    calibration_height_ = 0;
+
+    if (camera_info_url_.empty()) {
+      return;
+    }
+
+    calibration_path_ = resolveCalibrationPath(camera_info_url_);
+    if (calibration_path_.empty()) {
+      throw std::runtime_error("camera_info_url resolved to an empty path");
+    }
+
+    cv::FileStorage storage(calibration_path_, cv::FileStorage::READ);
+    if (!storage.isOpened()) {
+      throw std::runtime_error("failed to open camera calibration file: " + calibration_path_);
+    }
+
+    sensor_msgs::msg::CameraInfo info;
+
+    const auto image_width = static_cast<int>(storage["image_width"]);
+    const auto image_height = static_cast<int>(storage["image_height"]);
+    if (image_width <= 0 || image_height <= 0) {
+      throw std::runtime_error("camera calibration is missing valid image_width/image_height");
+    }
+
+    const std::vector<double> camera_matrix = readYamlArray(storage.root(), "camera_matrix");
+    const std::vector<double> distortion = readYamlArray(storage.root(), "distortion_coefficients");
+    const std::vector<double> rectification = readYamlArray(storage.root(), "rectification_matrix");
+    const std::vector<double> projection = readYamlArray(storage.root(), "projection_matrix");
+
+    if (camera_matrix.size() != info.k.size()) {
+      throw std::runtime_error("camera_matrix in calibration must contain exactly 9 values");
+    }
+
+    std::copy(camera_matrix.begin(), camera_matrix.end(), info.k.begin());
+    info.width = static_cast<uint32_t>(image_width);
+    info.height = static_cast<uint32_t>(image_height);
+    info.distortion_model = distortion_model_;
+    if (!storage["distortion_model"].empty()) {
+      info.distortion_model = static_cast<std::string>(storage["distortion_model"]);
+    }
+    info.d = distortion.empty() ? distortion_coefficients_ : distortion;
+
+    if (rectification.size() == info.r.size()) {
+      std::copy(rectification.begin(), rectification.end(), info.r.begin());
+    } else {
+      info.r = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+    }
+
+    if (projection.size() == info.p.size()) {
+      std::copy(projection.begin(), projection.end(), info.p.begin());
+    } else {
+      info.p = {
+        info.k[0], 0.0, info.k[2], 0.0,
+        0.0, info.k[4], info.k[5], 0.0,
+        0.0, 0.0, 1.0, 0.0};
+    }
+
+    calibration_template_ = info;
+    calibration_width_ = image_width;
+    calibration_height_ = image_height;
+    has_calibration_ = true;
+
+    RCLCPP_INFO(
+      this->get_logger(),
+      "loaded camera calibration %s (%dx%d, distortion_model=%s, d=%zu)",
+      calibration_path_.c_str(),
+      calibration_width_,
+      calibration_height_,
+      calibration_template_.distortion_model.c_str(),
+      calibration_template_.d.size());
+  }
+
   static int encodeFourcc(const std::string & value)
   {
     if (value.size() != 4) {
@@ -232,6 +349,37 @@ private:
 
   sensor_msgs::msg::CameraInfo makeCameraInfo(const sensor_msgs::msg::Image & image_msg) const
   {
+    if (has_calibration_) {
+      sensor_msgs::msg::CameraInfo info = calibration_template_;
+      info.header = image_msg.header;
+      info.width = image_msg.width;
+      info.height = image_msg.height;
+
+      if (calibration_width_ > 0 && calibration_height_ > 0 &&
+        (static_cast<int>(image_msg.width) != calibration_width_ ||
+        static_cast<int>(image_msg.height) != calibration_height_))
+      {
+        const double scale_x =
+          static_cast<double>(image_msg.width) / static_cast<double>(calibration_width_);
+        const double scale_y =
+          static_cast<double>(image_msg.height) / static_cast<double>(calibration_height_);
+
+        info.k[0] *= scale_x;
+        info.k[2] *= scale_x;
+        info.k[4] *= scale_y;
+        info.k[5] *= scale_y;
+
+        info.p[0] *= scale_x;
+        info.p[2] *= scale_x;
+        info.p[3] *= scale_x;
+        info.p[5] *= scale_y;
+        info.p[6] *= scale_y;
+        info.p[7] *= scale_y;
+      }
+
+      return info;
+    }
+
     sensor_msgs::msg::CameraInfo info;
     info.header = image_msg.header;
     info.width = image_msg.width;
@@ -291,18 +439,24 @@ private:
   std::string fourcc_;
   std::string frame_id_;
   std::string camera_name_;
+  std::string camera_info_url_;
+  std::string calibration_path_;
   std::string distortion_model_;
   std::vector<double> distortion_coefficients_;
+  sensor_msgs::msg::CameraInfo calibration_template_;
   int requested_width_{640};
   int requested_height_{480};
   int actual_width_{0};
   int actual_height_{0};
+  int calibration_width_{0};
+  int calibration_height_{0};
   double requested_fps_{30.0};
   double fx_{-1.0};
   double fy_{-1.0};
   double cx_{-1.0};
   double cy_{-1.0};
   double camera_hfov_rad_{-1.0};
+  bool has_calibration_{false};
 
   rclcpp::TimerBase::SharedPtr capture_timer_;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_pub_;

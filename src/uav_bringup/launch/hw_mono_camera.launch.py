@@ -2,6 +2,8 @@ import math
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
+from launch.substitutions import PythonExpression
 from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -9,6 +11,7 @@ from uav_bringup.profile_defaults import DEFAULT_CAMERA_INTRINSICS, DEFAULT_CAME
 
 
 def generate_launch_description():
+    backend = LaunchConfiguration("backend")
     device = LaunchConfiguration("device")
     fourcc = LaunchConfiguration("fourcc")
     image_width = LaunchConfiguration("image_width")
@@ -30,12 +33,14 @@ def generate_launch_description():
     cx = LaunchConfiguration("cx")
     cy = LaunchConfiguration("cy")
     camera_hfov_rad = LaunchConfiguration("camera_hfov_rad")
+    camera_info_url = LaunchConfiguration("camera_info_url")
 
     mono_camera_source = Node(
         package="uav_bridge",
         executable="mono_camera_source_node",
         name="mono_camera_source",
         output="screen",
+        condition=IfCondition(PythonExpression(["'", backend, "' == 'legacy'"])),
         parameters=[
             {
                 "device": device,
@@ -52,6 +57,7 @@ def generate_launch_description():
                 "cx": cx,
                 "cy": cy,
                 "camera_hfov_rad": camera_hfov_rad,
+                "camera_info_url": camera_info_url,
             }
         ],
     )
@@ -84,6 +90,11 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument(
+                "backend",
+                default_value=EnvironmentVariable("UAV_MONO_CAMERA_BACKEND", default_value="legacy"),
+                description="Camera backend: 'legacy' launches mono_camera_source_node, 'external' only publishes TF.",
+            ),
+            DeclareLaunchArgument(
                 "device",
                 default_value=EnvironmentVariable("UAV_MONO_CAMERA_DEVICE", default_value="/dev/video0"),
                 description="Mono camera video device path, e.g. /dev/video0",
@@ -112,6 +123,11 @@ def generate_launch_description():
             DeclareLaunchArgument("cx", default_value=DEFAULT_CAMERA_INTRINSICS["cx"]),
             DeclareLaunchArgument("cy", default_value=DEFAULT_CAMERA_INTRINSICS["cy"]),
             DeclareLaunchArgument("camera_hfov_rad", default_value="1.3962634"),
+            DeclareLaunchArgument(
+                "camera_info_url",
+                default_value=EnvironmentVariable("UAV_MONO_CAMERA_INFO_URL", default_value=""),
+                description="Optional camera calibration YAML. Absolute paths or file:/// URLs are supported.",
+            ),
             camera_static_tf,
             mono_camera_source,
         ]

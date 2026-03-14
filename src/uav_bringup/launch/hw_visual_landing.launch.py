@@ -12,6 +12,7 @@ def generate_launch_description():
     bringup_share = get_package_share_directory("uav_bringup")
     visual_landing_share = get_package_share_directory("uav_visual_landing")
 
+    camera_backend = LaunchConfiguration("camera_backend")
     camera_device = LaunchConfiguration("camera_device")
     camera_fourcc = LaunchConfiguration("camera_fourcc")
     image_width = LaunchConfiguration("image_width")
@@ -19,33 +20,50 @@ def generate_launch_description():
     camera_fps = LaunchConfiguration("camera_fps")
     image_topic = LaunchConfiguration("image_topic")
     camera_info_topic = LaunchConfiguration("camera_info_topic")
+    camera_name = LaunchConfiguration("camera_name")
     base_frame_id = LaunchConfiguration("base_frame_id")
     camera_frame_id = LaunchConfiguration("camera_frame_id")
+    camera_x = LaunchConfiguration("camera_x")
+    camera_y = LaunchConfiguration("camera_y")
+    camera_z = LaunchConfiguration("camera_z")
+    camera_roll = LaunchConfiguration("camera_roll")
+    camera_pitch = LaunchConfiguration("camera_pitch")
+    camera_yaw = LaunchConfiguration("camera_yaw")
     fx = LaunchConfiguration("fx")
     fy = LaunchConfiguration("fy")
     cx = LaunchConfiguration("cx")
     cy = LaunchConfiguration("cy")
     camera_hfov_rad = LaunchConfiguration("camera_hfov_rad")
+    camera_info_url = LaunchConfiguration("camera_info_url")
     fmu_namespace = LaunchConfiguration("fmu_namespace")
 
     visual_landing_config = os.path.join(visual_landing_share, "config", "visual_landing_stable.yaml")
     hw_camera_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(bringup_share, "launch", "hw_mono_camera.launch.py")),
         launch_arguments={
+            "backend": camera_backend,
             "device": camera_device,
             "fourcc": camera_fourcc,
             "image_width": image_width,
             "image_height": image_height,
             "fps": camera_fps,
+            "camera_name": camera_name,
             "image_topic": image_topic,
             "camera_info_topic": camera_info_topic,
             "base_frame_id": base_frame_id,
             "camera_frame_id": camera_frame_id,
+            "camera_x": camera_x,
+            "camera_y": camera_y,
+            "camera_z": camera_z,
+            "camera_roll": camera_roll,
+            "camera_pitch": camera_pitch,
+            "camera_yaw": camera_yaw,
             "fx": fx,
             "fy": fy,
             "cx": cx,
             "cy": cy,
             "camera_hfov_rad": camera_hfov_rad,
+            "camera_info_url": camera_info_url,
         }.items(),
     )
 
@@ -131,20 +149,29 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        DeclareLaunchArgument("camera_backend", default_value="legacy"),
         DeclareLaunchArgument("camera_device", default_value="/dev/video0"),
         DeclareLaunchArgument("camera_fourcc", default_value=""),
         DeclareLaunchArgument("image_width", default_value="640"),
         DeclareLaunchArgument("image_height", default_value="480"),
         DeclareLaunchArgument("camera_fps", default_value="30.0"),
+        DeclareLaunchArgument("camera_name", default_value="uav_mono_camera"),
         DeclareLaunchArgument("image_topic", default_value="/uav/camera/image_raw"),
         DeclareLaunchArgument("camera_info_topic", default_value="/uav/camera/camera_info"),
         DeclareLaunchArgument("base_frame_id", default_value="uav_base_link"),
         DeclareLaunchArgument("camera_frame_id", default_value="uav_camera_optical_frame"),
+        DeclareLaunchArgument("camera_x", default_value="0.08"),
+        DeclareLaunchArgument("camera_y", default_value="0.0"),
+        DeclareLaunchArgument("camera_z", default_value="0.03"),
+        DeclareLaunchArgument("camera_roll", default_value="-1.5707963267948966"),
+        DeclareLaunchArgument("camera_pitch", default_value="0.0"),
+        DeclareLaunchArgument("camera_yaw", default_value="-1.5707963267948966"),
         DeclareLaunchArgument("fx", default_value="387.229248046875"),
         DeclareLaunchArgument("fy", default_value="387.229248046875"),
         DeclareLaunchArgument("cx", default_value="321.04638671875"),
         DeclareLaunchArgument("cy", default_value="243.44969177246094"),
         DeclareLaunchArgument("camera_hfov_rad", default_value="1.3962634"),
+        DeclareLaunchArgument("camera_info_url", default_value=""),
         DeclareLaunchArgument("fmu_namespace", default_value="/uav/fmu"),
         hw_camera_launch,
         uav_state_bridge,
