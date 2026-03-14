@@ -53,5 +53,5 @@ visual_landing_node:
     range_max_m: 5.0
     range_consistency_max_diff_m: 0.35
 
-    control_rate_hz: 30.0
+    control_rate_hz: 50.0
     status_rate_hz: 5.0

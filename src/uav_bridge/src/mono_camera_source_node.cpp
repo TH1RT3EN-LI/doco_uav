@@ -27,16 +27,16 @@ public:
   : Node("mono_camera_source_node")
   {
     this->declare_parameter<std::string>("device", "/dev/video0");
-    this->declare_parameter<std::string>("fourcc", "");
+    this->declare_parameter<std::string>("fourcc", "MJPG");
     this->declare_parameter<std::string>("frame_id", "uav_camera_optical_frame");
     this->declare_parameter<std::string>("camera_name", "uav_mono_camera");
     this->declare_parameter<std::string>("image_topic", "/uav/camera/image_raw");
     this->declare_parameter<std::string>("camera_info_topic", "/uav/camera/camera_info");
     this->declare_parameter<std::string>("camera_info_url", "");
     this->declare_parameter<std::string>("distortion_model", "plumb_bob");
-    this->declare_parameter<int>("image_width", 640);
-    this->declare_parameter<int>("image_height", 480);
-    this->declare_parameter<double>("fps", 30.0);
+    this->declare_parameter<int>("image_width", 1280);
+    this->declare_parameter<int>("image_height", 720);
+    this->declare_parameter<double>("fps", 120.0);
     this->declare_parameter<double>("fx", -1.0);
     this->declare_parameter<double>("fy", -1.0);
     this->declare_parameter<double>("cx", -1.0);
@@ -444,13 +444,13 @@ private:
   std::string distortion_model_;
   std::vector<double> distortion_coefficients_;
   sensor_msgs::msg::CameraInfo calibration_template_;
-  int requested_width_{640};
-  int requested_height_{480};
+  int requested_width_{1280};
+  int requested_height_{720};
   int actual_width_{0};
   int actual_height_{0};
   int calibration_width_{0};
   int calibration_height_{0};
-  double requested_fps_{30.0};
+  double requested_fps_{120.0};
   double fx_{-1.0};
   double fy_{-1.0};
   double cx_{-1.0};
