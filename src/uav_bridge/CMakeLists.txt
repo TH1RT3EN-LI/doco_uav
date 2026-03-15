@@ -53,6 +53,19 @@ target_link_libraries(mono_camera_source_node
   ${OpenCV_LIBS}
 )
 
+add_executable(mono_video_recorder_node
+  src/mono_video_recorder_node.cpp
+)
+target_compile_features(mono_video_recorder_node PUBLIC cxx_std_17)
+target_include_directories(mono_video_recorder_node SYSTEM PRIVATE ${OpenCV_INCLUDE_DIRS})
+ament_target_dependencies(mono_video_recorder_node
+  rclcpp
+  sensor_msgs
+)
+target_link_libraries(mono_video_recorder_node
+  ${OpenCV_LIBS}
+)
+
 add_executable(px4_planar_state_reader_node
   src/px4_planar_state_reader_node.cpp
 )
@@ -124,6 +137,7 @@ ament_target_dependencies(fmu_topic_namespace_bridge_node
 install(TARGETS
   ${PROJECT_NAME}_px4_odom_adapter_logic
   mono_camera_source_node
+  mono_video_recorder_node
   px4_planar_state_reader_node
   px4_odom_adapter_node
   uav_state_bridge_node
