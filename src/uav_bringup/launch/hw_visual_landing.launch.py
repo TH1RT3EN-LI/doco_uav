@@ -121,7 +121,10 @@ def generate_launch_description():
             {"vehicle_status_topic": vehicle_status_topic},
             {"takeoff_service": "/uav/control/command/takeoff"},
             {"hold_service": "/uav/control/command/hold"},
+            {"position_mode_service": "/uav/control/command/position_mode"},
             {"land_service": "/uav/control/command/land"},
+            {"abort_service": "/uav/control/command/abort"},
+            {"disarm_service": "/uav/control/command/disarm"},
         ],
     )
 
@@ -186,7 +189,7 @@ def generate_launch_description():
         DeclareLaunchArgument("cy", default_value="360.0"),
         DeclareLaunchArgument("camera_hfov_rad", default_value="1.3962634"),
         DeclareLaunchArgument("camera_info_url", default_value=""),
-        DeclareLaunchArgument("fmu_namespace", default_value="/uav/fmu"),
+        DeclareLaunchArgument("fmu_namespace", default_value="/fmu"),
         DeclareLaunchArgument("height_measurement_mode", default_value="distance_sensor"),
         hw_camera_launch,
         fmu_topic_namespace_bridge,

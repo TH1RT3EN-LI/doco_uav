@@ -42,11 +42,11 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "vehicle_local_position_topic",
-                default_value="/uav/fmu/out/vehicle_local_position",
+                default_value="/fmu/out/vehicle_local_position",
             ),
             DeclareLaunchArgument(
                 "vehicle_odometry_topic",
-                default_value="/uav/fmu/out/vehicle_odometry",
+                default_value="/fmu/out/vehicle_odometry",
             ),
             DeclareLaunchArgument("output_odom_topic", default_value="/uav/px4/planar_odom"),
             DeclareLaunchArgument("world_frame_id", default_value="uav_odom"),

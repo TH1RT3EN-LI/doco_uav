@@ -45,15 +45,17 @@ public:
     this->declare_parameter<std::string>("position_topic", "/uav/control/pose");
     this->declare_parameter<std::string>("velocity_body_topic", "/uav/control/setpoint/velocity_body");
     this->declare_parameter<std::string>("state_topic", "/uav/state/odometry");
-    this->declare_parameter<std::string>("offboard_mode_topic", "/uav/fmu/in/offboard_control_mode");
-    this->declare_parameter<std::string>("trajectory_setpoint_topic", "/uav/fmu/in/trajectory_setpoint");
-    this->declare_parameter<std::string>("vehicle_command_topic", "/uav/fmu/in/vehicle_command");
-    this->declare_parameter<std::string>("vehicle_status_topic", "/uav/fmu/out/vehicle_status");
-    this->declare_parameter<std::string>("px4_local_position_topic", "/uav/fmu/out/vehicle_local_position");
+    this->declare_parameter<std::string>("offboard_mode_topic", "/fmu/in/offboard_control_mode");
+    this->declare_parameter<std::string>("trajectory_setpoint_topic", "/fmu/in/trajectory_setpoint");
+    this->declare_parameter<std::string>("vehicle_command_topic", "/fmu/in/vehicle_command");
+    this->declare_parameter<std::string>("vehicle_status_topic", "/fmu/out/vehicle_status");
+    this->declare_parameter<std::string>("px4_local_position_topic", "/fmu/out/vehicle_local_position");
     this->declare_parameter<std::string>("takeoff_service", "/uav/control/command/takeoff");
     this->declare_parameter<std::string>("hold_service", "/uav/control/command/hold");
     this->declare_parameter<std::string>("position_mode_service", "/uav/control/command/position_mode");
     this->declare_parameter<std::string>("land_service", "/uav/control/command/land");
+    this->declare_parameter<std::string>("abort_service", "/uav/control/command/abort");
+    this->declare_parameter<std::string>("disarm_service", "/uav/control/command/disarm");
     this->declare_parameter<double>("publish_rate_hz", 50.0);
     this->declare_parameter<int>("warmup_cycles", 20);
     this->declare_parameter<int>("target_system", 1);
@@ -88,6 +90,8 @@ public:
     hold_service_ = this->get_parameter("hold_service").as_string();
     position_mode_service_ = this->get_parameter("position_mode_service").as_string();
     land_service_ = this->get_parameter("land_service").as_string();
+    abort_service_ = this->get_parameter("abort_service").as_string();
+    disarm_service_ = this->get_parameter("disarm_service").as_string();
     publish_rate_hz_ = this->get_parameter("publish_rate_hz").as_double();
     warmup_cycles_ = this->get_parameter("warmup_cycles").as_int();
     target_system_ = static_cast<uint8_t>(this->get_parameter("target_system").as_int());
@@ -217,15 +221,30 @@ public:
         response->success = handleLandRequest(response->message);
       });
 
+    abort_srv_ = this->create_service<Trigger>(
+      abort_service_,
+      [this](const std::shared_ptr<Trigger::Request>, std::shared_ptr<Trigger::Response> response)
+      {
+        response->success = handleAbortRequest(response->message);
+      });
+
+    disarm_srv_ = this->create_service<Trigger>(
+      disarm_service_,
+      [this](const std::shared_ptr<Trigger::Request>, std::shared_ptr<Trigger::Response> response)
+      {
+        response->success = handleDisarmRequest(response->message);
+      });
+
     const auto timer_period = std::chrono::duration_cast<std::chrono::nanoseconds>(
       std::chrono::duration<double>(1.0 / publish_rate_hz_));
     timer_ = this->create_wall_timer(timer_period, std::bind(&UavControlNode::timerCallback, this));
 
     RCLCPP_INFO(
       this->get_logger(),
-      "uav_control_node: position=%s velocity_body=%s state=%s takeoff=%s hold=%s position_mode=%s land=%s",
+      "uav_control_node: position=%s velocity_body=%s state=%s takeoff=%s hold=%s position_mode=%s land=%s abort=%s disarm=%s",
       position_topic_.c_str(), velocity_body_topic_.c_str(), state_topic_.c_str(),
-      takeoff_service_.c_str(), hold_service_.c_str(), position_mode_service_.c_str(), land_service_.c_str());
+      takeoff_service_.c_str(), hold_service_.c_str(), position_mode_service_.c_str(),
+      land_service_.c_str(), abort_service_.c_str(), disarm_service_.c_str());
   }
 
 private:
@@ -253,7 +272,7 @@ private:
     setpoint_counter_ = 0;
   }
 
-  void clearPostLandingCommands()
+  void clearManualCommands()
   {
     has_velocity_body_cmd_ = false;
     velocity_mode_rate_limit_initialized_ = false;
@@ -261,6 +280,11 @@ private:
     last_velocity_mode_yawspeed_ned_ = 0.0f;
     hold_target_valid_ = false;
     position_target_valid_ = false;
+  }
+
+  void clearPostLandingCommands()
+  {
+    clearManualCommands();
   }
 
   void logModeChange(UavControlMode previous, const char * reason)
@@ -310,7 +334,12 @@ private:
     return std::isfinite(age_s) && age_s >= 0.0 && age_s <= state_timeout_s_;
   }
 
-  void publishVehicleCommand(uint32_t command, float param1, float param2)
+  void publishVehicleCommand(
+    uint32_t command,
+    float param1,
+    float param2,
+    float param3 = 0.0f,
+    float param4 = 0.0f)
   {
     const uint64_t stamp = nowMicros();
     if (!ensureTimestampReady("vehicle command", stamp)) {
@@ -320,6 +349,8 @@ private:
     msg.timestamp = stamp;
     msg.param1 = param1;
     msg.param2 = param2;
+    msg.param3 = param3;
+    msg.param4 = param4;
     msg.command = command;
     msg.target_system = target_system_;
     msg.target_component = target_component_;
@@ -327,6 +358,15 @@ private:
     msg.source_component = source_component_;
     msg.from_external = true;
     vehicle_command_pub_->publish(msg);
+  }
+
+  void requestPx4PositionMode(const char * reason)
+  {
+    const auto previous = mode_tracker_.mode();
+    mode_tracker_.requestPx4PositionHold();
+    position_mode_retry_counter_ = 0;
+    clearManualCommands();
+    logModeChange(previous, reason);
   }
 
   void maybeEnableOffboardAndArm()
@@ -617,13 +657,23 @@ private:
 
   bool handlePositionModeRequest(std::string & message)
   {
-    const auto previous = mode_tracker_.mode();
-    mode_tracker_.requestPx4PositionHold();
-    position_mode_retry_counter_ = 0;
-    has_velocity_body_cmd_ = false;
-    position_target_valid_ = false;
-    logModeChange(previous, "px4 position mode");
+    requestPx4PositionMode("px4 position mode");
     message = "px4 position mode requested";
+    return true;
+  }
+
+  bool handleAbortRequest(std::string & message)
+  {
+    requestPx4PositionMode("abort");
+    message = "abort requested, switching to px4 position mode";
+    return true;
+  }
+
+  bool handleDisarmRequest(std::string & message)
+  {
+    requestPx4PositionMode("disarm");
+    publishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM, 0.0f, 0.0f);
+    message = "disarm requested and switching to px4 position mode";
     return true;
   }
 
@@ -718,11 +768,19 @@ private:
 
     constexpr int kRetryIntervalCycles = 50;
     constexpr float kMavStandardModePositionHold = 1.0f;
+    constexpr float kMavModeFlagCustomModeEnabled = 1.0f;
+    constexpr float kPx4CustomMainModePosctl = 3.0f;
+    constexpr float kPx4CustomSubModePosctl = 0.0f;
     if (position_mode_retry_counter_ % kRetryIntervalCycles == 0) {
       publishVehicleCommand(
         px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_STANDARD_MODE,
         kMavStandardModePositionHold,
         0.0f);
+      publishVehicleCommand(
+        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE,
+        kMavModeFlagCustomModeEnabled,
+        kPx4CustomMainModePosctl,
+        kPx4CustomSubModePosctl);
     }
     ++position_mode_retry_counter_;
   }
@@ -763,6 +821,8 @@ private:
   std::string hold_service_;
   std::string position_mode_service_;
   std::string land_service_;
+  std::string abort_service_;
+  std::string disarm_service_;
   std::string base_frame_id_;
   std::string position_command_frame_id_;
   std::string gz_world_name_;
@@ -825,6 +885,8 @@ private:
   rclcpp::Service<Trigger>::SharedPtr hold_srv_;
   rclcpp::Service<Trigger>::SharedPtr position_mode_srv_;
   rclcpp::Service<Trigger>::SharedPtr land_srv_;
+  rclcpp::Service<Trigger>::SharedPtr abort_srv_;
+  rclcpp::Service<Trigger>::SharedPtr disarm_srv_;
   rclcpp::TimerBase::SharedPtr timer_;
 };
 
