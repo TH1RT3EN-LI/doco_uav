@@ -36,7 +36,8 @@ public:
     output_path_ = resolveOutputPath(this->get_parameter("output_path").as_string());
     fourcc_ = this->get_parameter("fourcc").as_string();
     fps_ = this->get_parameter("fps").as_double();
-    log_interval_frames_ = std::max(0, this->get_parameter("log_interval_frames").as_int());
+    const auto log_interval_frames = this->get_parameter("log_interval_frames").as_int();
+    log_interval_frames_ = static_cast<int>(std::max<int64_t>(0, log_interval_frames));
 
     if (fps_ <= 1.0e-6) {
       RCLCPP_WARN(this->get_logger(), "fps must be positive, falling back to 30.0");
@@ -149,7 +150,7 @@ private:
 
     const int rows = static_cast<int>(msg.height);
     const int cols = static_cast<int>(msg.width);
-    const auto * raw = const_cast<unsigned char *>(msg.data.data());
+    auto * raw = const_cast<unsigned char *>(msg.data.data());
 
     if (msg.encoding == sensor_msgs::image_encodings::MONO8) {
       const size_t min_step = static_cast<size_t>(cols);
@@ -160,7 +161,7 @@ private:
           msg.width, msg.height, msg.step, msg.data.size());
         return {};
       }
-      cv::Mat mono(rows, cols, CV_8UC1, raw, msg.step);
+      cv::Mat mono(rows, cols, CV_8UC1, raw, static_cast<size_t>(msg.step));
       cv::Mat bgr;
       cv::cvtColor(mono, bgr, cv::COLOR_GRAY2BGR);
       return bgr;
@@ -175,7 +176,7 @@ private:
           msg.width, msg.height, msg.step, msg.data.size());
         return {};
       }
-      cv::Mat bgr(rows, cols, CV_8UC3, raw, msg.step);
+      cv::Mat bgr(rows, cols, CV_8UC3, raw, static_cast<size_t>(msg.step));
       return bgr.clone();
     }
 
@@ -188,7 +189,7 @@ private:
           msg.width, msg.height, msg.step, msg.data.size());
         return {};
       }
-      cv::Mat rgb(rows, cols, CV_8UC3, raw, msg.step);
+      cv::Mat rgb(rows, cols, CV_8UC3, raw, static_cast<size_t>(msg.step));
       cv::Mat bgr;
       cv::cvtColor(rgb, bgr, cv::COLOR_RGB2BGR);
       return bgr;
@@ -203,7 +204,7 @@ private:
           msg.width, msg.height, msg.step, msg.data.size());
         return {};
       }
-      cv::Mat bgra(rows, cols, CV_8UC4, raw, msg.step);
+      cv::Mat bgra(rows, cols, CV_8UC4, raw, static_cast<size_t>(msg.step));
       cv::Mat bgr;
       cv::cvtColor(bgra, bgr, cv::COLOR_BGRA2BGR);
       return bgr;
@@ -218,7 +219,7 @@ private:
           msg.width, msg.height, msg.step, msg.data.size());
         return {};
       }
-      cv::Mat rgba(rows, cols, CV_8UC4, raw, msg.step);
+      cv::Mat rgba(rows, cols, CV_8UC4, raw, static_cast<size_t>(msg.step));
       cv::Mat bgr;
       cv::cvtColor(rgba, bgr, cv::COLOR_RGBA2BGR);
       return bgr;
