@@ -76,6 +76,17 @@ def generate_launch_description():
     vehicle_command_topic = [fmu_namespace, "/in/vehicle_command"]
     distance_sensor_topic = [fmu_namespace, "/out/distance_sensor"]
 
+    fmu_topic_namespace_bridge = Node(
+        package="uav_bridge",
+        executable="fmu_topic_namespace_bridge_node",
+        name="fmu_topic_namespace_bridge",
+        output="screen",
+        parameters=[
+            {"namespaced_fmu_prefix": fmu_namespace},
+            {"global_fmu_prefix": "/fmu"},
+        ],
+    )
+
     uav_state_bridge = Node(
         package="uav_bridge",
         executable="uav_state_bridge_node",
@@ -178,6 +189,7 @@ def generate_launch_description():
         DeclareLaunchArgument("fmu_namespace", default_value="/uav/fmu"),
         DeclareLaunchArgument("height_measurement_mode", default_value="distance_sensor"),
         hw_camera_launch,
+        fmu_topic_namespace_bridge,
         uav_state_bridge,
         uav_control,
         aruco_detector,
