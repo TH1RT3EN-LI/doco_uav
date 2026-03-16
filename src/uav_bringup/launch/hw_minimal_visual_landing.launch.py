@@ -15,6 +15,7 @@ def generate_launch_description():
     takeoff_height_m = LaunchConfiguration("takeoff_height_m")
     search_height_m = LaunchConfiguration("search_height_m")
     terminal_entry_height_m = LaunchConfiguration("terminal_entry_height_m")
+    max_vxy = LaunchConfiguration("max_vxy")
 
     image_topic = "/uav/camera/image_raw"
     camera_info_topic = "/uav/camera/camera_info"
@@ -63,6 +64,7 @@ def generate_launch_description():
             visual_landing_config,
             {"search_height_m": search_height_m},
             {"terminal_entry_height_m": terminal_entry_height_m},
+            {"max_vxy": max_vxy},
             {"target_observation_topic": "/uav/visual_landing/target_observation"},
             {"state_topic": "/uav/state/odometry"},
             {"velocity_body_topic": "/uav/control/setpoint/velocity_body"},
@@ -81,6 +83,7 @@ def generate_launch_description():
         DeclareLaunchArgument("takeoff_height_m", default_value="0.60"),
         DeclareLaunchArgument("search_height_m", default_value="0.60"),
         DeclareLaunchArgument("terminal_entry_height_m", default_value="0.40"),
+        DeclareLaunchArgument("max_vxy", default_value="0.10"),
         minimal_control_launch,
         aruco_detector,
         visual_landing,
