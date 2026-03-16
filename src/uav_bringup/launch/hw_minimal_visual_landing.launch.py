@@ -138,7 +138,7 @@ def generate_launch_description():
         DeclareLaunchArgument("tag_size_m", default_value="0.13"),
         DeclareLaunchArgument("record_video_source", default_value="debug"),
         DeclareLaunchArgument("record_video_output_path", default_value=default_recording_path),
-        DeclareLaunchArgument("record_video_fps", default_value="120.0"),
+        DeclareLaunchArgument("record_video_fps", default_value="30.0"),
         DeclareLaunchArgument("record_video_fourcc", default_value="MJPG"),
         minimal_control_launch,
         aruco_detector,
