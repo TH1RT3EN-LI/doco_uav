@@ -11,7 +11,11 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
-from uav_bringup.profile_defaults import DEFAULT_CAMERA_INTRINSICS, DEFAULT_CAMERA_TO_BODY
+from uav_bringup.profile_defaults import (
+    DEFAULT_CAMERA_INTRINSICS,
+    DEFAULT_CAMERA_TO_BODY,
+    DEFAULT_STEREO_CAMERA_TO_BODY,
+)
 
 
 def generate_launch_description():
@@ -50,6 +54,18 @@ def generate_launch_description():
     mono_video_output_path = LaunchConfiguration("mono_video_output_path")
     mono_video_fps = LaunchConfiguration("mono_video_fps")
     mono_video_fourcc = LaunchConfiguration("mono_video_fourcc")
+    start_orbbec_depth_camera = LaunchConfiguration("start_orbbec_depth_camera")
+    orbbec_camera_launch_file = LaunchConfiguration("orbbec_camera_launch_file")
+    orbbec_camera_name = LaunchConfiguration("orbbec_camera_name")
+    orbbec_camera_serial_number = LaunchConfiguration("orbbec_camera_serial_number")
+    orbbec_camera_usb_port = LaunchConfiguration("orbbec_camera_usb_port")
+    orbbec_camera_frame_id = LaunchConfiguration("orbbec_camera_frame_id")
+    orbbec_camera_x = LaunchConfiguration("orbbec_camera_x")
+    orbbec_camera_y = LaunchConfiguration("orbbec_camera_y")
+    orbbec_camera_z = LaunchConfiguration("orbbec_camera_z")
+    orbbec_camera_roll = LaunchConfiguration("orbbec_camera_roll")
+    orbbec_camera_pitch = LaunchConfiguration("orbbec_camera_pitch")
+    orbbec_camera_yaw = LaunchConfiguration("orbbec_camera_yaw")
 
     default_recording_path = str(
         Path.home() / "uav_recordings" / f"mono_{datetime.now().strftime('%Y%m%d_%H%M%S')}.avi"
@@ -89,6 +105,26 @@ def generate_launch_description():
             "cy": cy,
             "camera_hfov_rad": camera_hfov_rad,
             "camera_info_url": camera_info_url,
+        }.items(),
+    )
+
+    hw_orbbec_depth_camera_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(bringup_share, "launch", "hw_orbbec_depth_camera.launch.py")),
+        condition=IfCondition(start_orbbec_depth_camera),
+        launch_arguments={
+            "start_camera": start_orbbec_depth_camera,
+            "camera_launch_file": orbbec_camera_launch_file,
+            "camera_name": orbbec_camera_name,
+            "serial_number": orbbec_camera_serial_number,
+            "usb_port": orbbec_camera_usb_port,
+            "base_frame_id": base_frame_id,
+            "camera_frame_id": orbbec_camera_frame_id,
+            "camera_x": orbbec_camera_x,
+            "camera_y": orbbec_camera_y,
+            "camera_z": orbbec_camera_z,
+            "camera_roll": orbbec_camera_roll,
+            "camera_pitch": orbbec_camera_pitch,
+            "camera_yaw": orbbec_camera_yaw,
         }.items(),
     )
 
@@ -166,6 +202,7 @@ def generate_launch_description():
         DeclareLaunchArgument("max_velocity_setpoint_mps", default_value="0.40"),
         DeclareLaunchArgument("max_acceleration_setpoint_mps2", default_value="0.60"),
         DeclareLaunchArgument("start_mono_camera", default_value="true"),
+        DeclareLaunchArgument("start_orbbec_depth_camera", default_value="false"),
         DeclareLaunchArgument("camera_backend", default_value="legacy"),
         DeclareLaunchArgument("camera_device", default_value="/dev/video0"),
         DeclareLaunchArgument("camera_fourcc", default_value="MJPG"),
@@ -194,7 +231,19 @@ def generate_launch_description():
         DeclareLaunchArgument("mono_video_output_path", default_value=default_recording_path),
         DeclareLaunchArgument("mono_video_fps", default_value="120.0"),
         DeclareLaunchArgument("mono_video_fourcc", default_value="MJPG"),
+        DeclareLaunchArgument("orbbec_camera_launch_file", default_value="gemini_330_series.launch.py"),
+        DeclareLaunchArgument("orbbec_camera_name", default_value="uav/depth_camera"),
+        DeclareLaunchArgument("orbbec_camera_serial_number", default_value=""),
+        DeclareLaunchArgument("orbbec_camera_usb_port", default_value=""),
+        DeclareLaunchArgument("orbbec_camera_frame_id", default_value="uav_stereo_camera_optical_frame"),
+        DeclareLaunchArgument("orbbec_camera_x", default_value=DEFAULT_STEREO_CAMERA_TO_BODY["x"]),
+        DeclareLaunchArgument("orbbec_camera_y", default_value=DEFAULT_STEREO_CAMERA_TO_BODY["y"]),
+        DeclareLaunchArgument("orbbec_camera_z", default_value=DEFAULT_STEREO_CAMERA_TO_BODY["z"]),
+        DeclareLaunchArgument("orbbec_camera_roll", default_value=str(-math.pi / 2.0)),
+        DeclareLaunchArgument("orbbec_camera_pitch", default_value="0.0"),
+        DeclareLaunchArgument("orbbec_camera_yaw", default_value=str(-math.pi / 2.0)),
         hw_camera_launch,
+        hw_orbbec_depth_camera_launch,
         fmu_topic_namespace_bridge,
         uav_state_bridge,
         uav_control,

@@ -12,3 +12,9 @@ DEFAULT_CAMERA_TO_BODY = {
     "y": "0.0",
     "z": "0.03",
 }
+
+DEFAULT_STEREO_CAMERA_TO_BODY = {
+    "x": "0.0503",
+    "y": "0.0",
+    "z": "0.1043",
+}
