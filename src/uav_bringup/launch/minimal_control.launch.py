@@ -89,6 +89,8 @@ def generate_launch_description():
     orbbec_right_ir_fps = LaunchConfiguration("orbbec_right_ir_fps")
     orbbec_right_ir_format = LaunchConfiguration("orbbec_right_ir_format")
     orbbec_enable_ir_auto_exposure = LaunchConfiguration("orbbec_enable_ir_auto_exposure")
+    orbbec_enable_laser = LaunchConfiguration("orbbec_enable_laser")
+    orbbec_enable_ldp = LaunchConfiguration("orbbec_enable_ldp")
 
     start_openvins_orbbec = LaunchConfiguration("start_openvins_orbbec")
     publish_px4_external_vision = LaunchConfiguration("publish_px4_external_vision")
@@ -206,6 +208,8 @@ def generate_launch_description():
             "right_ir_fps": orbbec_right_ir_fps,
             "right_ir_format": orbbec_right_ir_format,
             "enable_ir_auto_exposure": orbbec_enable_ir_auto_exposure,
+            "enable_laser": orbbec_enable_laser,
+            "enable_ldp": orbbec_enable_ldp,
         }.items(),
     )
 
@@ -248,6 +252,8 @@ def generate_launch_description():
             "right_ir_fps": orbbec_right_ir_fps,
             "right_ir_format": orbbec_right_ir_format,
             "enable_ir_auto_exposure": orbbec_enable_ir_auto_exposure,
+            "enable_laser": orbbec_enable_laser,
+            "enable_ldp": orbbec_enable_ldp,
             "openvins_namespace": openvins_orbbec_namespace,
             "openvins_config_path": openvins_orbbec_config_path,
             "publish_px4_external_vision": publish_px4_external_vision,
@@ -406,6 +412,8 @@ def generate_launch_description():
         DeclareLaunchArgument("orbbec_right_ir_fps", default_value="15"),
         DeclareLaunchArgument("orbbec_right_ir_format", default_value="Y8"),
         DeclareLaunchArgument("orbbec_enable_ir_auto_exposure", default_value="true"),
+        DeclareLaunchArgument("orbbec_enable_laser", default_value="false"),
+        DeclareLaunchArgument("orbbec_enable_ldp", default_value="false"),
         mono_camera_launch,
         orbbec_depth_camera_launch,
         openvins_orbbec_launch,

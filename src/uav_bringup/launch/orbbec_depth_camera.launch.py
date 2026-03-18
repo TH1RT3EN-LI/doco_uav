@@ -42,6 +42,8 @@ def generate_launch_description():
     right_ir_fps = LaunchConfiguration("right_ir_fps")
     right_ir_format = LaunchConfiguration("right_ir_format")
     enable_ir_auto_exposure = LaunchConfiguration("enable_ir_auto_exposure")
+    enable_laser = LaunchConfiguration("enable_laser")
+    enable_ldp = LaunchConfiguration("enable_ldp")
     enable_point_cloud = LaunchConfiguration("enable_point_cloud")
     enable_colored_point_cloud = LaunchConfiguration("enable_colored_point_cloud")
     enable_sync_output_accel_gyro = LaunchConfiguration("enable_sync_output_accel_gyro")
@@ -73,6 +75,8 @@ def generate_launch_description():
             "right_ir_fps": right_ir_fps,
             "right_ir_format": right_ir_format,
             "enable_ir_auto_exposure": enable_ir_auto_exposure,
+            "enable_laser": enable_laser,
+            "enable_ldp": enable_ldp,
             "enable_point_cloud": enable_point_cloud,
             "enable_colored_point_cloud": enable_colored_point_cloud,
             "enable_sync_output_accel_gyro": enable_sync_output_accel_gyro,
@@ -144,6 +148,8 @@ def generate_launch_description():
             DeclareLaunchArgument("right_ir_fps", default_value="0"),
             DeclareLaunchArgument("right_ir_format", default_value="ANY"),
             DeclareLaunchArgument("enable_ir_auto_exposure", default_value="true"),
+            DeclareLaunchArgument("enable_laser", default_value="false"),
+            DeclareLaunchArgument("enable_ldp", default_value="false"),
             DeclareLaunchArgument("enable_point_cloud", default_value="true"),
             DeclareLaunchArgument("enable_colored_point_cloud", default_value="false"),
             DeclareLaunchArgument("enable_sync_output_accel_gyro", default_value="false"),

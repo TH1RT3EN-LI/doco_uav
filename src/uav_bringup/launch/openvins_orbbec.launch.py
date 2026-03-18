@@ -55,6 +55,8 @@ def generate_launch_description():
     right_ir_fps = LaunchConfiguration("right_ir_fps")
     right_ir_format = LaunchConfiguration("right_ir_format")
     enable_ir_auto_exposure = LaunchConfiguration("enable_ir_auto_exposure")
+    enable_laser = LaunchConfiguration("enable_laser")
+    enable_ldp = LaunchConfiguration("enable_ldp")
     log_level = LaunchConfiguration("log_level")
 
     openvins_namespace = LaunchConfiguration("openvins_namespace")
@@ -112,6 +114,8 @@ def generate_launch_description():
             "right_ir_fps": right_ir_fps,
             "right_ir_format": right_ir_format,
             "enable_ir_auto_exposure": enable_ir_auto_exposure,
+            "enable_laser": enable_laser,
+            "enable_ldp": enable_ldp,
             "log_level": log_level,
         }.items(),
     )
@@ -192,6 +196,8 @@ def generate_launch_description():
             DeclareLaunchArgument("right_ir_fps", default_value="15"),
             DeclareLaunchArgument("right_ir_format", default_value="Y8"),
             DeclareLaunchArgument("enable_ir_auto_exposure", default_value="true"),
+            DeclareLaunchArgument("enable_laser", default_value="false"),
+            DeclareLaunchArgument("enable_ldp", default_value="false"),
             DeclareLaunchArgument("log_level", default_value="info"),
             DeclareLaunchArgument("openvins_namespace", default_value="ov_msckf"),
             DeclareLaunchArgument("openvins_config_path", default_value=default_config_path),

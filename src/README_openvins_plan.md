@@ -1185,6 +1185,14 @@ ros2 topic hz /uav/state/odometry
 
 ### 16.2 这次真正需要关注的关键配置项
 
+另外，当前 `uav_bringup` 已经把 Orbbec 的 `enable_laser` / `enable_ldp` 透传出来，并且默认都关闭。
+
+这样做的目的就是：
+
+- 减少 IR 点阵对 OpenVINS 特征跟踪的干扰
+- 让双 IR + IMU 标定优先基于自然纹理收敛
+- 如果以后你要做 A/B 测试，再手动打开
+
 以后你主要只需要盯这几个入口参数：
 
 - `camera_name`
