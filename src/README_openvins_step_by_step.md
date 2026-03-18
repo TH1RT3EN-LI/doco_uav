@@ -26,10 +26,12 @@
 - 默认按“更适合 VIO / 标定”的方式起相机
 - 如果你后面想做 A/B 对比，再手动覆盖打开
 
-这份手册还遵守你的环境限制：
+这份手册原本按 Docker 工作流编写，但如果你当前就在真机 ROS 工作区里运行，也可以直接在真机执行。
 
-- **宿主机不编译**
-- **所有 build / run 都放在 Docker 内完成**
+建议区分两种环境：
+
+- **Docker 开发环境**：使用 `/repo/...`、`/ws/...` 这类路径
+- **真机运行环境**：使用你真实工作区路径，比如 `~/uav_hw/...`
 
 ---
 
@@ -156,7 +158,8 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
     enable_sync_output_accel_gyro:=true \
     enable_publish_extrinsic:=true \
     enable_depth:=false \
-    enable_color:=false'
+    enable_color:=false
+    '
 ```
 
 ### 4.3 这一步成功以后怎么检查
@@ -224,7 +227,8 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
   source /ws/install/setup.bash &&
   ros2 run uav_bringup generate_orbbec_openvins_bootstrap.py \
     --camera-name uav_depth_camera \
-    --output-dir /repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap'
+    --output-dir ~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap
+    '
 ```
 
 ### 5.3 做完以后看什么
@@ -232,7 +236,7 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
 生成目录应该存在：
 
 ```bash
-ls /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap
+ls ~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap
 ```
 
 应该至少能看到：
@@ -293,8 +297,8 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
   source /ws/install/setup.bash &&
   ros2 launch uav_bringup openvins_orbbec_calibration.launch.py \
     camera_name:=uav_depth_camera \
-    openvins_config_path:=/repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/estimator_config.calibration.yaml \
-    state_output_dir:=/repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_01'
+    openvins_config_path:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/estimator_config.calibration.yaml \
+    state_output_dir:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_01'
 ```
 
 ### 6.3 起起来之后先不要动，先检查
@@ -393,9 +397,9 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
 ```bash
 cd /home/th1rt3en/doco
 WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
-  python3 /repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/scripts/apply_openvins_calibration_result.py \
-    --state-estimate-path /repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_01/ov_estimate.txt \
-    --input-imucam-yaml /repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/kalibr_imucam_chain.yaml'
+  python3 ~/uav_hw/src/workspace/doco_uav/src/uav_bringup/scripts/apply_openvins_calibration_result.py \
+    --state-estimate-path ~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_01/ov_estimate.txt \
+    --input-imucam-yaml ~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/kalibr_imucam_chain.yaml'
 ```
 
 ### 8.3 这一步会更新哪些内容
@@ -454,8 +458,8 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
   source /ws/install/setup.bash &&
   ros2 launch uav_bringup openvins_orbbec_calibration.launch.py \
     camera_name:=uav_depth_camera \
-    openvins_config_path:=/repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/estimator_config.calibration.yaml \
-    state_output_dir:=/repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_02'
+    openvins_config_path:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/estimator_config.calibration.yaml \
+    state_output_dir:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_02'
 ```
 
 跑完以后，再执行一次回写：
@@ -463,9 +467,9 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
 ```bash
 cd /home/th1rt3en/doco
 WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
-  python3 /repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/scripts/apply_openvins_calibration_result.py \
-    --state-estimate-path /repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_02/ov_estimate.txt \
-    --input-imucam-yaml /repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/kalibr_imucam_chain.yaml'
+  python3 ~/uav_hw/src/workspace/doco_uav/src/uav_bringup/scripts/apply_openvins_calibration_result.py \
+    --state-estimate-path ~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_02/ov_estimate.txt \
+    --input-imucam-yaml ~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/kalibr_imucam_chain.yaml'
 ```
 
 如果还想再稳一轮，再做 `round_03`，方法完全一样。
@@ -547,7 +551,7 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
   source /ws/install/setup.bash &&
   ros2 launch uav_bringup openvins_orbbec.launch.py \
     camera_name:=uav_depth_camera \
-    openvins_config_path:=/repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/estimator_config.flight.yaml'
+    openvins_config_path:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/estimator_config.flight.yaml'
 ```
 
 ### 11.3 这一步做完以后看什么
@@ -746,7 +750,7 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
   source /ws/install/setup.bash &&
   ros2 run uav_bringup generate_orbbec_openvins_bootstrap.py \
     --camera-name uav_depth_camera \
-    --output-dir /repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap'
+    --output-dir ~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap'
 ```
 
 ### 15.4 起第 1 轮标定
@@ -759,8 +763,8 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
   source /ws/install/setup.bash &&
   ros2 launch uav_bringup openvins_orbbec_calibration.launch.py \
     camera_name:=uav_depth_camera \
-    openvins_config_path:=/repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/estimator_config.calibration.yaml \
-    state_output_dir:=/repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_01'
+    openvins_config_path:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/estimator_config.calibration.yaml \
+    state_output_dir:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_01'
 ```
 
 ### 15.5 回写第 1 轮
@@ -768,9 +772,9 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
 ```bash
 cd /home/th1rt3en/doco
 WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
-  python3 /repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/scripts/apply_openvins_calibration_result.py \
-    --state-estimate-path /repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_01/ov_estimate.txt \
-    --input-imucam-yaml /repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/kalibr_imucam_chain.yaml'
+  python3 ~/uav_hw/src/workspace/doco_uav/src/uav_bringup/scripts/apply_openvins_calibration_result.py \
+    --state-estimate-path ~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_01/ov_estimate.txt \
+    --input-imucam-yaml ~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/kalibr_imucam_chain.yaml'
 ```
 
 ### 15.6 起冻结后的 flight 配置
@@ -783,7 +787,7 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
   source /ws/install/setup.bash &&
   ros2 launch uav_bringup openvins_orbbec.launch.py \
     camera_name:=uav_depth_camera \
-    openvins_config_path:=/repo/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/estimator_config.flight.yaml'
+    openvins_config_path:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/estimator_config.flight.yaml'
 ```
 
 ---
@@ -792,7 +796,7 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
 
 如果你现在就要开干，建议你按这个顺序走：
 
-1. 先做 Step 1：Docker 内 build
+1. 如果你在 Docker，就先做 Step 1：Docker 内 build；如果你已经在真机工作区并且包已安装，可以跳过
 2. 再做 Step 2：只起相机，看双 IR + IMU
 3. 再做 Step 3：生成 bootstrap
 4. 再做 Step 4：起第 1 轮标定

@@ -44,7 +44,7 @@ class BootstrapCollector(Node):
         super().__init__("orbbec_openvins_bootstrap_generator")
         self.required_keys = {key for key, (_, _, required) in topics.items() if required}
         self.messages: Dict[str, object] = {}
-        self.subscriptions = []
+        self._subscriptions = []
         for key, (topic_name, msg_type, _) in topics.items():
             subscription = self.create_subscription(
                 msg_type,
@@ -52,7 +52,7 @@ class BootstrapCollector(Node):
                 lambda message, topic_key=key: self._on_message(topic_key, message),
                 10,
             )
-            self.subscriptions.append(subscription)
+            self._subscriptions.append(subscription)
             self.get_logger().info(f"waiting for {key}: {topic_name}")
 
     def _on_message(self, key: str, message: object) -> None:
