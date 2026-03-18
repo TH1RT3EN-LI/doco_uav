@@ -12,4 +12,10 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
+install(PROGRAMS
+  scripts/generate_orbbec_openvins_bootstrap.py
+  scripts/apply_openvins_calibration_result.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_package()

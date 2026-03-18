@@ -72,7 +72,7 @@ PX4
 - `PX4_SYS_AUTOSTART`
 - `PX4_SIM_MODEL`
 - `PX4_GZ_WORLD`
-- 自定义机体参数 profile，例如 `sim_uav` / `hw_uav`
+- 自定义机体参数 profile，例如 `default` / `uav`
 
 然后执行：
 

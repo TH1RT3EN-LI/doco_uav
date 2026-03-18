@@ -31,8 +31,25 @@ def generate_launch_description():
     enable_depth = LaunchConfiguration("enable_depth")
     enable_color = LaunchConfiguration("enable_color")
     enable_ir = LaunchConfiguration("enable_ir")
+    enable_left_ir = LaunchConfiguration("enable_left_ir")
+    enable_right_ir = LaunchConfiguration("enable_right_ir")
+    left_ir_width = LaunchConfiguration("left_ir_width")
+    left_ir_height = LaunchConfiguration("left_ir_height")
+    left_ir_fps = LaunchConfiguration("left_ir_fps")
+    left_ir_format = LaunchConfiguration("left_ir_format")
+    right_ir_width = LaunchConfiguration("right_ir_width")
+    right_ir_height = LaunchConfiguration("right_ir_height")
+    right_ir_fps = LaunchConfiguration("right_ir_fps")
+    right_ir_format = LaunchConfiguration("right_ir_format")
+    enable_ir_auto_exposure = LaunchConfiguration("enable_ir_auto_exposure")
     enable_point_cloud = LaunchConfiguration("enable_point_cloud")
     enable_colored_point_cloud = LaunchConfiguration("enable_colored_point_cloud")
+    enable_sync_output_accel_gyro = LaunchConfiguration("enable_sync_output_accel_gyro")
+    enable_publish_extrinsic = LaunchConfiguration("enable_publish_extrinsic")
+    enable_accel = LaunchConfiguration("enable_accel")
+    accel_rate = LaunchConfiguration("accel_rate")
+    enable_gyro = LaunchConfiguration("enable_gyro")
+    gyro_rate = LaunchConfiguration("gyro_rate")
     log_level = LaunchConfiguration("log_level")
 
     depth_camera_launch = IncludeLaunchDescription(
@@ -45,8 +62,25 @@ def generate_launch_description():
             "enable_depth": enable_depth,
             "enable_color": enable_color,
             "enable_ir": enable_ir,
+            "enable_left_ir": enable_left_ir,
+            "enable_right_ir": enable_right_ir,
+            "left_ir_width": left_ir_width,
+            "left_ir_height": left_ir_height,
+            "left_ir_fps": left_ir_fps,
+            "left_ir_format": left_ir_format,
+            "right_ir_width": right_ir_width,
+            "right_ir_height": right_ir_height,
+            "right_ir_fps": right_ir_fps,
+            "right_ir_format": right_ir_format,
+            "enable_ir_auto_exposure": enable_ir_auto_exposure,
             "enable_point_cloud": enable_point_cloud,
             "enable_colored_point_cloud": enable_colored_point_cloud,
+            "enable_sync_output_accel_gyro": enable_sync_output_accel_gyro,
+            "enable_publish_extrinsic": enable_publish_extrinsic,
+            "enable_accel": enable_accel,
+            "accel_rate": accel_rate,
+            "enable_gyro": enable_gyro,
+            "gyro_rate": gyro_rate,
             "publish_tf": "false",
             "depth_optical_frame_id": camera_frame_id,
             "cloud_frame_id": camera_frame_id,
@@ -84,7 +118,7 @@ def generate_launch_description():
         [
             DeclareLaunchArgument("start_camera", default_value="true"),
             DeclareLaunchArgument("camera_launch_file", default_value="gemini_330_series.launch.py"),
-            DeclareLaunchArgument("camera_name", default_value="uav/depth_camera"),
+            DeclareLaunchArgument("camera_name", default_value="uav_depth_camera"),
             DeclareLaunchArgument("serial_number", default_value=""),
             DeclareLaunchArgument("usb_port", default_value=""),
             DeclareLaunchArgument("base_frame_id", default_value="uav_base_link"),
@@ -99,8 +133,25 @@ def generate_launch_description():
             DeclareLaunchArgument("enable_depth", default_value="true"),
             DeclareLaunchArgument("enable_color", default_value="false"),
             DeclareLaunchArgument("enable_ir", default_value="false"),
+            DeclareLaunchArgument("enable_left_ir", default_value=enable_ir),
+            DeclareLaunchArgument("enable_right_ir", default_value=enable_ir),
+            DeclareLaunchArgument("left_ir_width", default_value="0"),
+            DeclareLaunchArgument("left_ir_height", default_value="0"),
+            DeclareLaunchArgument("left_ir_fps", default_value="0"),
+            DeclareLaunchArgument("left_ir_format", default_value="ANY"),
+            DeclareLaunchArgument("right_ir_width", default_value="0"),
+            DeclareLaunchArgument("right_ir_height", default_value="0"),
+            DeclareLaunchArgument("right_ir_fps", default_value="0"),
+            DeclareLaunchArgument("right_ir_format", default_value="ANY"),
+            DeclareLaunchArgument("enable_ir_auto_exposure", default_value="true"),
             DeclareLaunchArgument("enable_point_cloud", default_value="true"),
             DeclareLaunchArgument("enable_colored_point_cloud", default_value="false"),
+            DeclareLaunchArgument("enable_sync_output_accel_gyro", default_value="false"),
+            DeclareLaunchArgument("enable_publish_extrinsic", default_value="false"),
+            DeclareLaunchArgument("enable_accel", default_value="false"),
+            DeclareLaunchArgument("accel_rate", default_value="200hz"),
+            DeclareLaunchArgument("enable_gyro", default_value="false"),
+            DeclareLaunchArgument("gyro_rate", default_value="200hz"),
             DeclareLaunchArgument("log_level", default_value="info"),
             camera_mount_tf,
             depth_camera_launch,

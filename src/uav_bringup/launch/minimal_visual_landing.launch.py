@@ -43,7 +43,7 @@ def generate_launch_description():
 
     minimal_control_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(bringup_share, "launch", "hw_minimal_control.launch.py")
+            os.path.join(bringup_share, "launch", "minimal_control.launch.py")
         ),
         launch_arguments={
             "fmu_namespace": fmu_namespace,

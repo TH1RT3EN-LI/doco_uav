@@ -46,6 +46,8 @@ public:
       "/in/trajectory_setpoint", command_qos);
     bridgeNamespacedToGlobal<px4_msgs::msg::VehicleCommand>(
       "/in/vehicle_command", command_qos);
+    bridgeNamespacedToGlobal<px4_msgs::msg::VehicleOdometry>(
+      "/in/vehicle_visual_odometry", sensor_qos);
     bridgeNamespacedToGlobal<px4_msgs::msg::DistanceSensor>(
       "/in/distance_sensor", sensor_qos);
     bridgeNamespacedToGlobal<px4_msgs::msg::SensorOpticalFlow>(

@@ -134,6 +134,19 @@ ament_target_dependencies(fmu_topic_namespace_bridge_node
   px4_msgs
 )
 
+add_executable(openvins_px4_vision_bridge_node
+  src/openvins_px4_vision_bridge_node.cpp
+  src/math_utils.cpp
+)
+target_compile_features(openvins_px4_vision_bridge_node PUBLIC cxx_std_17)
+target_include_directories(openvins_px4_vision_bridge_node PRIVATE include)
+ament_target_dependencies(openvins_px4_vision_bridge_node
+  nav_msgs
+  px4_msgs
+  rclcpp
+  tf2
+)
+
 install(TARGETS
   ${PROJECT_NAME}_px4_odom_adapter_logic
   mono_camera_source_node
@@ -143,6 +156,7 @@ install(TARGETS
   uav_state_bridge_node
   uav_control_node
   fmu_topic_namespace_bridge_node
+  openvins_px4_vision_bridge_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

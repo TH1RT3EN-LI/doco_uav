@@ -1,7 +1,7 @@
-# Hardware quadrotor profile extracted from mav.parm (frame + high + medium)
+# UAV quadrotor profile extracted from mav.parm (frame + high + medium)
 # Generated from /home/th1rt3en/DOCO/scripts/sync_hw_param/mav.parm
 # Generated at 2026-03-10T07:51:54Z
-# Presets: hw_frame_control, hw_priority_high, hw_priority_medium
+# Presets: frame_control, priority_high, priority_medium
 # PX4 metadata: /home/th1rt3en/DOCO/third_party/PX4-Autopilot/build/px4_sitl_default/parameters.xml
 # Dropped unknown params: 128
 

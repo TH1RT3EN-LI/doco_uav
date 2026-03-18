@@ -39,8 +39,8 @@ def generate_launch_description():
     height_measurement_mode = LaunchConfiguration("height_measurement_mode")
 
     visual_landing_config = os.path.join(visual_landing_share, "config", "visual_landing_stable.yaml")
-    hw_camera_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(bringup_share, "launch", "hw_mono_camera.launch.py")),
+    mono_camera_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(bringup_share, "launch", "mono_camera.launch.py")),
         launch_arguments={
             "backend": camera_backend,
             "device": camera_device,
@@ -191,7 +191,7 @@ def generate_launch_description():
         DeclareLaunchArgument("camera_info_url", default_value=""),
         DeclareLaunchArgument("fmu_namespace", default_value="/fmu"),
         DeclareLaunchArgument("height_measurement_mode", default_value="distance_sensor"),
-        hw_camera_launch,
+        mono_camera_launch,
         fmu_topic_namespace_bridge,
         uav_state_bridge,
         uav_control,
