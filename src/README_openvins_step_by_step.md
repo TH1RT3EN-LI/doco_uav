@@ -217,6 +217,14 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
 
 ### 5.2 执行什么
 
+先注意一个关键点：**bootstrap 阶段必须临时打开 depth 流**。
+
+原因不是 OpenVINS 要吃 depth，而是 Orbbec 只有在 `enable_depth:=true` 时才会发布 `depth_to_left_ir / depth_to_right_ir / depth_to_gyro` 这些工厂外参话题；没有这些话题，生成器就拿不到外参。
+
+另外，当前 `uav_bringup/orbbec_depth_camera.launch.py` 已经直接把 Orbbec 内部 `publish_tf` 绑定到 `enable_publish_extrinsic`。只要你设置 `enable_publish_extrinsic:=true`，SDK 就会真正把这些外参消息发出来。
+
+所以如果你当前相机是按纯 VIO 模式起的（`enable_depth:=false`），请先停掉并按 bootstrap 模式重启相机，再运行下面的生成器。
+
 确保 Step 2 的相机 launch 还在运行，然后在新终端执行：
 
 ```bash
@@ -260,6 +268,50 @@ ls ~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo
 - 通常是相机话题没起来
 - 或者 `enable_publish_extrinsic` 没打开
 - 或者 `camera_name` 写错了
+
+### 5.5 如果提示 timed out waiting for required topics
+
+这说明脚本本身已经跑起来了，但它等的 Orbbec 话题没有出现。最常见原因不是脚本问题，而是**相机没有按 OpenVINS 需要的模式启动**。
+
+先单独确认下面这些话题是否存在：
+
+```bash
+ros2 topic list | grep uav_depth_camera
+```
+
+然后重点检查这些关键话题：
+
+```bash
+ros2 topic hz /uav_depth_camera/left_ir/camera_info
+ros2 topic hz /uav_depth_camera/right_ir/camera_info
+ros2 topic hz /uav_depth_camera/depth_to_left_ir
+ros2 topic hz /uav_depth_camera/depth_to_right_ir
+ros2 topic hz /uav_depth_camera/depth_to_gyro
+```
+
+如果这些话题没有，就必须先用下面这种方式起相机：
+
+```bash
+ros2 launch uav_bringup orbbec_depth_camera.launch.py \
+  camera_name:=uav_depth_camera \
+  enable_left_ir:=true \
+  enable_right_ir:=true \
+  enable_accel:=true \
+  enable_gyro:=true \
+  enable_sync_output_accel_gyro:=true \
+  enable_publish_extrinsic:=true \
+  enable_depth:=true \
+  enable_color:=false \
+  enable_point_cloud:=false
+```
+
+注意这里最关键的是：
+
+- `enable_left_ir:=true`
+- `enable_right_ir:=true`
+- `enable_publish_extrinsic:=true`
+
+因为 bootstrap 既要 `camera_info`，也要 `depth_to_left_ir / depth_to_right_ir / depth_to_gyro` 这些工厂外参话题。
 
 ---
 

@@ -1209,7 +1209,8 @@ ros2 topic hz /uav/state/odometry
   - **飞行阶段打开**
 - `enable_publish_extrinsic`
   - 建议保持 `true`
-  - 这样 Orbbec 工厂外参话题会发布出来，bootstrap 才能自动取数
+  - 现在它也会直接驱动底层 Orbbec `publish_tf` 打开
+  - 这样 Orbbec 工厂外参话题会真正发布出来，bootstrap 才能自动取数
 
 如果你的话题名不是默认规则，再额外覆盖：
 

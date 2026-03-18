@@ -10,6 +10,7 @@ from typing import Dict, List, Tuple
 import rclpy
 from orbbec_camera_msgs.msg import Extrinsics, IMUInfo
 from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CameraInfo
 
 DEFAULT_ACCEL_NOISE_DENSITY = 0.00207649074
@@ -44,15 +45,21 @@ class BootstrapCollector(Node):
         super().__init__("orbbec_openvins_bootstrap_generator")
         self.required_keys = {key for key, (_, _, required) in topics.items() if required}
         self.messages: Dict[str, object] = {}
-        self._subscriptions = []
+        self._bootstrap_subscriptions = []
+        extrinsics_qos = QoSProfile(depth=1)
+        extrinsics_qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
+        extrinsics_qos.reliability = ReliabilityPolicy.RELIABLE
+        default_qos = 10
+
         for key, (topic_name, msg_type, _) in topics.items():
+            qos = extrinsics_qos if msg_type is Extrinsics else default_qos
             subscription = self.create_subscription(
                 msg_type,
                 topic_name,
                 lambda message, topic_key=key: self._on_message(topic_key, message),
-                10,
+                qos,
             )
-            self._subscriptions.append(subscription)
+            self._bootstrap_subscriptions.append(subscription)
             self.get_logger().info(f"waiting for {key}: {topic_name}")
 
     def _on_message(self, key: str, message: object) -> None:

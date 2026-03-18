@@ -85,7 +85,7 @@ def generate_launch_description():
             "accel_rate": accel_rate,
             "enable_gyro": enable_gyro,
             "gyro_rate": gyro_rate,
-            "publish_tf": "false",
+            "publish_tf": enable_publish_extrinsic,
             "depth_optical_frame_id": camera_frame_id,
             "cloud_frame_id": camera_frame_id,
             "log_level": log_level,
