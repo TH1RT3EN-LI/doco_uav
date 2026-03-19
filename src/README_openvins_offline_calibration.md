@@ -56,26 +56,7 @@ source /opt/ros/humble/setup.bash
 source install/setup.bash
 
 ros2 launch uav_bringup orbbec_depth_camera.launch.py \
-  camera_name:=uav_depth_camera \
-  enable_depth:=false \
-  enable_color:=false \
-  enable_point_cloud:=false \
-  enable_left_ir:=true \
-  enable_right_ir:=true \
-  enable_accel:=true \
-  enable_gyro:=true \
-  enable_sync_output_accel_gyro:=true \
-  enable_publish_extrinsic:=false \
-  left_ir_width:=848 \
-  left_ir_height:=480 \
-  left_ir_fps:=30 \
-  left_ir_format:=Y8 \
-  right_ir_width:=848 \
-  right_ir_height:=480 \
-  right_ir_fps:=30 \
-  right_ir_format:=Y80 \
-  enable_laser:=false \
-  enable_ldp:=false
+  enable_publish_extrinsic:=false
 ```
 
 ## 4. 录 `stereo_static`

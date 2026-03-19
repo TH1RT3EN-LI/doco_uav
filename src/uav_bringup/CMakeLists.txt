@@ -15,6 +15,7 @@ install(DIRECTORY
 install(PROGRAMS
   scripts/generate_orbbec_openvins_bootstrap.py
   scripts/apply_openvins_calibration_result.py
+  scripts/monitor_topic_position.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

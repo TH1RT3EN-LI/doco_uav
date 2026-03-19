@@ -32,28 +32,10 @@ cd ~/uav_hw
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 
-ros2 launch uav_bringup orbbec_depth_camera.launch.py \
-  camera_name:=uav_depth_camera \
-  enable_depth:=false \
-  enable_color:=false \
-  enable_point_cloud:=false \
-  enable_left_ir:=true \
-  enable_right_ir:=true \
-  enable_accel:=true \
-  enable_gyro:=true \
-  enable_sync_output_accel_gyro:=true \
-  enable_publish_extrinsic:=true \
-  left_ir_width:=848 \
-  left_ir_height:=480 \
-  left_ir_fps:=30 \
-  left_ir_format:=Y8 \
-  right_ir_width:=848 \
-  right_ir_height:=480 \
-  right_ir_fps:=30 \
-  right_ir_format:=Y80 \
-  enable_laser:=false \
-  enable_ldp:=false
+ros2 launch uav_bringup orbbec_depth_camera.launch.py
 ```
+
+这里的默认值已经按当前真机链路收口为：Gemini 336、双 IR、IMU、无 depth/color、无点云、30Hz、848x480。
 
 另开一个终端检查：
 
@@ -144,28 +126,11 @@ BOOT=$OV_ROOT/bootstrap/current
 ROUND=$OV_ROOT/bootstrap/round_01
 
 ros2 launch uav_bringup openvins_orbbec_calibration.launch.py \
-  camera_name:=uav_depth_camera \
   openvins_config_path:=$BOOT/estimator_config.calibration.yaml \
-  state_output_dir:=$ROUND \
-  enable_depth:=false \
-  enable_color:=false \
-  enable_point_cloud:=false \
-  enable_left_ir:=true \
-  enable_right_ir:=true \
-  enable_accel:=true \
-  enable_gyro:=true \
-  enable_sync_output_accel_gyro:=true \
-  left_ir_width:=848 \
-  left_ir_height:=480 \
-  left_ir_fps:=30 \
-  left_ir_format:=Y8 \
-  right_ir_width:=848 \
-  right_ir_height:=480 \
-  right_ir_fps:=30 \
-  right_ir_format:=Y80 \
-  enable_laser:=false \
-  enable_ldp:=false
+  state_output_dir:=$ROUND
 ```
+
+这里保留手动设置的只有两项：本轮使用的 `openvins_config_path`，以及输出目录 `state_output_dir`。
 
 手持动作只做下面这套：
 
@@ -260,32 +225,10 @@ source install/setup.bash
 CFG=src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/estimator_config.flight.yaml
 
 ros2 launch uav_bringup openvins_orbbec.launch.py \
-  camera_name:=uav_depth_camera \
-  openvins_config_path:=$CFG \
-  publish_px4_external_vision:=true \
-  fmu_namespace:=/fmu \
-  sensor_roll_in_body_rad:=0.0 \
-  sensor_pitch_in_body_rad:=0.0 \
-  sensor_yaw_in_body_rad:=0.0 \
-  enable_depth:=false \
-  enable_color:=false \
-  enable_point_cloud:=false \
-  enable_left_ir:=true \
-  enable_right_ir:=true \
-  enable_accel:=true \
-  enable_gyro:=true \
-  enable_sync_output_accel_gyro:=true \
-  left_ir_width:=848 \
-  left_ir_height:=480 \
-  left_ir_fps:=30 \
-  left_ir_format:=Y8 \
-  right_ir_width:=848 \
-  right_ir_height:=480 \
-  right_ir_fps:=30 \
-  right_ir_format:=Y80 \
-  enable_laser:=false \
-  enable_ldp:=false
+  openvins_config_path:=$CFG
 ```
+
+这里通常只手动指定 `openvins_config_path`，其余相机、IMU、PX4 bridge 参数都默认按当前真机链路配置。
 
 快速检查：
 
