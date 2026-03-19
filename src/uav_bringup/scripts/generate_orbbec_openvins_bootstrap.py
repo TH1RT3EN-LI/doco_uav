@@ -17,6 +17,8 @@ DEFAULT_ACCEL_NOISE_DENSITY = 0.00207649074
 DEFAULT_ACCEL_RANDOM_WALK = 0.00041327852
 DEFAULT_GYRO_NOISE_DENSITY = 0.00020544166
 DEFAULT_GYRO_RANDOM_WALK = 0.00001110622
+DEFAULT_MASK_CORNER_WIDTH_RATIO = 0.10
+DEFAULT_MASK_TOP_Y_RATIO = 0.85
 
 Transform = Tuple[List[List[float]], List[float]]
 
@@ -26,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--camera-name", default="uav_depth_camera")
     parser.add_argument("--output-dir", default="")
     parser.add_argument("--timeout-sec", type=float, default=10.0)
-    parser.add_argument("--camera-rate-hz", type=float, default=15.0)
+    parser.add_argument("--camera-rate-hz", type=float, default=30.0)
     parser.add_argument("--imu-rate-hz", type=float, default=200.0)
     parser.add_argument("--imu-reference", choices=["gyro", "accel"], default="gyro")
     parser.add_argument("--left-camera-info-topic", default="")
@@ -155,6 +157,17 @@ def transform_from_extrinsics(message: Extrinsics) -> Transform:
     return matrix_from_flat(list(message.rotation)), [float(value) for value in message.translation]
 
 
+def transform_from_orbbec_optical_extrinsics(message: Extrinsics) -> Transform:
+    """Interpret Orbbec stream extrinsics with the same optical-frame semantics as ROS topics.
+
+    The Orbbec ROS driver applies the same fixed stream->optical rotation to every camera and IMU
+    stream frame before publishing image and IMU topics. For transforms between those optical
+    frames, the raw stream-to-stream calibration published in `Extrinsics` is numerically
+    equivalent to the optical-frame transform used by OpenVINS.
+    """
+    return transform_from_extrinsics(message)
+
+
 def transform_delta(first: Transform, second: Transform) -> Tuple[float, float]:
     first_inverse = invert_transform(first)
     delta_rotation, delta_translation = compose_transforms(first_inverse, second)
@@ -163,6 +176,12 @@ def transform_delta(first: Transform, second: Transform) -> Tuple[float, float]:
     angle_deg = abs(math.degrees(math.acos(cosine)))
     translation_norm = sum(value * value for value in delta_translation) ** 0.5
     return angle_deg, translation_norm
+
+
+def rotation_deviation_deg(rotation: List[List[float]]) -> float:
+    trace_value = rotation[0][0] + rotation[1][1] + rotation[2][2]
+    cosine = max(-1.0, min(1.0, (trace_value - 1.0) * 0.5))
+    return abs(math.degrees(math.acos(cosine)))
 
 
 def map_distortion_model(model_name: str) -> str:
@@ -205,7 +224,8 @@ def format_transform(transform: Transform) -> List[str]:
 
 
 def estimator_config_text(enable_online_calibration: bool, camera_rate_hz: float) -> str:
-    calib_value = "true" if enable_online_calibration else "false"
+    extrinsics_value = "true" if enable_online_calibration else "false"
+    timeoffset_value = "true" if enable_online_calibration else "false"
     return f'''%YAML:1.0
 
 verbosity: "INFO"
@@ -215,9 +235,9 @@ integration: "rk4"
 use_stereo: true
 max_cameras: 2
 
-calib_cam_extrinsics: {calib_value}
-calib_cam_intrinsics: {calib_value}
-calib_cam_timeoffset: {calib_value}
+calib_cam_extrinsics: {extrinsics_value}
+calib_cam_intrinsics: false
+calib_cam_timeoffset: {timeoffset_value}
 calib_imu_intrinsics: false
 calib_imu_g_sensitivity: false
 
@@ -277,7 +297,7 @@ grid_x: 5
 grid_y: 5
 min_px_dist: 15
 knn_ratio: 0.70
-track_frequency: {format_scalar(camera_rate_hz)}
+track_frequency: {int(round(camera_rate_hz))}
 downsample_cameras: false
 num_opencv_threads: 2
 histogram_method: "CLAHE"
@@ -293,7 +313,9 @@ up_slam_chi2_multipler: 1
 up_aruco_sigma_px: 1
 up_aruco_chi2_multipler: 1
 
-use_mask: false
+use_mask: true
+mask0: "mask0.pgm"
+mask1: "mask1.pgm"
 
 relative_config_imu: "kalibr_imu_chain.yaml"
 relative_config_imucam: "kalibr_imucam_chain.yaml"
@@ -393,6 +415,71 @@ imu0:
 '''
 
 
+def build_default_mask(width: int, height: int) -> bytes:
+    if width <= 0 or height <= 0:
+        raise BootstrapError(f"invalid mask resolution: {width}x{height}")
+
+    corner_width = max(1, int(round(width * DEFAULT_MASK_CORNER_WIDTH_RATIO)))
+    top_y = min(height - 1, max(0, int(round(height * DEFAULT_MASK_TOP_Y_RATIO))))
+    slope = 0.0 if corner_width <= 0 else (height - 1 - top_y) / float(corner_width)
+
+    pixels = bytearray(width * height)
+    for y in range(height):
+        row_offset = y * width
+        for x in range(width):
+            mask_pixel = False
+            if x <= corner_width:
+                edge_y = top_y + slope * x
+                mask_pixel = y >= edge_y
+            elif x >= width - 1 - corner_width:
+                edge_y = top_y + slope * (width - 1 - x)
+                mask_pixel = y >= edge_y
+            if mask_pixel:
+                pixels[row_offset + x] = 255
+
+    header = f"P5\n{width} {height}\n255\n".encode("ascii")
+    return header + bytes(pixels)
+
+
+def write_mask(path: Path, width: int, height: int) -> None:
+    path.write_bytes(build_default_mask(width, height))
+    print(f"wrote {path}")
+
+
+def add_sanity_warnings(
+    warnings: List[BootstrapWarning],
+    left_camera: Dict[str, object],
+    right_camera: Dict[str, object],
+    stereo_transform: Transform,
+) -> None:
+    left_resolution = tuple(left_camera["resolution"])
+    right_resolution = tuple(right_camera["resolution"])
+    if left_resolution != right_resolution:
+        warnings.append(
+            BootstrapWarning(
+                f"left/right resolution mismatch: {left_resolution} vs {right_resolution}; verify the stream configuration before flight."
+            )
+        )
+
+    stereo_baseline = sum(value * value for value in stereo_transform[1]) ** 0.5
+    if stereo_baseline < 0.045 or stereo_baseline > 0.055:
+        warnings.append(
+            BootstrapWarning(
+                "stereo baseline is outside the expected Gemini 336 range "
+                f"({format_scalar(stereo_baseline)} m); verify factory extrinsics and stream selection."
+            )
+        )
+
+    stereo_rotation_deg = rotation_deviation_deg(stereo_transform[0])
+    if stereo_rotation_deg > 2.0:
+        warnings.append(
+            BootstrapWarning(
+                "stereo relative rotation is larger than expected "
+                f"({format_scalar(stereo_rotation_deg)} deg); verify the generated camera chain before using it for flight."
+            )
+        )
+
+
 def summary_text(
     args: argparse.Namespace,
     output_dir: Path,
@@ -402,6 +489,7 @@ def summary_text(
     stereo_transform: Transform,
 ) -> str:
     stereo_baseline = sum(value * value for value in stereo_transform[1]) ** 0.5
+    stereo_rotation_deg = rotation_deviation_deg(stereo_transform[0])
     lines = [
         "# OpenVINS Orbbec Bootstrap Summary",
         "",
@@ -413,19 +501,21 @@ def summary_text(
         f"- Left resolution: `{left_camera['resolution'][0]}x{left_camera['resolution'][1]}`",
         f"- Right resolution: `{right_camera['resolution'][0]}x{right_camera['resolution'][1]}`",
         f"- Stereo baseline estimate: `{format_scalar(stereo_baseline)}` m",
+        f"- Stereo rotation deviation: `{format_scalar(stereo_rotation_deg)}` deg",
         "",
         "## Files",
         "",
         "- `estimator_config.calibration.yaml`: online calibration profile",
-        "- `estimator_config.flight.yaml`: frozen calibration profile",
+        "- `estimator_config.flight.yaml`: frozen flight profile",
         "- `kalibr_imucam_chain.yaml`: camera/IMU bootstrap chain",
         "- `kalibr_imu_chain.yaml`: IMU noise bootstrap chain",
+        "- `mask0.pgm`, `mask1.pgm`: conservative lower-corner masks generated from current resolution",
         "",
         "## Notes",
         "",
-        "- This bootstrap uses Orbbec factory intrinsics, factory stream extrinsics, and IMU info topics.",
-        "- It is intended to be a strong starting point, not final flight-grade calibration.",
-        "- For real flight use, record a calibration bag and solve a batch calibration in Docker, then freeze the result into `estimator_config.flight.yaml`.",
+        "- Camera and IMU transforms are interpreted with the same optical-frame semantics as the published ROS topics.",
+        "- Intrinsics stay frozen during online calibration; only camera extrinsics and camera/IMU time offset are enabled.",
+        "- Generated masks only suppress the lower-corner airframe intrusion and should be refined later if the mounted airframe changes.",
         "",
         "## Warnings",
         "",
@@ -445,7 +535,7 @@ def resolve_output_dir(argument_value: str) -> Path:
 
 
 def write_text(path: Path, content: str) -> None:
-    path.write_text(content)
+    path.write_text(content, encoding="utf-8")
     print(f"wrote {path}")
 
 
@@ -454,7 +544,6 @@ def main() -> int:
     fill_topic_defaults(args)
 
     rclpy.init(args=None)
-
     topics = {
         "left_camera_info": (args.left_camera_info_topic, CameraInfo, True),
         "right_camera_info": (args.right_camera_info_topic, CameraInfo, True),
@@ -481,20 +570,20 @@ def main() -> int:
         warnings: List[BootstrapWarning] = []
         left_camera = extract_camera_parameters(node.messages["left_camera_info"])
         right_camera = extract_camera_parameters(node.messages["right_camera_info"])
-        left_depth_transform = transform_from_extrinsics(node.messages["depth_to_left_ir"])
-        right_depth_transform = transform_from_extrinsics(node.messages["depth_to_right_ir"])
+        left_depth_transform = transform_from_orbbec_optical_extrinsics(node.messages["depth_to_left_ir"])
+        right_depth_transform = transform_from_orbbec_optical_extrinsics(node.messages["depth_to_right_ir"])
 
         if args.imu_reference == "gyro":
-            imu_depth_transform = transform_from_extrinsics(node.messages["depth_to_gyro"])
+            imu_depth_transform = transform_from_orbbec_optical_extrinsics(node.messages["depth_to_gyro"])
             imu_topic = f"/{args.camera_name}/gyro_accel/sample"
         else:
-            imu_depth_transform = transform_from_extrinsics(node.messages["depth_to_accel"])
+            imu_depth_transform = transform_from_orbbec_optical_extrinsics(node.messages["depth_to_accel"])
             imu_topic = f"/{args.camera_name}/gyro_accel/sample"
 
         if "depth_to_gyro" in node.messages and "depth_to_accel" in node.messages:
             rotation_delta_deg, translation_delta_m = transform_delta(
-                transform_from_extrinsics(node.messages["depth_to_gyro"]),
-                transform_from_extrinsics(node.messages["depth_to_accel"]),
+                transform_from_orbbec_optical_extrinsics(node.messages["depth_to_gyro"]),
+                transform_from_orbbec_optical_extrinsics(node.messages["depth_to_accel"]),
             )
             if rotation_delta_deg > 1.0 or translation_delta_m > 0.005:
                 warnings.append(
@@ -509,6 +598,8 @@ def main() -> int:
         left_cam_imu = compose_transforms(left_depth_transform, imu_depth_inverse)
         right_cam_imu = compose_transforms(right_depth_transform, imu_depth_inverse)
         stereo_transform = compose_transforms(right_cam_imu, invert_transform(left_cam_imu))
+
+        add_sanity_warnings(warnings, left_camera, right_camera, stereo_transform)
 
         accel_noise_density = DEFAULT_ACCEL_NOISE_DENSITY
         accel_random_walk = DEFAULT_ACCEL_RANDOM_WALK
@@ -557,7 +648,12 @@ def main() -> int:
                 args.imu_rate_hz,
             ),
         )
-        write_text(output_dir / "bootstrap_summary.md", summary_text(args, output_dir, warnings, left_camera, right_camera, stereo_transform))
+        write_mask(output_dir / "mask0.pgm", left_camera["resolution"][0], left_camera["resolution"][1])
+        write_mask(output_dir / "mask1.pgm", right_camera["resolution"][0], right_camera["resolution"][1])
+        write_text(
+            output_dir / "bootstrap_summary.md",
+            summary_text(args, output_dir, warnings, left_camera, right_camera, stereo_transform),
+        )
     except BootstrapError as error:
         print(f"error: {error}", file=sys.stderr)
         return 1

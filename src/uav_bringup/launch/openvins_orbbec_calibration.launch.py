@@ -8,7 +8,6 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 
 
-
 def _prepare_calibration(context, *_args, **_kwargs):
     state_output_dir = Path(LaunchConfiguration("state_output_dir").perform(context))
     state_output_dir.mkdir(parents=True, exist_ok=True)
@@ -22,7 +21,6 @@ def _prepare_calibration(context, *_args, **_kwargs):
         )
 
     return []
-
 
 
 def generate_launch_description():
@@ -76,6 +74,9 @@ def generate_launch_description():
             "right_ir_fps": LaunchConfiguration("right_ir_fps"),
             "right_ir_format": LaunchConfiguration("right_ir_format"),
             "enable_ir_auto_exposure": LaunchConfiguration("enable_ir_auto_exposure"),
+            "ir_exposure": LaunchConfiguration("ir_exposure"),
+            "ir_gain": LaunchConfiguration("ir_gain"),
+            "ir_ae_max_exposure": LaunchConfiguration("ir_ae_max_exposure"),
             "enable_laser": LaunchConfiguration("enable_laser"),
             "enable_ldp": LaunchConfiguration("enable_ldp"),
             "log_level": LaunchConfiguration("log_level"),
@@ -123,8 +124,11 @@ def generate_launch_description():
             DeclareLaunchArgument("right_ir_width", default_value="848"),
             DeclareLaunchArgument("right_ir_height", default_value="480"),
             DeclareLaunchArgument("right_ir_fps", default_value="30"),
-            DeclareLaunchArgument("right_ir_format", default_value="Y80"),
+            DeclareLaunchArgument("right_ir_format", default_value="Y8"),
             DeclareLaunchArgument("enable_ir_auto_exposure", default_value="true"),
+            DeclareLaunchArgument("ir_exposure", default_value="-1"),
+            DeclareLaunchArgument("ir_gain", default_value="-1"),
+            DeclareLaunchArgument("ir_ae_max_exposure", default_value="-1"),
             DeclareLaunchArgument("enable_laser", default_value="false"),
             DeclareLaunchArgument("enable_ldp", default_value="false"),
             DeclareLaunchArgument("log_level", default_value="info"),

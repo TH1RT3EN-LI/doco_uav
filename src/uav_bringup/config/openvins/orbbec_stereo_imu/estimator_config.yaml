@@ -8,7 +8,7 @@ use_stereo: true
 max_cameras: 2
 
 calib_cam_extrinsics: true
-calib_cam_intrinsics: true
+calib_cam_intrinsics: false
 calib_cam_timeoffset: true
 calib_imu_intrinsics: false
 calib_imu_g_sensitivity: false
@@ -51,8 +51,8 @@ init_dyn_inflation_bg: 10
 init_dyn_inflation_ba: 100
 init_dyn_min_rec_cond: 1e-12
 
-init_dyn_bias_g: [ 0.0, 0.0, 0.0 ]
-init_dyn_bias_a: [ 0.0, 0.0, 0.0 ]
+init_dyn_bias_g: [0.0, 0.0, 0.0]
+init_dyn_bias_a: [0.0, 0.0, 0.0]
 
 record_timing_information: false
 record_timing_filepath: "/tmp/traj_timing.txt"
@@ -69,7 +69,7 @@ grid_x: 5
 grid_y: 5
 min_px_dist: 15
 knn_ratio: 0.70
-track_frequency: 15.0
+track_frequency: 30
 downsample_cameras: false
 num_opencv_threads: 2
 histogram_method: "CLAHE"
@@ -85,7 +85,9 @@ up_slam_chi2_multipler: 1
 up_aruco_sigma_px: 1
 up_aruco_chi2_multipler: 1
 
-use_mask: false
+use_mask: true
+mask0: "mask0.pgm"
+mask1: "mask1.pgm"
 
 relative_config_imu: "kalibr_imu_chain.yaml"
 relative_config_imucam: "kalibr_imucam_chain.yaml"

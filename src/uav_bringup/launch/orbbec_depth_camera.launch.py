@@ -41,6 +41,9 @@ def generate_launch_description():
     right_ir_fps = LaunchConfiguration("right_ir_fps")
     right_ir_format = LaunchConfiguration("right_ir_format")
     enable_ir_auto_exposure = LaunchConfiguration("enable_ir_auto_exposure")
+    ir_exposure = LaunchConfiguration("ir_exposure")
+    ir_gain = LaunchConfiguration("ir_gain")
+    ir_ae_max_exposure = LaunchConfiguration("ir_ae_max_exposure")
     enable_laser = LaunchConfiguration("enable_laser")
     enable_ldp = LaunchConfiguration("enable_ldp")
     enable_point_cloud = LaunchConfiguration("enable_point_cloud")
@@ -73,6 +76,9 @@ def generate_launch_description():
             "right_ir_fps": right_ir_fps,
             "right_ir_format": right_ir_format,
             "enable_ir_auto_exposure": enable_ir_auto_exposure,
+            "ir_exposure": ir_exposure,
+            "ir_gain": ir_gain,
+            "ir_ae_max_exposure": ir_ae_max_exposure,
             "enable_laser": enable_laser,
             "enable_ldp": enable_ldp,
             "enable_point_cloud": enable_point_cloud,
@@ -140,8 +146,11 @@ def generate_launch_description():
             DeclareLaunchArgument("right_ir_width", default_value="848"),
             DeclareLaunchArgument("right_ir_height", default_value="480"),
             DeclareLaunchArgument("right_ir_fps", default_value="30"),
-            DeclareLaunchArgument("right_ir_format", default_value="Y80"),
+            DeclareLaunchArgument("right_ir_format", default_value="Y8"),
             DeclareLaunchArgument("enable_ir_auto_exposure", default_value="true"),
+            DeclareLaunchArgument("ir_exposure", default_value="-1"),
+            DeclareLaunchArgument("ir_gain", default_value="-1"),
+            DeclareLaunchArgument("ir_ae_max_exposure", default_value="-1"),
             DeclareLaunchArgument("enable_laser", default_value="false"),
             DeclareLaunchArgument("enable_ldp", default_value="false"),
             DeclareLaunchArgument("enable_point_cloud", default_value="false"),

@@ -89,7 +89,7 @@ class MultiSourceMonitorNode(Node):
     def __init__(self, source_states: List[SourceState]):
         super().__init__("monitor_topic_position_gui")
         self.source_states = {state.spec.key: state for state in source_states}
-        self.subscriptions = []
+        self._subscriptions = []
 
         for state in source_states:
             subscription = self.create_subscription(
@@ -98,7 +98,7 @@ class MultiSourceMonitorNode(Node):
                 self._make_callback(state),
                 qos_profile_sensor_data,
             )
-            self.subscriptions.append(subscription)
+            self._subscriptions.append(subscription)
 
     def _make_callback(self, state: SourceState):
         def callback(msg):
