@@ -82,9 +82,9 @@ def make_px4_spec():
         pose_frame = int(msg.pose_frame)
         frame_label = f"px4_pose_frame={pose_frame}"
         return PositionSample(
-            x=float(msg.x),
-            y=float(msg.y),
-            z=float(msg.z),
+            x=float(msg.position[0]),
+            y=float(msg.position[1]),
+            z=float(msg.position[2]),
             stamp_s=float(stamp_us) * 1e-6,
             frame_label=frame_label,
         )
