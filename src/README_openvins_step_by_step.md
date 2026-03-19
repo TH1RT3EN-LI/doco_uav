@@ -33,6 +33,10 @@
 - **Docker 开发环境**：使用 `/repo/...`、`/ws/...` 这类路径
 - **真机运行环境**：使用你真实工作区路径，比如 `~/uav_hw/...`
 
+注意：在 `ros2 launch ... name:=value` 这种 launch 参数里，不要写 `~`。请直接写绝对路径，比如 `/home/th1rt3en/...`。
+
+注意：**在 `ros2 launch ... name:=value` 这种 launch 参数里，不要写 `~`。请直接写绝对路径，比如 `/home/th1rt3en/...`。**
+
 ---
 
 ## 0. 这套流程最终要达到什么结果
@@ -349,8 +353,9 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
   source /ws/install/setup.bash &&
   ros2 launch uav_bringup openvins_orbbec_calibration.launch.py \
     camera_name:=uav_depth_camera \
-    openvins_config_path:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/estimator_config.calibration.yaml \
-    state_output_dir:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_01'
+    openvins_config_path:=/home/th1rt3en/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/estimator_config.calibration.yaml \
+    state_output_dir:=/home/th1rt3en/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_01
+    '
 ```
 
 ### 6.3 起起来之后先不要动，先检查
@@ -361,11 +366,12 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
 cd /home/th1rt3en/doco
 WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
   source /opt/ros/humble/setup.bash &&
-  source /ws/install/setup.bash &&
+  source install/setup.bash &&
   timeout 3 ros2 topic hz /uav_depth_camera/left_ir/image_raw &&
   timeout 3 ros2 topic hz /uav_depth_camera/right_ir/image_raw &&
   timeout 3 ros2 topic hz /uav_depth_camera/gyro_accel/sample &&
-  ros2 topic echo --once /ov_msckf/odomimu'
+  ros2 topic echo --once /ov_msckf/odomimu
+  '
 ```
 
 ### 6.4 这一步正常现象
@@ -377,11 +383,14 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
 - `/ov_msckf/odomimu` 能出消息
 - 不应该往 PX4 发视觉里程计
 
+如果这里左右 IR 没图，优先怀疑是相机档位不匹配。当前仓库已经把 OpenVINS 入口默认改成自动选择 IR profile（`0/ANY`），不再强绑旧的 `1280x800@15`。
+
 如果 `/ov_msckf/odomimu` 根本没有：
 
 - 先检查 `openvins_config_path` 是否存在
 - 再检查 bootstrap 文件是否完整
 - 再检查左右 IR 和 IMU 话题是否一致
+- 如果 `run_subscribe_msckf` 直接因为 `ParameterAlreadyDeclaredException: topic_imu` 退出，说明你还在用旧版 `openvins_orbbec.launch.py`。新版不再从 launch 重复注入 `topic_imu / topic_camera0 / topic_camera1`，而是直接使用 `kalibr_imu_chain.yaml` 和 `kalibr_imucam_chain.yaml` 里的 `rostopic`。
 
 ---
 
@@ -510,8 +519,8 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
   source /ws/install/setup.bash &&
   ros2 launch uav_bringup openvins_orbbec_calibration.launch.py \
     camera_name:=uav_depth_camera \
-    openvins_config_path:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/estimator_config.calibration.yaml \
-    state_output_dir:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_02'
+    openvins_config_path:=/home/th1rt3en/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/estimator_config.calibration.yaml \
+    state_output_dir:=/home/th1rt3en/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_02'
 ```
 
 跑完以后，再执行一次回写：
@@ -603,7 +612,7 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
   source /ws/install/setup.bash &&
   ros2 launch uav_bringup openvins_orbbec.launch.py \
     camera_name:=uav_depth_camera \
-    openvins_config_path:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/estimator_config.flight.yaml'
+    openvins_config_path:=/home/th1rt3en/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/estimator_config.flight.yaml'
 ```
 
 ### 11.3 这一步做完以后看什么
@@ -815,8 +824,8 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
   source /ws/install/setup.bash &&
   ros2 launch uav_bringup openvins_orbbec_calibration.launch.py \
     camera_name:=uav_depth_camera \
-    openvins_config_path:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/estimator_config.calibration.yaml \
-    state_output_dir:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_01'
+    openvins_config_path:=/home/th1rt3en/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/estimator_config.calibration.yaml \
+    state_output_dir:=/home/th1rt3en/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/round_01'
 ```
 
 ### 15.5 回写第 1 轮
@@ -839,7 +848,7 @@ WORKSPACE_SUBDIR=uav_hw ./scripts/dev.sh exec bash -lc '
   source /ws/install/setup.bash &&
   ros2 launch uav_bringup openvins_orbbec.launch.py \
     camera_name:=uav_depth_camera \
-    openvins_config_path:=~/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/estimator_config.flight.yaml'
+    openvins_config_path:=/home/th1rt3en/uav_hw/src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/estimator_config.flight.yaml'
 ```
 
 ---
