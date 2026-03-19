@@ -226,6 +226,8 @@ def format_transform(transform: Transform) -> List[str]:
 def estimator_config_text(enable_online_calibration: bool, camera_rate_hz: float) -> str:
     extrinsics_value = "true" if enable_online_calibration else "false"
     timeoffset_value = "true" if enable_online_calibration else "false"
+    try_zupt_value = "true" if enable_online_calibration else "false"
+    zupt_only_at_beginning_value = "true" if enable_online_calibration else "false"
     return f'''%YAML:1.0
 
 verbosity: "INFO"
@@ -253,12 +255,12 @@ feat_rep_msckf: "GLOBAL_3D"
 feat_rep_slam: "ANCHORED_MSCKF_INVERSE_DEPTH"
 feat_rep_aruco: "ANCHORED_MSCKF_INVERSE_DEPTH"
 
-try_zupt: false
+try_zupt: {try_zupt_value}
 zupt_chi2_multipler: 0
 zupt_max_velocity: 0.1
 zupt_noise_multiplier: 10
 zupt_max_disparity: 0.5
-zupt_only_at_beginning: false
+zupt_only_at_beginning: {zupt_only_at_beginning_value}
 
 init_window_time: 2.0
 init_imu_thresh: 1.5
@@ -531,7 +533,7 @@ def summary_text(
 def resolve_output_dir(argument_value: str) -> Path:
     if argument_value:
         return Path(argument_value).expanduser().resolve()
-    return (Path.cwd() / "openvins_orbbec_bootstrap").resolve()
+    return (Path(__file__).resolve().parent.parent / "config" / "openvins" / "orbbec_stereo_imu" / "bootstrap").resolve()
 
 
 def write_text(path: Path, content: str) -> None:

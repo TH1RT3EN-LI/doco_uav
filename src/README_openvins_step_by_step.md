@@ -48,10 +48,10 @@ ros2 launch uav_bringup openvins_orbbec_calibration.launch.py \
 
 动作要求：
 
-- 开头静止 `3 ~ 5 s`
+- 开头静止 `2 ~ 3 s`；这套 calibration 配置允许静止初始化
 - 中间做平滑平移、俯仰、横滚、偏航
 - 近处和远处都要看到纹理
-- 不要猛甩，不要长时间只做单轴运动
+- 若未起，再给一次短促平移或小角度转动；不要长时间连续乱晃
 
 ## 3. 保存一轮结果
 
