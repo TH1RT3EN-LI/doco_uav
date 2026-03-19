@@ -56,6 +56,7 @@ def generate_launch_description():
     ir_exposure = LaunchConfiguration("ir_exposure")
     ir_gain = LaunchConfiguration("ir_gain")
     ir_ae_max_exposure = LaunchConfiguration("ir_ae_max_exposure")
+    ir_brightness = LaunchConfiguration("ir_brightness")
     enable_laser = LaunchConfiguration("enable_laser")
     enable_ldp = LaunchConfiguration("enable_ldp")
     log_level = LaunchConfiguration("log_level")
@@ -112,6 +113,7 @@ def generate_launch_description():
             "ir_exposure": ir_exposure,
             "ir_gain": ir_gain,
             "ir_ae_max_exposure": ir_ae_max_exposure,
+            "ir_brightness": ir_brightness,
             "enable_laser": enable_laser,
             "enable_ldp": enable_ldp,
             "log_level": log_level,
@@ -191,6 +193,7 @@ def generate_launch_description():
             DeclareLaunchArgument("ir_exposure", default_value="-1"),
             DeclareLaunchArgument("ir_gain", default_value="-1"),
             DeclareLaunchArgument("ir_ae_max_exposure", default_value="-1"),
+            DeclareLaunchArgument("ir_brightness", default_value="-1"),
             DeclareLaunchArgument("enable_laser", default_value="false"),
             DeclareLaunchArgument("enable_ldp", default_value="false"),
             DeclareLaunchArgument("log_level", default_value="info"),
