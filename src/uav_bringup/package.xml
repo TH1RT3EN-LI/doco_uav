@@ -18,7 +18,6 @@
   <exec_depend>rclpy</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>orbbec_camera</exec_depend>
-  <exec_depend>orbbec_description</exec_depend>
   <exec_depend>ov_msckf</exec_depend>
   <exec_depend>uav_bridge</exec_depend>
   <exec_depend>uav_visual_landing</exec_depend>

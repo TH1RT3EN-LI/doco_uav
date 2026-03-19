@@ -56,10 +56,7 @@ def generate_launch_description():
     mono_video_fourcc = LaunchConfiguration("mono_video_fourcc")
 
     start_orbbec_depth_camera = LaunchConfiguration("start_orbbec_depth_camera")
-    orbbec_camera_launch_file = LaunchConfiguration("orbbec_camera_launch_file")
     orbbec_camera_name = LaunchConfiguration("orbbec_camera_name")
-    orbbec_camera_serial_number = LaunchConfiguration("orbbec_camera_serial_number")
-    orbbec_camera_usb_port = LaunchConfiguration("orbbec_camera_usb_port")
     orbbec_camera_frame_id = LaunchConfiguration("orbbec_camera_frame_id")
     orbbec_camera_x = LaunchConfiguration("orbbec_camera_x")
     orbbec_camera_y = LaunchConfiguration("orbbec_camera_y")
@@ -69,7 +66,6 @@ def generate_launch_description():
     orbbec_camera_yaw = LaunchConfiguration("orbbec_camera_yaw")
     orbbec_enable_depth = LaunchConfiguration("orbbec_enable_depth")
     orbbec_enable_color = LaunchConfiguration("orbbec_enable_color")
-    orbbec_enable_ir = LaunchConfiguration("orbbec_enable_ir")
     orbbec_enable_left_ir = LaunchConfiguration("orbbec_enable_left_ir")
     orbbec_enable_right_ir = LaunchConfiguration("orbbec_enable_right_ir")
     orbbec_enable_point_cloud = LaunchConfiguration("orbbec_enable_point_cloud")
@@ -174,10 +170,7 @@ def generate_launch_description():
         condition=IfCondition(start_orbbec_depth_camera),
         launch_arguments={
             "start_camera": start_orbbec_depth_camera,
-            "camera_launch_file": orbbec_camera_launch_file,
             "camera_name": orbbec_camera_name,
-            "serial_number": orbbec_camera_serial_number,
-            "usb_port": orbbec_camera_usb_port,
             "base_frame_id": base_frame_id,
             "camera_frame_id": orbbec_camera_frame_id,
             "camera_x": orbbec_camera_x,
@@ -188,7 +181,6 @@ def generate_launch_description():
             "camera_yaw": orbbec_camera_yaw,
             "enable_depth": orbbec_enable_depth,
             "enable_color": orbbec_enable_color,
-            "enable_ir": orbbec_enable_ir,
             "enable_left_ir": effective_orbbec_enable_left_ir,
             "enable_right_ir": effective_orbbec_enable_right_ir,
             "enable_point_cloud": orbbec_enable_point_cloud,
@@ -219,10 +211,7 @@ def generate_launch_description():
         launch_arguments={
             "start_openvins": start_openvins_orbbec,
             "start_orbbec_camera": start_orbbec_camera_for_openvins,
-            "camera_launch_file": orbbec_camera_launch_file,
             "camera_name": orbbec_camera_name,
-            "serial_number": orbbec_camera_serial_number,
-            "usb_port": orbbec_camera_usb_port,
             "base_frame_id": base_frame_id,
             "camera_frame_id": orbbec_camera_frame_id,
             "camera_x": orbbec_camera_x,
@@ -379,10 +368,7 @@ def generate_launch_description():
         DeclareLaunchArgument("mono_video_output_path", default_value=default_recording_path),
         DeclareLaunchArgument("mono_video_fps", default_value="120.0"),
         DeclareLaunchArgument("mono_video_fourcc", default_value="MJPG"),
-        DeclareLaunchArgument("orbbec_camera_launch_file", default_value="gemini_330_series.launch.py"),
         DeclareLaunchArgument("orbbec_camera_name", default_value="uav_depth_camera"),
-        DeclareLaunchArgument("orbbec_camera_serial_number", default_value=""),
-        DeclareLaunchArgument("orbbec_camera_usb_port", default_value=""),
         DeclareLaunchArgument("orbbec_camera_frame_id", default_value="uav_stereo_camera_optical_frame"),
         DeclareLaunchArgument("orbbec_camera_x", default_value=DEFAULT_STEREO_CAMERA_TO_BODY["x"]),
         DeclareLaunchArgument("orbbec_camera_y", default_value=DEFAULT_STEREO_CAMERA_TO_BODY["y"]),
@@ -392,9 +378,8 @@ def generate_launch_description():
         DeclareLaunchArgument("orbbec_camera_yaw", default_value=str(-math.pi / 2.0)),
         DeclareLaunchArgument("orbbec_enable_depth", default_value="true"),
         DeclareLaunchArgument("orbbec_enable_color", default_value="false"),
-        DeclareLaunchArgument("orbbec_enable_ir", default_value="false"),
-        DeclareLaunchArgument("orbbec_enable_left_ir", default_value=orbbec_enable_ir),
-        DeclareLaunchArgument("orbbec_enable_right_ir", default_value=orbbec_enable_ir),
+        DeclareLaunchArgument("orbbec_enable_left_ir", default_value="false"),
+        DeclareLaunchArgument("orbbec_enable_right_ir", default_value="false"),
         DeclareLaunchArgument("orbbec_enable_point_cloud", default_value="true"),
         DeclareLaunchArgument("orbbec_enable_colored_point_cloud", default_value="false"),
         DeclareLaunchArgument("orbbec_enable_sync_output_accel_gyro", default_value="false"),

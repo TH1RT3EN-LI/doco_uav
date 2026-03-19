@@ -9,6 +9,7 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
+
 def generate_launch_description():
     bringup_share = get_package_share_directory("uav_bringup")
     default_config_path = os.path.join(
@@ -21,10 +22,7 @@ def generate_launch_description():
 
     start_openvins = LaunchConfiguration("start_openvins")
     start_orbbec_camera = LaunchConfiguration("start_orbbec_camera")
-    camera_launch_file = LaunchConfiguration("camera_launch_file")
     camera_name = LaunchConfiguration("camera_name")
-    serial_number = LaunchConfiguration("serial_number")
-    usb_port = LaunchConfiguration("usb_port")
     base_frame_id = LaunchConfiguration("base_frame_id")
     camera_frame_id = LaunchConfiguration("camera_frame_id")
     camera_x = LaunchConfiguration("camera_x")
@@ -72,19 +70,13 @@ def generate_launch_description():
     sensor_roll_in_body_rad = LaunchConfiguration("sensor_roll_in_body_rad")
     sensor_pitch_in_body_rad = LaunchConfiguration("sensor_pitch_in_body_rad")
     sensor_yaw_in_body_rad = LaunchConfiguration("sensor_yaw_in_body_rad")
-    imu_topic = LaunchConfiguration("imu_topic")
-    left_ir_topic = LaunchConfiguration("left_ir_topic")
-    right_ir_topic = LaunchConfiguration("right_ir_topic")
 
     orbbec_camera_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(bringup_share, "launch", "orbbec_depth_camera.launch.py")),
         condition=IfCondition(start_orbbec_camera),
         launch_arguments={
             "start_camera": start_orbbec_camera,
-            "camera_launch_file": camera_launch_file,
             "camera_name": camera_name,
-            "serial_number": serial_number,
-            "usb_port": usb_port,
             "base_frame_id": base_frame_id,
             "camera_frame_id": camera_frame_id,
             "camera_x": camera_x,
@@ -160,10 +152,7 @@ def generate_launch_description():
         [
             DeclareLaunchArgument("start_openvins", default_value="true"),
             DeclareLaunchArgument("start_orbbec_camera", default_value="true"),
-            DeclareLaunchArgument("camera_launch_file", default_value="gemini_330_series.launch.py"),
             DeclareLaunchArgument("camera_name", default_value="uav_depth_camera"),
-            DeclareLaunchArgument("serial_number", default_value=""),
-            DeclareLaunchArgument("usb_port", default_value=""),
             DeclareLaunchArgument("base_frame_id", default_value="uav_base_link"),
             DeclareLaunchArgument("camera_frame_id", default_value="uav_stereo_camera_optical_frame"),
             DeclareLaunchArgument("camera_x", default_value="0.0503"),
@@ -209,9 +198,6 @@ def generate_launch_description():
             DeclareLaunchArgument("sensor_roll_in_body_rad", default_value="0.0"),
             DeclareLaunchArgument("sensor_pitch_in_body_rad", default_value="0.0"),
             DeclareLaunchArgument("sensor_yaw_in_body_rad", default_value="0.0"),
-            DeclareLaunchArgument("imu_topic", default_value=["/", camera_name, "/gyro_accel/sample"]),
-            DeclareLaunchArgument("left_ir_topic", default_value=["/", camera_name, "/left_ir/image_raw"]),
-            DeclareLaunchArgument("right_ir_topic", default_value=["/", camera_name, "/right_ir/image_raw"]),
             orbbec_camera_launch,
             openvins_node,
             openvins_px4_bridge,

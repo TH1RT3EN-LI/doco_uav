@@ -84,7 +84,7 @@ make -C "$PX4_DIR" px4_sitl none
 
 ### 2.2 ROS 2 和 PX4 是怎么打通的
 
-在启用 `use_offboard_bridge:=true` 时，`sitl_uav.launch.py` 里还会启动：
+在启用 `use_offboard_bridge:=true` 时，`uav_sim_bringup/sitl_uav.launch.py` 里还会启动：
 
 ```bash
 MicroXRCEAgent udp4 -p 8888

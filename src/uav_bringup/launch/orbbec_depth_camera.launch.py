@@ -11,14 +11,14 @@ from launch_ros.actions import Node
 from uav_bringup.profile_defaults import DEFAULT_STEREO_CAMERA_TO_BODY
 
 
+GEMINI_336_LAUNCH_FILE = "gemini_330_series.launch.py"
+
+
 def generate_launch_description():
     orbbec_camera_share = get_package_share_directory("orbbec_camera")
 
     start_camera = LaunchConfiguration("start_camera")
-    camera_launch_file = LaunchConfiguration("camera_launch_file")
     camera_name = LaunchConfiguration("camera_name")
-    serial_number = LaunchConfiguration("serial_number")
-    usb_port = LaunchConfiguration("usb_port")
     base_frame_id = LaunchConfiguration("base_frame_id")
     camera_frame_id = LaunchConfiguration("camera_frame_id")
     camera_x = LaunchConfiguration("camera_x")
@@ -30,7 +30,6 @@ def generate_launch_description():
     publish_mount_tf = LaunchConfiguration("publish_mount_tf")
     enable_depth = LaunchConfiguration("enable_depth")
     enable_color = LaunchConfiguration("enable_color")
-    enable_ir = LaunchConfiguration("enable_ir")
     enable_left_ir = LaunchConfiguration("enable_left_ir")
     enable_right_ir = LaunchConfiguration("enable_right_ir")
     left_ir_width = LaunchConfiguration("left_ir_width")
@@ -55,15 +54,14 @@ def generate_launch_description():
     log_level = LaunchConfiguration("log_level")
 
     depth_camera_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(PathJoinSubstitution([orbbec_camera_share, "launch", camera_launch_file])),
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([orbbec_camera_share, "launch", GEMINI_336_LAUNCH_FILE])
+        ),
         condition=IfCondition(start_camera),
         launch_arguments={
             "camera_name": camera_name,
-            "serial_number": serial_number,
-            "usb_port": usb_port,
             "enable_depth": enable_depth,
             "enable_color": enable_color,
-            "enable_ir": enable_ir,
             "enable_left_ir": enable_left_ir,
             "enable_right_ir": enable_right_ir,
             "left_ir_width": left_ir_width,
@@ -121,10 +119,7 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument("start_camera", default_value="true"),
-            DeclareLaunchArgument("camera_launch_file", default_value="gemini_330_series.launch.py"),
             DeclareLaunchArgument("camera_name", default_value="uav_depth_camera"),
-            DeclareLaunchArgument("serial_number", default_value=""),
-            DeclareLaunchArgument("usb_port", default_value=""),
             DeclareLaunchArgument("base_frame_id", default_value="uav_base_link"),
             DeclareLaunchArgument("camera_frame_id", default_value="uav_stereo_camera_optical_frame"),
             DeclareLaunchArgument("camera_x", default_value=DEFAULT_STEREO_CAMERA_TO_BODY["x"]),
@@ -136,9 +131,8 @@ def generate_launch_description():
             DeclareLaunchArgument("publish_mount_tf", default_value="true"),
             DeclareLaunchArgument("enable_depth", default_value="true"),
             DeclareLaunchArgument("enable_color", default_value="false"),
-            DeclareLaunchArgument("enable_ir", default_value="false"),
-            DeclareLaunchArgument("enable_left_ir", default_value=enable_ir),
-            DeclareLaunchArgument("enable_right_ir", default_value=enable_ir),
+            DeclareLaunchArgument("enable_left_ir", default_value="false"),
+            DeclareLaunchArgument("enable_right_ir", default_value="false"),
             DeclareLaunchArgument("left_ir_width", default_value="0"),
             DeclareLaunchArgument("left_ir_height", default_value="0"),
             DeclareLaunchArgument("left_ir_fps", default_value="0"),
