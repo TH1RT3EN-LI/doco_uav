@@ -40,7 +40,7 @@ Gemini 336
   - `calib_cam_timeoffset: true`
   - `try_zupt: true`
   - `zupt_only_at_beginning: true`
-  - 手动曝光：`enable_ir_auto_exposure: false`、`ir_exposure: 10000`、`ir_gain: 24`
+  - 自动曝光：`enable_ir_auto_exposure: true`、`ir_exposure: -1`、`ir_gain: -1`
   - 更稳前端：`fast_threshold: 15`、`num_opencv_threads: 4`
 - 飞行档 `frozen_final/estimator_config.flight.yaml`
   - `calib_cam_extrinsics: false`

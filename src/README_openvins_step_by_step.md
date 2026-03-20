@@ -134,7 +134,7 @@ sensor_yaw_in_body_rad:=...
 - `enable_laser:=false`
 - `enable_ldp:=false`
 
-校准档默认使用手动曝光；飞行档默认自动曝光。如果快速运动时拖影明显，再手动压曝光：
+校准档默认也使用自动曝光；飞行档默认自动曝光。如果快速运动时拖影明显，再手动压曝光：
 
 ```bash
 ros2 launch uav_bringup openvins_orbbec.launch.py \
