@@ -31,6 +31,42 @@ Gemini 336
 - `enable_ldp: false`
 - `left_ir_format: Y8`
 - `right_ir_format: Y8`
+- `ir_brightness: 255`
+
+## 2.1 校准档 / 飞行档默认分离
+
+- 校准档 `bootstrap/estimator_config.calibration.yaml`
+  - `calib_cam_extrinsics: true`
+  - `calib_cam_timeoffset: true`
+  - `try_zupt: true`
+  - `zupt_only_at_beginning: true`
+  - 手动曝光：`enable_ir_auto_exposure: false`、`ir_exposure: 10000`、`ir_gain: 24`
+  - 更稳前端：`fast_threshold: 15`、`num_opencv_threads: 4`
+- 飞行档 `frozen_final/estimator_config.flight.yaml`
+  - `calib_cam_extrinsics: false`
+  - `calib_cam_timeoffset: false`
+  - `try_zupt: true`
+  - `zupt_only_at_beginning: true`
+  - 自动曝光：`enable_ir_auto_exposure: true`
+  - 保守前端：`fast_threshold: 18`、`num_opencv_threads: 4`
+- OpenVINS 链路默认 `enable_publish_extrinsic: false`，避免平时多发一层驱动侧 extrinsic / TF。
+
+## 2.2 手持标定动作约定
+
+动作流程参考 Fast-Drone-250 中 VINS-Fusion 的手持标定经验，但保持当前算法仍然是 OpenVINS：
+
+- 阶段 1：上电后平放静止 `2–3 s`
+- 阶段 2：给一次短促小范围 `6DoF` 激励，帮助完成初始化
+- 阶段 3：围绕 Aprilgrid 或强纹理区域做低加速度全方向移动
+- 阶段 4：近处 / 远处都覆盖，避免只在单一深度层移动
+- 阶段 5：回到接近起点位置，形成小闭环
+- 标定结果只做 `2–3` 轮；每轮要求新的 `ov_estimate.txt` 非空，且回写前先做 `diff`
+
+常见失败模式直接按下面处理：
+
+- `not enough feats to compute disp`：优先检查亮度、纹理、mask 和视野遮挡
+- `platform moving too much`：说明连续大幅运动过久，先放稳再重新给短促激励
+- `no accel jerk detected`：说明已静止但缺启动动作，或当前流程还没等到初始化触发
 
 ## 3. 配置目录
 

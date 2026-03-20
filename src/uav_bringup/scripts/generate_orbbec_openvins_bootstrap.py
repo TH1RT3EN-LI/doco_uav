@@ -226,8 +226,10 @@ def format_transform(transform: Transform) -> List[str]:
 def estimator_config_text(enable_online_calibration: bool, camera_rate_hz: float) -> str:
     extrinsics_value = "true" if enable_online_calibration else "false"
     timeoffset_value = "true" if enable_online_calibration else "false"
-    try_zupt_value = "true" if enable_online_calibration else "false"
-    zupt_only_at_beginning_value = "true" if enable_online_calibration else "false"
+    try_zupt_value = "true"
+    zupt_only_at_beginning_value = "true"
+    fast_threshold_value = 15 if enable_online_calibration else 18
+    num_opencv_threads_value = 4
     return f'''%YAML:1.0
 
 verbosity: "INFO"
@@ -294,14 +296,14 @@ filepath_gt: "/tmp/ov_groundtruth.txt"
 
 use_klt: true
 num_pts: 220
-fast_threshold: 20
+fast_threshold: {fast_threshold_value}
 grid_x: 5
 grid_y: 5
 min_px_dist: 15
 knn_ratio: 0.70
 track_frequency: {int(round(camera_rate_hz))}
 downsample_cameras: false
-num_opencv_threads: 2
+num_opencv_threads: {num_opencv_threads_value}
 histogram_method: "CLAHE"
 
 use_aruco: false

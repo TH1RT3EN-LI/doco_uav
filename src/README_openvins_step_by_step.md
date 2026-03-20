@@ -46,11 +46,13 @@ ros2 launch uav_bringup openvins_orbbec_calibration.launch.py \
   openvins_config_path:=$CFG
 ```
 
-动作要求：
+动作要求（参考 Fast-Drone-250 的手持标定节奏，但保持当前求解器仍为 OpenVINS）：
 
 - 开头静止 `2 ~ 3 s`；这套 calibration 配置允许静止初始化
-- 中间做平滑平移、俯仰、横滚、偏航
-- 近处和远处都要看到纹理
+- 阶段 2：给一次短促小范围 6DoF 激励，保证初始化
+- 阶段 3：围绕 Aprilgrid 或强纹理区域做低加速度全方向移动
+- 阶段 4：近处和远处都覆盖，避免只在单一深度层移动
+- 阶段 5：回到接近起点位置，形成小闭环
 - 若未起，再给一次短促平移或小角度转动；不要长时间连续乱晃
 
 ## 3. 保存一轮结果
@@ -79,6 +81,12 @@ diff -u $BOOT/kalibr_imucam_chain.yaml $OUT
 - 相邻两轮旋转变化 `< 0.5 deg`
 - 相邻两轮平移变化 `< 0.005 m`
 - `timeshift_cam_imu` 变化 `< 0.0005 s`
+
+常见失败模式：
+
+- `not enough feats to compute disp`：亮度、纹理、mask 或视野有问题
+- `platform moving too much`：连续大幅运动过久
+- `no accel jerk detected`：已静止但缺启动动作，或当前档位仍在等待静止初始化
 
 ## 4. 冻结到飞行目录
 
@@ -122,10 +130,11 @@ sensor_yaw_in_body_rad:=...
 - `left_ir_format:=Y8`
 - `right_ir_format:=Y8`
 - `enable_ir_auto_exposure:=true`
+- `ir_brightness:=255`
 - `enable_laser:=false`
 - `enable_ldp:=false`
 
-如果快速运动时拖影明显，再手动压曝光：
+校准档默认使用手动曝光；飞行档默认自动曝光。如果快速运动时拖影明显，再手动压曝光：
 
 ```bash
 ros2 launch uav_bringup openvins_orbbec.launch.py \

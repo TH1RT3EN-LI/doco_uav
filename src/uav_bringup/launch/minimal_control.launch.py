@@ -85,6 +85,10 @@ def generate_launch_description():
     orbbec_right_ir_fps = LaunchConfiguration("orbbec_right_ir_fps")
     orbbec_right_ir_format = LaunchConfiguration("orbbec_right_ir_format")
     orbbec_enable_ir_auto_exposure = LaunchConfiguration("orbbec_enable_ir_auto_exposure")
+    orbbec_ir_exposure = LaunchConfiguration("orbbec_ir_exposure")
+    orbbec_ir_gain = LaunchConfiguration("orbbec_ir_gain")
+    orbbec_ir_ae_max_exposure = LaunchConfiguration("orbbec_ir_ae_max_exposure")
+    orbbec_ir_brightness = LaunchConfiguration("orbbec_ir_brightness")
     orbbec_enable_laser = LaunchConfiguration("orbbec_enable_laser")
     orbbec_enable_ldp = LaunchConfiguration("orbbec_enable_ldp")
 
@@ -113,6 +117,24 @@ def generate_launch_description():
     effective_orbbec_enable_right_ir = PythonExpression(
         ["'true' if '", start_openvins_orbbec, "' == 'true' else '", orbbec_enable_right_ir, "'"]
     )
+    effective_orbbec_enable_depth = PythonExpression(
+        ["'false' if '", start_openvins_orbbec, "' == 'true' else '", orbbec_enable_depth, "'"]
+    )
+    effective_orbbec_enable_color = PythonExpression(
+        ["'false' if '", start_openvins_orbbec, "' == 'true' else '", orbbec_enable_color, "'"]
+    )
+    effective_orbbec_enable_point_cloud = PythonExpression(
+        ["'false' if '", start_openvins_orbbec, "' == 'true' else '", orbbec_enable_point_cloud, "'"]
+    )
+    effective_orbbec_enable_colored_point_cloud = PythonExpression(
+        [
+            "'false' if '",
+            start_openvins_orbbec,
+            "' == 'true' else '",
+            orbbec_enable_colored_point_cloud,
+            "'",
+        ]
+    )
     effective_orbbec_enable_sync_output_accel_gyro = PythonExpression(
         [
             "'true' if '",
@@ -122,9 +144,7 @@ def generate_launch_description():
             "'",
         ]
     )
-    effective_orbbec_enable_publish_extrinsic = PythonExpression(
-        ["'true' if '", start_openvins_orbbec, "' == 'true' else '", orbbec_enable_publish_extrinsic, "'"]
-    )
+    effective_orbbec_enable_publish_extrinsic = orbbec_enable_publish_extrinsic
     effective_orbbec_enable_accel = PythonExpression(
         ["'true' if '", start_openvins_orbbec, "' == 'true' else '", orbbec_enable_accel, "'"]
     )
@@ -179,12 +199,12 @@ def generate_launch_description():
             "camera_roll": orbbec_camera_roll,
             "camera_pitch": orbbec_camera_pitch,
             "camera_yaw": orbbec_camera_yaw,
-            "enable_depth": orbbec_enable_depth,
-            "enable_color": orbbec_enable_color,
+            "enable_depth": effective_orbbec_enable_depth,
+            "enable_color": effective_orbbec_enable_color,
             "enable_left_ir": effective_orbbec_enable_left_ir,
             "enable_right_ir": effective_orbbec_enable_right_ir,
-            "enable_point_cloud": orbbec_enable_point_cloud,
-            "enable_colored_point_cloud": orbbec_enable_colored_point_cloud,
+            "enable_point_cloud": effective_orbbec_enable_point_cloud,
+            "enable_colored_point_cloud": effective_orbbec_enable_colored_point_cloud,
             "enable_sync_output_accel_gyro": effective_orbbec_enable_sync_output_accel_gyro,
             "enable_publish_extrinsic": effective_orbbec_enable_publish_extrinsic,
             "enable_accel": effective_orbbec_enable_accel,
@@ -200,6 +220,10 @@ def generate_launch_description():
             "right_ir_fps": orbbec_right_ir_fps,
             "right_ir_format": orbbec_right_ir_format,
             "enable_ir_auto_exposure": orbbec_enable_ir_auto_exposure,
+            "ir_exposure": orbbec_ir_exposure,
+            "ir_gain": orbbec_ir_gain,
+            "ir_ae_max_exposure": orbbec_ir_ae_max_exposure,
+            "ir_brightness": orbbec_ir_brightness,
             "enable_laser": orbbec_enable_laser,
             "enable_ldp": orbbec_enable_ldp,
         }.items(),
@@ -220,12 +244,12 @@ def generate_launch_description():
             "camera_roll": orbbec_camera_roll,
             "camera_pitch": orbbec_camera_pitch,
             "camera_yaw": orbbec_camera_yaw,
-            "enable_depth": orbbec_enable_depth,
-            "enable_color": orbbec_enable_color,
+            "enable_depth": effective_orbbec_enable_depth,
+            "enable_color": effective_orbbec_enable_color,
             "enable_left_ir": effective_orbbec_enable_left_ir,
             "enable_right_ir": effective_orbbec_enable_right_ir,
-            "enable_point_cloud": orbbec_enable_point_cloud,
-            "enable_colored_point_cloud": orbbec_enable_colored_point_cloud,
+            "enable_point_cloud": effective_orbbec_enable_point_cloud,
+            "enable_colored_point_cloud": effective_orbbec_enable_colored_point_cloud,
             "enable_sync_output_accel_gyro": effective_orbbec_enable_sync_output_accel_gyro,
             "enable_publish_extrinsic": effective_orbbec_enable_publish_extrinsic,
             "enable_accel": effective_orbbec_enable_accel,
@@ -241,6 +265,10 @@ def generate_launch_description():
             "right_ir_fps": orbbec_right_ir_fps,
             "right_ir_format": orbbec_right_ir_format,
             "enable_ir_auto_exposure": orbbec_enable_ir_auto_exposure,
+            "ir_exposure": orbbec_ir_exposure,
+            "ir_gain": orbbec_ir_gain,
+            "ir_ae_max_exposure": orbbec_ir_ae_max_exposure,
+            "ir_brightness": orbbec_ir_brightness,
             "enable_laser": orbbec_enable_laser,
             "enable_ldp": orbbec_enable_ldp,
             "openvins_namespace": openvins_orbbec_namespace,
@@ -388,15 +416,19 @@ def generate_launch_description():
         DeclareLaunchArgument("orbbec_enable_gyro", default_value="false"),
         DeclareLaunchArgument("orbbec_accel_rate", default_value="200hz"),
         DeclareLaunchArgument("orbbec_gyro_rate", default_value="200hz"),
-        DeclareLaunchArgument("orbbec_left_ir_width", default_value="1280"),
-        DeclareLaunchArgument("orbbec_left_ir_height", default_value="800"),
-        DeclareLaunchArgument("orbbec_left_ir_fps", default_value="15"),
+        DeclareLaunchArgument("orbbec_left_ir_width", default_value="848"),
+        DeclareLaunchArgument("orbbec_left_ir_height", default_value="480"),
+        DeclareLaunchArgument("orbbec_left_ir_fps", default_value="30"),
         DeclareLaunchArgument("orbbec_left_ir_format", default_value="Y8"),
-        DeclareLaunchArgument("orbbec_right_ir_width", default_value="1280"),
-        DeclareLaunchArgument("orbbec_right_ir_height", default_value="800"),
-        DeclareLaunchArgument("orbbec_right_ir_fps", default_value="15"),
+        DeclareLaunchArgument("orbbec_right_ir_width", default_value="848"),
+        DeclareLaunchArgument("orbbec_right_ir_height", default_value="480"),
+        DeclareLaunchArgument("orbbec_right_ir_fps", default_value="30"),
         DeclareLaunchArgument("orbbec_right_ir_format", default_value="Y8"),
         DeclareLaunchArgument("orbbec_enable_ir_auto_exposure", default_value="true"),
+        DeclareLaunchArgument("orbbec_ir_exposure", default_value="-1"),
+        DeclareLaunchArgument("orbbec_ir_gain", default_value="-1"),
+        DeclareLaunchArgument("orbbec_ir_ae_max_exposure", default_value="-1"),
+        DeclareLaunchArgument("orbbec_ir_brightness", default_value="255"),
         DeclareLaunchArgument("orbbec_enable_laser", default_value="false"),
         DeclareLaunchArgument("orbbec_enable_ldp", default_value="false"),
         mono_camera_launch,
