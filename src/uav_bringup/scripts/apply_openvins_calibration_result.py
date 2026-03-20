@@ -3,6 +3,7 @@
 import argparse
 import ast
 import math
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -44,14 +45,25 @@ def parse_scalar_or_list(value: str) -> Any:
 def parse_imucam_yaml(path: Path) -> Dict[str, Dict[str, Any]]:
     cameras: Dict[str, Dict[str, Any]] = {}
     current_camera = None
+    current_matrix_key = None
 
     for raw_line in path.read_text(encoding="utf-8").splitlines():
         stripped = raw_line.strip()
         if not stripped or stripped.startswith("%") or stripped.startswith("#"):
             continue
+
+        if current_camera is not None and current_matrix_key is not None and stripped.startswith("-"):
+            cameras[current_camera].setdefault(current_matrix_key, []).append(
+                parse_scalar_or_list(stripped[1:].strip())
+            )
+            if len(cameras[current_camera][current_matrix_key]) == 4:
+                current_matrix_key = None
+            continue
+
         if stripped.endswith(":") and stripped.startswith("cam"):
             current_camera = stripped[:-1]
             cameras[current_camera] = {}
+            current_matrix_key = None
             continue
         if current_camera is None or ":" not in stripped:
             continue
@@ -60,6 +72,9 @@ def parse_imucam_yaml(path: Path) -> Dict[str, Dict[str, Any]]:
         key = key.strip()
         value = value.strip()
         if not value:
+            if key in {"T_cam_imu", "T_cn_cnm1"}:
+                cameras[current_camera][key] = []
+                current_matrix_key = key
             continue
 
         if key in {"cam_overlaps", "distortion_coeffs", "intrinsics", "resolution"}:
@@ -70,7 +85,9 @@ def parse_imucam_yaml(path: Path) -> Dict[str, Dict[str, Any]]:
     return cameras
 
 
-def parse_last_state_line(path: Path) -> Tuple[float, List[Dict[str, List[float]]]]:
+def parse_last_state_line(
+    path: Path,
+) -> Tuple[float, List[float], List[float], List[Dict[str, List[float]]]]:
     lines = [
         line.strip()
         for line in path.read_text(encoding="utf-8").splitlines()
@@ -83,6 +100,8 @@ def parse_last_state_line(path: Path) -> Tuple[float, List[Dict[str, List[float]
     if len(values) < 19:
         raise RuntimeError("state estimate line is too short")
 
+    position = values[5:8]
+    velocity = values[8:11]
     time_offset = values[17]
     num_cameras = int(round(values[18]))
     index = 19
@@ -99,7 +118,23 @@ def parse_last_state_line(path: Path) -> Tuple[float, List[Dict[str, List[float]
         index += 7
         cameras.append({"intrinsics": intrinsics, "transform": transform})
 
-    return time_offset, cameras
+    return time_offset, position, velocity, cameras
+
+
+def transform_matrix_to_rt(matrix: List[List[float]]) -> Tuple[List[List[float]], List[float]]:
+    rotation = [row[:3] for row in matrix[:3]]
+    translation = [row[3] for row in matrix[:3]]
+    return rotation, translation
+
+
+def rotation_angle_deg(rotation: List[List[float]]) -> float:
+    trace = rotation[0][0] + rotation[1][1] + rotation[2][2]
+    cos_angle = max(-1.0, min(1.0, 0.5 * (trace - 1.0)))
+    return math.degrees(math.acos(cos_angle))
+
+
+def vector_norm(vector: List[float]) -> float:
+    return math.sqrt(sum(value * value for value in vector))
 
 
 def q_to_rotation(qx: float, qy: float, qz: float, qw: float) -> List[List[float]]:
@@ -124,9 +159,9 @@ def q_to_rotation(qx: float, qy: float, qz: float, qw: float) -> List[List[float
     wz = qw * qz
 
     return [
-        [ww + xx - yy - zz, 2.0 * (xy - wz), 2.0 * (xz + wy)],
-        [2.0 * (xy + wz), ww - xx + yy - zz, 2.0 * (yz - wx)],
-        [2.0 * (xz - wy), 2.0 * (yz + wx), ww - xx - yy + zz],
+        [ww + xx - yy - zz, 2.0 * (xy + wz), 2.0 * (xz - wy)],
+        [2.0 * (xy - wz), ww - xx + yy - zz, 2.0 * (yz + wx)],
+        [2.0 * (xz + wy), 2.0 * (yz - wx), ww - xx - yy + zz],
     ]
 
 
@@ -271,7 +306,7 @@ def main() -> int:
     state_path = Path(args.state_estimate_path).expanduser().resolve()
 
     cameras_in = parse_imucam_yaml(input_path)
-    time_offset, cameras_out = parse_last_state_line(state_path)
+    time_offset, final_position, final_velocity, cameras_out = parse_last_state_line(state_path)
     content = build_output_yaml(
         cameras_in,
         cameras_out,
@@ -281,8 +316,49 @@ def main() -> int:
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(content, encoding="utf-8")
+
+    final_speed = vector_norm(final_velocity)
+    final_pos_norm = vector_norm(final_position)
+
+    qx0, qy0, qz0, qw0, px0, py0, pz0 = cameras_out[0]["transform"]
+    qx1, qy1, qz1, qw1, px1, py1, pz1 = cameras_out[1]["transform"]
+    cam0_rt = (q_to_rotation(qx0, qy0, qz0, qw0), [px0, py0, pz0])
+    cam1_rt = (q_to_rotation(qx1, qy1, qz1, qw1), [px1, py1, pz1])
+    cam0_inv = invert_transform(*cam0_rt)
+    estimated_stereo_rt = compose_transforms(cam1_rt[0], cam1_rt[1], cam0_inv[0], cam0_inv[1])
+
     print(f"wrote {output_path}")
     print(f"applied camera-imu time offset: {time_offset:.7f}")
+    print(f"last-state position norm: {final_pos_norm:.3f} m")
+    print(f"last-state speed norm: {final_speed:.3f} m/s")
+
+    if "T_cn_cnm1" in cameras_in["cam1"] and cameras_in["cam1"]["T_cn_cnm1"]:
+        input_stereo_rt = transform_matrix_to_rt(cameras_in["cam1"]["T_cn_cnm1"])
+        input_baseline = vector_norm(input_stereo_rt[1])
+        estimated_baseline = vector_norm(estimated_stereo_rt[1])
+        input_angle = rotation_angle_deg(input_stereo_rt[0])
+        estimated_angle = rotation_angle_deg(estimated_stereo_rt[0])
+        print(
+            "stereo baseline: "
+            f"input={input_baseline:.4f} m output={estimated_baseline:.4f} m "
+            f"delta={estimated_baseline - input_baseline:+.4f} m"
+        )
+        print(
+            "stereo relative rotation: "
+            f"input={input_angle:.3f} deg output={estimated_angle:.3f} deg "
+            f"delta={estimated_angle - input_angle:+.3f} deg"
+        )
+        if abs(estimated_baseline - input_baseline) > 0.01 or abs(estimated_angle - input_angle) > 0.5:
+            print(
+                "warning: estimated stereo geometry changed a lot; this round is likely unstable",
+                file=sys.stderr,
+            )
+
+    if final_speed > 0.2:
+        print(
+            "warning: final-state speed is high; stop and hold still 1-2 s before saving calibration",
+            file=sys.stderr,
+        )
     return 0
 
 
