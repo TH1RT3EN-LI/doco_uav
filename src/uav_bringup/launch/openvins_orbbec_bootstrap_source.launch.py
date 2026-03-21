@@ -1,47 +1,21 @@
 import os
-from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 
 
-def _prepare_calibration(context, *_args, **_kwargs):
-    state_output_dir = Path(LaunchConfiguration("state_output_dir").perform(context))
-    state_output_dir.mkdir(parents=True, exist_ok=True)
-
-    config_path = Path(LaunchConfiguration("openvins_config_path").perform(context))
-    if not config_path.exists():
-        raise RuntimeError(
-            "OpenVINS calibration config not found: "
-            f"{config_path}. Run generate_orbbec_openvins_bootstrap.py first."
-        )
-
-    return []
-
-
 def generate_launch_description():
     bringup_share = get_package_share_directory("uav_bringup")
-    default_config_path = os.path.join(
-        bringup_share,
-        "config",
-        "openvins",
-        "orbbec_stereo_imu",
-        "bootstrap",
-        "estimator_config.calibration.yaml",
-    )
 
-    state_output_dir = LaunchConfiguration("state_output_dir")
-
-    calibration_launch = IncludeLaunchDescription(
+    depth_camera_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(bringup_share, "launch", "openvins_orbbec.launch.py")
+            os.path.join(bringup_share, "launch", "orbbec_depth_camera.launch.py")
         ),
         launch_arguments={
-            "start_openvins": LaunchConfiguration("start_openvins"),
-            "start_orbbec_camera": LaunchConfiguration("start_orbbec_camera"),
+            "start_camera": LaunchConfiguration("start_camera"),
             "camera_name": LaunchConfiguration("camera_name"),
             "base_frame_id": LaunchConfiguration("base_frame_id"),
             "camera_frame_id": LaunchConfiguration("camera_frame_id"),
@@ -51,18 +25,11 @@ def generate_launch_description():
             "camera_roll": LaunchConfiguration("camera_roll"),
             "camera_pitch": LaunchConfiguration("camera_pitch"),
             "camera_yaw": LaunchConfiguration("camera_yaw"),
+            "publish_mount_tf": LaunchConfiguration("publish_mount_tf"),
             "enable_depth": "true",
             "enable_color": "false",
             "enable_left_ir": "true",
             "enable_right_ir": "true",
-            "enable_point_cloud": "false",
-            "enable_colored_point_cloud": "false",
-            "enable_sync_output_accel_gyro": "true",
-            "enable_publish_extrinsic": "true",
-            "enable_accel": "true",
-            "enable_gyro": "true",
-            "accel_rate": LaunchConfiguration("accel_rate"),
-            "gyro_rate": LaunchConfiguration("gyro_rate"),
             "left_ir_width": LaunchConfiguration("left_ir_width"),
             "left_ir_height": LaunchConfiguration("left_ir_height"),
             "left_ir_fps": LaunchConfiguration("left_ir_fps"),
@@ -78,23 +45,21 @@ def generate_launch_description():
             "ir_brightness": LaunchConfiguration("ir_brightness"),
             "enable_laser": LaunchConfiguration("enable_laser"),
             "enable_ldp": LaunchConfiguration("enable_ldp"),
+            "enable_point_cloud": "false",
+            "enable_colored_point_cloud": "false",
+            "enable_sync_output_accel_gyro": "true",
+            "enable_publish_extrinsic": "true",
+            "enable_accel": "true",
+            "accel_rate": LaunchConfiguration("accel_rate"),
+            "enable_gyro": "true",
+            "gyro_rate": LaunchConfiguration("gyro_rate"),
             "log_level": LaunchConfiguration("log_level"),
-            "openvins_namespace": LaunchConfiguration("openvins_namespace"),
-            "openvins_config_path": LaunchConfiguration("openvins_config_path"),
-            "openvins_verbosity": LaunchConfiguration("openvins_verbosity"),
-            "openvins_save_total_state": "true",
-            "openvins_publish_calibration_tf": "true",
-            "openvins_filepath_est": [state_output_dir, "/ov_estimate.txt"],
-            "openvins_filepath_std": [state_output_dir, "/ov_estimate_std.txt"],
-            "openvins_filepath_gt": [state_output_dir, "/ov_groundtruth.txt"],
-            "publish_px4_external_vision": "false",
         }.items(),
     )
 
     return LaunchDescription(
         [
-            DeclareLaunchArgument("start_openvins", default_value="true"),
-            DeclareLaunchArgument("start_orbbec_camera", default_value="true"),
+            DeclareLaunchArgument("start_camera", default_value="true"),
             DeclareLaunchArgument("camera_name", default_value="uav_depth_camera"),
             DeclareLaunchArgument("base_frame_id", default_value="uav_base_link"),
             DeclareLaunchArgument(
@@ -106,8 +71,7 @@ def generate_launch_description():
             DeclareLaunchArgument("camera_roll", default_value=str(-3.141592653589793 / 2.0)),
             DeclareLaunchArgument("camera_pitch", default_value="0.0"),
             DeclareLaunchArgument("camera_yaw", default_value=str(-3.141592653589793 / 2.0)),
-            DeclareLaunchArgument("accel_rate", default_value="200hz"),
-            DeclareLaunchArgument("gyro_rate", default_value="200hz"),
+            DeclareLaunchArgument("publish_mount_tf", default_value="true"),
             DeclareLaunchArgument("left_ir_width", default_value="848"),
             DeclareLaunchArgument("left_ir_height", default_value="480"),
             DeclareLaunchArgument("left_ir_fps", default_value="30"),
@@ -123,14 +87,9 @@ def generate_launch_description():
             DeclareLaunchArgument("ir_brightness", default_value="255"),
             DeclareLaunchArgument("enable_laser", default_value="false"),
             DeclareLaunchArgument("enable_ldp", default_value="false"),
+            DeclareLaunchArgument("accel_rate", default_value="200hz"),
+            DeclareLaunchArgument("gyro_rate", default_value="200hz"),
             DeclareLaunchArgument("log_level", default_value="info"),
-            DeclareLaunchArgument("openvins_namespace", default_value="ov_msckf"),
-            DeclareLaunchArgument("openvins_config_path", default_value=default_config_path),
-            DeclareLaunchArgument("openvins_verbosity", default_value="INFO"),
-            DeclareLaunchArgument(
-                "state_output_dir", default_value="/tmp/openvins_orbbec_calibration"
-            ),
-            OpaqueFunction(function=_prepare_calibration),
-            calibration_launch,
+            depth_camera_launch,
         ]
     )

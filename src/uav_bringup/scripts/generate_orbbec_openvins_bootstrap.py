@@ -17,8 +17,7 @@ DEFAULT_ACCEL_NOISE_DENSITY = 0.00207649074
 DEFAULT_ACCEL_RANDOM_WALK = 0.00041327852
 DEFAULT_GYRO_NOISE_DENSITY = 0.00020544166
 DEFAULT_GYRO_RANDOM_WALK = 0.00001110622
-DEFAULT_MASK_CORNER_WIDTH_RATIO = 0.10
-DEFAULT_MASK_TOP_Y_RATIO = 0.85
+DEFAULT_MASK_BOTTOM_HEIGHT_RATIO = 1.0 / 6.0
 
 Transform = Tuple[List[List[float]], List[float]]
 
@@ -30,13 +29,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--timeout-sec", type=float, default=10.0)
     parser.add_argument("--camera-rate-hz", type=float, default=30.0)
     parser.add_argument("--imu-rate-hz", type=float, default=200.0)
-    parser.add_argument("--imu-reference", choices=["gyro", "accel"], default="gyro")
     parser.add_argument("--left-camera-info-topic", default="")
     parser.add_argument("--right-camera-info-topic", default="")
     parser.add_argument("--depth-to-left-ir-topic", default="")
     parser.add_argument("--depth-to-right-ir-topic", default="")
     parser.add_argument("--depth-to-gyro-topic", default="")
-    parser.add_argument("--depth-to-accel-topic", default="")
     parser.add_argument("--gyro-info-topic", default="")
     parser.add_argument("--accel-info-topic", default="")
     return parser.parse_args()
@@ -95,8 +92,6 @@ def fill_topic_defaults(args: argparse.Namespace) -> None:
         args.depth_to_right_ir_topic = f"{base_topic}/depth_to_right_ir"
     if not args.depth_to_gyro_topic:
         args.depth_to_gyro_topic = f"{base_topic}/depth_to_gyro"
-    if not args.depth_to_accel_topic:
-        args.depth_to_accel_topic = f"{base_topic}/depth_to_accel"
     if not args.gyro_info_topic:
         args.gyro_info_topic = f"{base_topic}/gyro/imu_info"
     if not args.accel_info_topic:
@@ -166,16 +161,6 @@ def transform_from_orbbec_optical_extrinsics(message: Extrinsics) -> Transform:
     equivalent to the optical-frame transform used by OpenVINS.
     """
     return transform_from_extrinsics(message)
-
-
-def transform_delta(first: Transform, second: Transform) -> Tuple[float, float]:
-    first_inverse = invert_transform(first)
-    delta_rotation, delta_translation = compose_transforms(first_inverse, second)
-    trace_value = delta_rotation[0][0] + delta_rotation[1][1] + delta_rotation[2][2]
-    cosine = max(-1.0, min(1.0, (trace_value - 1.0) * 0.5))
-    angle_deg = abs(math.degrees(math.acos(cosine)))
-    translation_norm = sum(value * value for value in delta_translation) ** 0.5
-    return angle_deg, translation_norm
 
 
 def rotation_deviation_deg(rotation: List[List[float]]) -> float:
@@ -423,22 +408,14 @@ def build_default_mask(width: int, height: int) -> bytes:
     if width <= 0 or height <= 0:
         raise BootstrapError(f"invalid mask resolution: {width}x{height}")
 
-    corner_width = max(1, int(round(width * DEFAULT_MASK_CORNER_WIDTH_RATIO)))
-    top_y = min(height - 1, max(0, int(round(height * DEFAULT_MASK_TOP_Y_RATIO))))
-    slope = 0.0 if corner_width <= 0 else (height - 1 - top_y) / float(corner_width)
+    masked_height = max(1, int(round(height * DEFAULT_MASK_BOTTOM_HEIGHT_RATIO)))
+    top_y = max(0, height - masked_height)
 
     pixels = bytearray(width * height)
     for y in range(height):
         row_offset = y * width
         for x in range(width):
-            mask_pixel = False
-            if x <= corner_width:
-                edge_y = top_y + slope * x
-                mask_pixel = y >= edge_y
-            elif x >= width - 1 - corner_width:
-                edge_y = top_y + slope * (width - 1 - x)
-                mask_pixel = y >= edge_y
-            if mask_pixel:
+            if y >= top_y:
                 pixels[row_offset + x] = 255
 
     header = f"P5\n{width} {height}\n255\n".encode("ascii")
@@ -498,9 +475,9 @@ def summary_text(
         "# OpenVINS Orbbec Bootstrap Summary",
         "",
         f"- Camera namespace: `{args.camera_name}`",
-        f"- IMU reference: `{args.imu_reference}`",
         f"- Left camera topic: `{args.left_camera_info_topic}`",
         f"- Right camera topic: `{args.right_camera_info_topic}`",
+        f"- IMU extrinsics topic: `{args.depth_to_gyro_topic}`",
         f"- Output directory: `{output_dir}`",
         f"- Left resolution: `{left_camera['resolution'][0]}x{left_camera['resolution'][1]}`",
         f"- Right resolution: `{right_camera['resolution'][0]}x{right_camera['resolution'][1]}`",
@@ -513,13 +490,15 @@ def summary_text(
         "- `estimator_config.flight.yaml`: frozen flight profile",
         "- `kalibr_imucam_chain.yaml`: camera/IMU bootstrap chain",
         "- `kalibr_imu_chain.yaml`: IMU noise bootstrap chain",
-        "- `mask0.pgm`, `mask1.pgm`: conservative lower-corner masks generated from current resolution",
+        "- `mask0.pgm`, `mask1.pgm`: bottom rectangular masks generated from current resolution",
         "",
         "## Notes",
         "",
         "- Camera and IMU transforms are interpreted with the same optical-frame semantics as the published ROS topics.",
+        "- The combined IMU reference is fixed to the gyro-aligned `/gyro_accel/sample` semantics used by this project.",
         "- Intrinsics stay frozen during online calibration; only camera extrinsics and camera/IMU time offset are enabled.",
-        "- Generated masks only suppress the lower-corner airframe intrusion and should be refined later if the mounted airframe changes.",
+        "- If `gyro/imu_info` or `accel/imu_info` is missing, the script falls back to project default noise values rather than device-reported values.",
+        "- Generated masks suppress the lower rectangular airframe intrusion band and should be refined later if the mounted airframe changes.",
         "",
         "## Warnings",
         "",
@@ -533,9 +512,23 @@ def summary_text(
 
 
 def resolve_output_dir(argument_value: str) -> Path:
-    if argument_value:
-        return Path(argument_value).expanduser().resolve()
-    return (Path(__file__).resolve().parent.parent / "config" / "openvins" / "orbbec_stereo_imu" / "bootstrap").resolve()
+    bootstrap_dir = (
+        Path(__file__).resolve().parent.parent
+        / "config"
+        / "openvins"
+        / "orbbec_stereo_imu"
+        / "bootstrap"
+    ).resolve()
+    if not argument_value:
+        return bootstrap_dir
+
+    resolved = Path(argument_value).expanduser().resolve()
+    if resolved != bootstrap_dir:
+        raise BootstrapError(
+            "bootstrap generation only writes to the project bootstrap workspace: "
+            f"{bootstrap_dir}"
+        )
+    return resolved
 
 
 def write_text(path: Path, content: str) -> None:
@@ -553,8 +546,7 @@ def main() -> int:
         "right_camera_info": (args.right_camera_info_topic, CameraInfo, True),
         "depth_to_left_ir": (args.depth_to_left_ir_topic, Extrinsics, True),
         "depth_to_right_ir": (args.depth_to_right_ir_topic, Extrinsics, True),
-        "depth_to_gyro": (args.depth_to_gyro_topic, Extrinsics, args.imu_reference == "gyro"),
-        "depth_to_accel": (args.depth_to_accel_topic, Extrinsics, args.imu_reference == "accel"),
+        "depth_to_gyro": (args.depth_to_gyro_topic, Extrinsics, True),
         "gyro_info": (args.gyro_info_topic, IMUInfo, False),
         "accel_info": (args.accel_info_topic, IMUInfo, False),
     }
@@ -576,27 +568,8 @@ def main() -> int:
         right_camera = extract_camera_parameters(node.messages["right_camera_info"])
         left_depth_transform = transform_from_orbbec_optical_extrinsics(node.messages["depth_to_left_ir"])
         right_depth_transform = transform_from_orbbec_optical_extrinsics(node.messages["depth_to_right_ir"])
-
-        if args.imu_reference == "gyro":
-            imu_depth_transform = transform_from_orbbec_optical_extrinsics(node.messages["depth_to_gyro"])
-            imu_topic = f"/{args.camera_name}/gyro_accel/sample"
-        else:
-            imu_depth_transform = transform_from_orbbec_optical_extrinsics(node.messages["depth_to_accel"])
-            imu_topic = f"/{args.camera_name}/gyro_accel/sample"
-
-        if "depth_to_gyro" in node.messages and "depth_to_accel" in node.messages:
-            rotation_delta_deg, translation_delta_m = transform_delta(
-                transform_from_orbbec_optical_extrinsics(node.messages["depth_to_gyro"]),
-                transform_from_orbbec_optical_extrinsics(node.messages["depth_to_accel"]),
-            )
-            if rotation_delta_deg > 1.0 or translation_delta_m > 0.005:
-                warnings.append(
-                    BootstrapWarning(
-                        "gyro and accel factory extrinsics differ noticeably "
-                        f"({format_scalar(rotation_delta_deg)} deg, {format_scalar(translation_delta_m)} m); "
-                        f"using `{args.imu_reference}` as the IMU reference frame."
-                    )
-                )
+        imu_depth_transform = transform_from_orbbec_optical_extrinsics(node.messages["depth_to_gyro"])
+        imu_topic = f"/{args.camera_name}/gyro_accel/sample"
 
         imu_depth_inverse = invert_transform(imu_depth_transform)
         left_cam_imu = compose_transforms(left_depth_transform, imu_depth_inverse)
@@ -615,14 +588,22 @@ def main() -> int:
             accel_noise_density = float(accel_info.noise_density)
             accel_random_walk = float(accel_info.random_walk)
         else:
-            warnings.append(BootstrapWarning("accel/imu_info was not received; using fallback accelerometer noise values."))
+            warnings.append(
+                BootstrapWarning(
+                    "accel/imu_info was not received; using project fallback accelerometer noise values, not device-reported values."
+                )
+            )
 
         gyro_info = node.messages.get("gyro_info")
         if isinstance(gyro_info, IMUInfo):
             gyro_noise_density = float(gyro_info.noise_density)
             gyro_random_walk = float(gyro_info.random_walk)
         else:
-            warnings.append(BootstrapWarning("gyro/imu_info was not received; using fallback gyroscope noise values."))
+            warnings.append(
+                BootstrapWarning(
+                    "gyro/imu_info was not received; using project fallback gyroscope noise values, not device-reported values."
+                )
+            )
 
         output_dir = resolve_output_dir(args.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)

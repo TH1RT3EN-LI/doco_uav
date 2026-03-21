@@ -9,6 +9,9 @@ from typing import Any, Dict, List, Tuple
 
 
 CAMERA_KEYS = ["cam0", "cam1"]
+MAX_FINAL_SPEED_MPS = 0.2
+MAX_STEREO_BASELINE_DELTA_M = 0.01
+MAX_STEREO_ROTATION_DELTA_DEG = 0.5
 
 
 def parse_args() -> argparse.Namespace:
@@ -31,9 +34,9 @@ def parse_args() -> argparse.Namespace:
         help="Optional output path. Defaults to overwriting the input file.",
     )
     parser.add_argument(
-        "--update-intrinsics",
+        "--force",
         action="store_true",
-        help="Also overwrite intrinsics and distortion coefficients from OpenVINS online estimates.",
+        help="Write output even if stability checks fail.",
     )
     return parser.parse_args()
 
@@ -227,7 +230,6 @@ def build_output_yaml(
     cameras_in: Dict[str, Dict[str, Any]],
     cameras_out: List[Dict[str, List[float]]],
     time_offset: float,
-    update_intrinsics: bool,
 ) -> str:
     for camera_key in CAMERA_KEYS:
         if camera_key not in cameras_in:
@@ -247,12 +249,8 @@ def build_output_yaml(
         parsed_transforms.append((rotation, translation))
 
         template = cameras_in[camera_key]
-        if update_intrinsics:
-            intrinsics = cameras_out[index]["intrinsics"][:4]
-            distortion_coeffs = cameras_out[index]["intrinsics"][4:8]
-        else:
-            intrinsics = [float(value) for value in template["intrinsics"]]
-            distortion_coeffs = [float(value) for value in template["distortion_coeffs"]]
+        intrinsics = [float(value) for value in template["intrinsics"]]
+        distortion_coeffs = [float(value) for value in template["distortion_coeffs"]]
 
         block = [
             f"{camera_key}:",
@@ -295,6 +293,65 @@ def build_output_yaml(
     return "%YAML:1.0\n\n" + "\n".join(out_blocks) + "\n"
 
 
+def collect_stability_issues(
+    cameras_in: Dict[str, Dict[str, Any]],
+    cameras_out: List[Dict[str, List[float]]],
+    final_velocity: List[float],
+) -> Tuple[List[str], Dict[str, float]]:
+    issues: List[str] = []
+
+    final_speed = vector_norm(final_velocity)
+    metrics: Dict[str, float] = {"final_speed": final_speed}
+    if final_speed > MAX_FINAL_SPEED_MPS:
+        issues.append(
+            "final-state speed is too high "
+            f"({final_speed:.3f} m/s > {MAX_FINAL_SPEED_MPS:.3f} m/s); stop and hold still before saving calibration"
+        )
+
+    if "T_cn_cnm1" not in cameras_in["cam1"] or not cameras_in["cam1"]["T_cn_cnm1"]:
+        return issues, metrics
+
+    qx0, qy0, qz0, qw0, px0, py0, pz0 = cameras_out[0]["transform"]
+    qx1, qy1, qz1, qw1, px1, py1, pz1 = cameras_out[1]["transform"]
+    cam0_rt = (q_to_rotation(qx0, qy0, qz0, qw0), [px0, py0, pz0])
+    cam1_rt = (q_to_rotation(qx1, qy1, qz1, qw1), [px1, py1, pz1])
+    cam0_inv = invert_transform(*cam0_rt)
+    estimated_stereo_rt = compose_transforms(cam1_rt[0], cam1_rt[1], cam0_inv[0], cam0_inv[1])
+
+    input_stereo_rt = transform_matrix_to_rt(cameras_in["cam1"]["T_cn_cnm1"])
+    input_baseline = vector_norm(input_stereo_rt[1])
+    estimated_baseline = vector_norm(estimated_stereo_rt[1])
+    input_angle = rotation_angle_deg(input_stereo_rt[0])
+    estimated_angle = rotation_angle_deg(estimated_stereo_rt[0])
+
+    baseline_delta = estimated_baseline - input_baseline
+    rotation_delta = estimated_angle - input_angle
+
+    metrics.update(
+        {
+            "input_baseline": input_baseline,
+            "estimated_baseline": estimated_baseline,
+            "baseline_delta": baseline_delta,
+            "input_angle": input_angle,
+            "estimated_angle": estimated_angle,
+            "rotation_delta": rotation_delta,
+        }
+    )
+
+    if abs(baseline_delta) > MAX_STEREO_BASELINE_DELTA_M:
+        issues.append(
+            "stereo baseline changed too much "
+            f"({baseline_delta:+.4f} m, limit {MAX_STEREO_BASELINE_DELTA_M:.4f} m)"
+        )
+    if abs(rotation_delta) > MAX_STEREO_ROTATION_DELTA_DEG:
+        issues.append(
+            "stereo relative rotation changed too much "
+            f"({rotation_delta:+.3f} deg, limit {MAX_STEREO_ROTATION_DELTA_DEG:.3f} deg)"
+        )
+
+    return issues, metrics
+
+
 def main() -> int:
     args = parse_args()
     input_path = Path(args.input_imucam_yaml).expanduser().resolve()
@@ -307,58 +364,45 @@ def main() -> int:
 
     cameras_in = parse_imucam_yaml(input_path)
     time_offset, final_position, final_velocity, cameras_out = parse_last_state_line(state_path)
-    content = build_output_yaml(
-        cameras_in,
-        cameras_out,
-        time_offset,
-        args.update_intrinsics,
-    )
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(content, encoding="utf-8")
-
     final_speed = vector_norm(final_velocity)
     final_pos_norm = vector_norm(final_position)
+    issues, metrics = collect_stability_issues(cameras_in, cameras_out, final_velocity)
 
-    qx0, qy0, qz0, qw0, px0, py0, pz0 = cameras_out[0]["transform"]
-    qx1, qy1, qz1, qw1, px1, py1, pz1 = cameras_out[1]["transform"]
-    cam0_rt = (q_to_rotation(qx0, qy0, qz0, qw0), [px0, py0, pz0])
-    cam1_rt = (q_to_rotation(qx1, qy1, qz1, qw1), [px1, py1, pz1])
-    cam0_inv = invert_transform(*cam0_rt)
-    estimated_stereo_rt = compose_transforms(cam1_rt[0], cam1_rt[1], cam0_inv[0], cam0_inv[1])
-
-    print(f"wrote {output_path}")
     print(f"applied camera-imu time offset: {time_offset:.7f}")
     print(f"last-state position norm: {final_pos_norm:.3f} m")
     print(f"last-state speed norm: {final_speed:.3f} m/s")
 
-    if "T_cn_cnm1" in cameras_in["cam1"] and cameras_in["cam1"]["T_cn_cnm1"]:
-        input_stereo_rt = transform_matrix_to_rt(cameras_in["cam1"]["T_cn_cnm1"])
-        input_baseline = vector_norm(input_stereo_rt[1])
-        estimated_baseline = vector_norm(estimated_stereo_rt[1])
-        input_angle = rotation_angle_deg(input_stereo_rt[0])
-        estimated_angle = rotation_angle_deg(estimated_stereo_rt[0])
+    if "baseline_delta" in metrics and "rotation_delta" in metrics:
         print(
             "stereo baseline: "
-            f"input={input_baseline:.4f} m output={estimated_baseline:.4f} m "
-            f"delta={estimated_baseline - input_baseline:+.4f} m"
+            f"input={metrics['input_baseline']:.4f} m output={metrics['estimated_baseline']:.4f} m "
+            f"delta={metrics['baseline_delta']:+.4f} m"
         )
         print(
             "stereo relative rotation: "
-            f"input={input_angle:.3f} deg output={estimated_angle:.3f} deg "
-            f"delta={estimated_angle - input_angle:+.3f} deg"
+            f"input={metrics['input_angle']:.3f} deg output={metrics['estimated_angle']:.3f} deg "
+            f"delta={metrics['rotation_delta']:+.3f} deg"
         )
-        if abs(estimated_baseline - input_baseline) > 0.01 or abs(estimated_angle - input_angle) > 0.5:
-            print(
-                "warning: estimated stereo geometry changed a lot; this round is likely unstable",
-                file=sys.stderr,
-            )
 
-    if final_speed > 0.2:
+    if issues and not args.force:
+        for issue in issues:
+            print(f"error: {issue}", file=sys.stderr)
         print(
-            "warning: final-state speed is high; stop and hold still 1-2 s before saving calibration",
+            "error: refusing to write updated calibration; rerun after a steadier round or pass --force to override",
             file=sys.stderr,
         )
+        return 1
+
+    content = build_output_yaml(cameras_in, cameras_out, time_offset)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(content, encoding="utf-8")
+    print(f"wrote {output_path}")
+
+    if issues:
+        for issue in issues:
+            print(f"warning: {issue}", file=sys.stderr)
+        print("warning: wrote calibration because --force was set", file=sys.stderr)
+
     return 0
 
 

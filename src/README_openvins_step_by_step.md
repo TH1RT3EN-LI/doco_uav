@@ -1,21 +1,64 @@
-# OpenVINS 真机步骤
+# OpenVINS 标定与运行唯一流程
 
-## 1. 生成 bootstrap
+本文档定义当前项目唯一允许的 OpenVINS 工作流。
+
+## 1. 两套唯一真相
+
+```bash
+cd ~/uav_hw/src/workspace/doco_uav/src
+
+OV_ROOT=uav_bringup/config/openvins/orbbec_stereo_imu
+BOOT=$OV_ROOT/bootstrap
+FROZEN=$OV_ROOT/frozen_final
+```
+
+- `bootstrap/`：标定工作区，可以反复覆盖。
+- `frozen_final/`：运行配置区，所有真机运行入口默认只读这里。
+- 根目录 `orbbec_stereo_imu/*.yaml` / `*.pgm` 已不再是合法活动入口。
+
+## 2. 生成 bootstrap
+
+先起仅提供标定源数据的相机入口。
 
 ```bash
 cd ~/uav_hw
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 
-BOOT=src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap
-mkdir -p $BOOT
-
-python3 src/workspace/doco_uav/src/uav_bringup/scripts/generate_orbbec_openvins_bootstrap.py \
-  --camera-name uav_depth_camera \
-  --output-dir $BOOT
+ros2 launch uav_bringup openvins_orbbec_bootstrap_source.launch.py
 ```
 
-生成结果包含：
+这个 launch 固定开启：
+
+- `enable_depth=true`
+- `enable_publish_extrinsic=true`
+- `enable_sync_output_accel_gyro=true`
+- `enable_left_ir=true`
+- `enable_right_ir=true`
+- `enable_color=false`
+- `enable_point_cloud=false`
+
+然后在另一个终端生成 `bootstrap/` 工作区：
+
+```bash
+cd ~/uav_hw
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+
+ros2 run uav_bringup generate_orbbec_openvins_bootstrap.py
+```
+
+脚本固定只消费：
+
+- 左右 `CameraInfo`
+- `depth_to_left_ir`
+- `depth_to_right_ir`
+- `depth_to_gyro`
+- `/gyro_accel/sample` 这一套 gyro reference 语义
+
+缺这些输入会直接失败。`gyro/imu_info` 和 `accel/imu_info` 可以缺失，但会明确警告并回退到项目默认噪声值。
+
+生成完成后，`bootstrap/` 里应至少有：
 
 - `estimator_config.calibration.yaml`
 - `estimator_config.flight.yaml`
@@ -23,81 +66,86 @@ python3 src/workspace/doco_uav/src/uav_bringup/scripts/generate_orbbec_openvins_
 - `kalibr_imu_chain.yaml`
 - `mask0.pgm`
 - `mask1.pgm`
+- `bootstrap_summary.md`
 
-默认工作点：
-
-- 双 IR
-- `848x480 @ 30 Hz`
-- IMU `200 Hz`
-- `laser=false`
-- `ldp=false`
-- 在线标定只开外参与相机-IMU 时间偏移，不开内参
-
-## 2. 在线标定
+## 3. 运行在线标定
 
 ```bash
 cd ~/uav_hw
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 
-CFG=src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/estimator_config.calibration.yaml
+STATE=/tmp/openvins_orbbec_calibration
 
 ros2 launch uav_bringup openvins_orbbec_calibration.launch.py \
-  openvins_config_path:=$CFG
+  state_output_dir:=$STATE
 ```
 
-动作要求（参考 Fast-Drone-250 的手持标定节奏，但保持当前求解器仍为 OpenVINS）：
+这个标定 launch 会强制：
 
-- 开头静止 `2 ~ 3 s`；这套 calibration 配置允许静止初始化
-- 阶段 2：给一次短促小范围 6DoF 激励，保证初始化
-- 阶段 3：围绕 Aprilgrid 或强纹理区域做低加速度全方向移动
-- 阶段 4：近处和远处都覆盖，避免只在单一深度层移动
-- 阶段 5：回到接近起点位置，形成小闭环
-- 若未起，再给一次短促平移或小角度转动；不要长时间连续乱晃
+- `openvins_save_total_state=true`
+- `openvins_publish_calibration_tf=true`
+- `publish_px4_external_vision=false`
+- `enable_depth=true`
+- `enable_publish_extrinsic=true`
+- `enable_sync_output_accel_gyro=true`
 
-## 3. 保存一轮结果
+它不会再暴露会破坏标定语义的旧默认开关。
+
+## 4. 把结果原地 apply 回 bootstrap
 
 ```bash
 cd ~/uav_hw
+source /opt/ros/humble/setup.bash
+source install/setup.bash
 
-BOOT=src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap
-STATE=/tmp/openvins_orbbec_calibration/ov_estimate.txt
-OUT=$BOOT/round_01_applied.yaml
+STATE=/tmp/openvins_orbbec_calibration
+OV_ROOT=src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu
+BOOT=$OV_ROOT/bootstrap
 
-python3 src/workspace/doco_uav/src/uav_bringup/scripts/apply_openvins_calibration_result.py \
-  --state-estimate-path $STATE \
+ros2 run uav_bringup apply_openvins_calibration_result.py \
+  --state-estimate-path $STATE/ov_estimate.txt \
+  --input-imucam-yaml $BOOT/kalibr_imucam_chain.yaml
+```
+
+默认行为就是**原地覆盖** `bootstrap/kalibr_imucam_chain.yaml`。
+
+脚本默认会在以下情况直接非零退出，并拒绝写回：
+
+- 最终速度过高
+- stereo baseline 变化过大
+- stereo relative rotation 变化过大
+
+只有显式传 `--force` 才允许绕过：
+
+```bash
+ros2 run uav_bringup apply_openvins_calibration_result.py \
+  --state-estimate-path $STATE/ov_estimate.txt \
   --input-imucam-yaml $BOOT/kalibr_imucam_chain.yaml \
-  --output-imucam-yaml $OUT
+  --force
 ```
 
-对比：
+## 5. 多轮收敛
 
-```bash
-diff -u $BOOT/kalibr_imucam_chain.yaml $OUT
-```
+多轮标定时，重复下面两步：
 
-建议只做 `2 ~ 3` 轮。停止条件：
+1. 重新运行 `openvins_orbbec_calibration.launch.py`
+2. 再次把最新结果原地 apply 回 `bootstrap/kalibr_imucam_chain.yaml`
 
-- 相邻两轮旋转变化 `< 0.5 deg`
-- 相邻两轮平移变化 `< 0.005 m`
-- `timeshift_cam_imu` 变化 `< 0.0005 s`
+不再使用 `round_01_applied.yaml` 这类旁路文件作为默认工作流。
 
-常见失败模式：
+## 6. freeze 到运行目录
 
-- `not enough feats to compute disp`：亮度、纹理、mask 或视野有问题
-- `platform moving too much`：连续大幅运动过久
-- `no accel jerk detected`：已静止但缺启动动作，或当前档位仍在等待静止初始化
-
-## 4. 冻结到飞行目录
-
-确认收敛后覆盖：
+确认标定收敛后，再一次性冻结到运行目录：
 
 ```bash
 cd ~/uav_hw
 
-BOOT=src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap
-FROZEN=src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final
+OV_ROOT=src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu
+BOOT=$OV_ROOT/bootstrap
+FROZEN=$OV_ROOT/frozen_final
 
+mkdir -p $FROZEN
 cp $BOOT/estimator_config.flight.yaml $FROZEN/estimator_config.flight.yaml
 cp $BOOT/kalibr_imucam_chain.yaml $FROZEN/kalibr_imucam_chain.yaml
 cp $BOOT/kalibr_imu_chain.yaml $FROZEN/kalibr_imu_chain.yaml
@@ -105,9 +153,11 @@ cp $BOOT/mask0.pgm $FROZEN/mask0.pgm
 cp $BOOT/mask1.pgm $FROZEN/mask1.pgm
 ```
 
-## 5. 真机启动 OpenVINS + PX4 融合
+冻结完成后，运行态只认 `frozen_final/`。
 
-当前默认入口直接使用 `frozen_final/estimator_config.flight.yaml`，并默认发布到 PX4：
+## 7. 真机运行
+
+运行阶段默认入口：
 
 ```bash
 cd ~/uav_hw
@@ -117,59 +167,44 @@ source install/setup.bash
 ros2 launch uav_bringup openvins_orbbec.launch.py
 ```
 
-如果桥接姿态和真实挂载不一致，再显式传：
+或者由最小控制入口带起：
 
 ```bash
-sensor_roll_in_body_rad:=... \
-sensor_pitch_in_body_rad:=... \
-sensor_yaw_in_body_rad:=...
+cd ~/uav_hw
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+
+ros2 launch uav_bringup minimal_control.launch.py \
+  start_openvins_orbbec:=true
 ```
 
-当前默认相机参数已经收口为：
+这两个入口默认都读取：
 
-- `left_ir_format:=Y8`
-- `right_ir_format:=Y8`
-- `enable_ir_auto_exposure:=true`
-- `ir_brightness:=255`
-- `enable_laser:=false`
-- `enable_ldp:=false`
+- `uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/estimator_config.flight.yaml`
 
-校准档默认也使用自动曝光；飞行档默认自动曝光。如果快速运动时拖影明显，再手动压曝光：
+## 8. 运行阶段硬规则
 
-```bash
-ros2 launch uav_bringup openvins_orbbec.launch.py \
-  enable_ir_auto_exposure:=false \
-  ir_exposure:=4000 \
-  ir_gain:=16
-```
+- 运行阶段不允许开启 `calib_cam_extrinsics`
+- 运行阶段不允许开启 `calib_cam_timeoffset`
+- 不允许再把 `bootstrap/` 当运行目录
+- 不允许再恢复根目录 `orbbec_stereo_imu/*.yaml` / `*.pgm` 活动副本
 
-## 6. 手持验证
-
-先只看 OpenVINS，不先看 PX4：
-
-```bash
-ros2 topic echo --once /ov_msckf/odomimu
-```
-
-目标：
-
-- 静止时不持续发散
-- 手持走 `1 m`，估计位移同量级
-- 做 `2 m x 2 m` 小闭环，回环误差明显小于之前
-
-图像下方两侧的浅灰机体侵入区域已经默认用 `mask0.pgm` 和 `mask1.pgm` 屏蔽。
-
-## 7. 固化到 Git
+## 9. 快速自检
 
 ```bash
 cd ~/uav_hw/src/workspace/doco_uav/src
 
-git add \
-  uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/estimator_config.flight.yaml \
-  uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/kalibr_imucam_chain.yaml \
-  uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/kalibr_imu_chain.yaml \
-  uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/mask0.pgm \
-  uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/mask1.pgm
+find uav_bringup/config/openvins/orbbec_stereo_imu -maxdepth 2 -type f | sort
 ```
 
-如果当前工作区不是 `--symlink-install`，改完 launch 和 share 目录文件后需要重新 build 再 `source install/setup.bash`。
+你应当看到：
+
+- `bootstrap/` 下的工作文件
+- `frozen_final/` 下的运行文件
+
+但不应再看到根目录活动版：
+
+- 根目录旧的运行配置 YAML
+- 根目录旧的相机-IMU 链 YAML
+- 根目录旧的 IMU 链 YAML
+- 根目录旧的遮罩文件

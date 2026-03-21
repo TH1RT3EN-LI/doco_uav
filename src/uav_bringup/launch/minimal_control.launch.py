@@ -362,7 +362,12 @@ def generate_launch_description():
         DeclareLaunchArgument(
             "openvins_orbbec_config_path",
             default_value=os.path.join(
-                bringup_share, "config", "openvins", "orbbec_stereo_imu", "estimator_config.yaml"
+                bringup_share,
+                "config",
+                "openvins",
+                "orbbec_stereo_imu",
+                "frozen_final",
+                "estimator_config.flight.yaml",
             ),
         ),
         DeclareLaunchArgument("openvins_sensor_roll_in_body_rad", default_value="0.0"),

@@ -1,6 +1,20 @@
 # OpenVINS 离线标定
 
-## 1. 目标板
+本文档描述离线 Kalibr 工作流如何接入当前的双目录模型。
+
+## 1. 目录约定
+
+```bash
+cd ~/uav_hw/src/workspace/doco_uav/src
+
+OV_ROOT=uav_bringup/config/openvins/orbbec_stereo_imu
+BOOT=$OV_ROOT/bootstrap
+FROZEN=$OV_ROOT/frozen_final
+```
+
+离线标定结果先回写到 `bootstrap/`，确认无误后再 freeze 到 `frozen_final/`。
+
+## 2. 目标板
 
 当前使用 `Aprilgrid 6x6`。
 
@@ -26,7 +40,7 @@ tagSpacing: 0.3
 YAML
 ```
 
-## 2. 录数据
+## 3. 录数据
 
 ### 双目静态
 
@@ -73,7 +87,7 @@ ros2 bag record --storage sqlite3 \
   /uav_depth_camera/gyro_accel/sample
 ```
 
-## 3. 转 rosbag1
+## 4. 转 rosbag1
 
 ```bash
 cd ~/uav_hw
@@ -94,7 +108,7 @@ CALIB=calib/gemini336_batch_01
   --dst $CALIB/bags_ros1/imu_allan.bag
 ```
 
-## 4. 跑 Kalibr
+## 5. 跑 Kalibr
 
 ### 双目标定
 
@@ -117,9 +131,11 @@ kalibr_calibrate_cameras \
 cd ~/uav_hw
 
 OV_ROOT=src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu
+BOOT=$OV_ROOT/bootstrap
 CALIB=calib/gemini336_batch_01
 
-cp $OV_ROOT/kalibr_imu_chain.yaml $CALIB/results_imucam/imu_initial.yaml
+mkdir -p $CALIB/results_imucam
+cp $BOOT/kalibr_imu_chain.yaml $CALIB/results_imucam/imu_initial.yaml
 
 kalibr_calibrate_imu_camera \
   --bag $CALIB/bags_ros1/vi_dynamic.bag \
@@ -129,19 +145,29 @@ kalibr_calibrate_imu_camera \
   --output-folder $CALIB/results_imucam
 ```
 
-## 5. 回写项目并冻结
+## 6. 回写 bootstrap 并 freeze
 
 ```bash
 cd ~/uav_hw
 
 OV_ROOT=src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu
+BOOT=$OV_ROOT/bootstrap
 FROZEN=$OV_ROOT/frozen_final
 CALIB=calib/gemini336_batch_01
 
-cp $CALIB/results_imucam/camchain-imucam-vi_dynamic.yaml $OV_ROOT/kalibr_imucam_chain.yaml
-cp $CALIB/results_imucam/imu_initial.yaml $OV_ROOT/kalibr_imu_chain.yaml
+cp $CALIB/results_imucam/camchain-imucam-vi_dynamic.yaml $BOOT/kalibr_imucam_chain.yaml
+cp $CALIB/results_imucam/imu_initial.yaml $BOOT/kalibr_imu_chain.yaml
 
 mkdir -p $FROZEN
-cp $OV_ROOT/kalibr_imucam_chain.yaml $FROZEN/kalibr_imucam_chain.yaml
-cp $OV_ROOT/kalibr_imu_chain.yaml $FROZEN/kalibr_imu_chain.yaml
+cp $BOOT/estimator_config.flight.yaml $FROZEN/estimator_config.flight.yaml
+cp $BOOT/kalibr_imucam_chain.yaml $FROZEN/kalibr_imucam_chain.yaml
+cp $BOOT/kalibr_imu_chain.yaml $FROZEN/kalibr_imu_chain.yaml
+cp $BOOT/mask0.pgm $FROZEN/mask0.pgm
+cp $BOOT/mask1.pgm $FROZEN/mask1.pgm
 ```
+
+## 7. 规则
+
+- 不再把离线结果先写到根目录 `orbbec_stereo_imu/*.yaml`
+- 离线标定也要先进入 `bootstrap/`
+- 真机运行仍然只读 `frozen_final/`
