@@ -33,7 +33,7 @@
 
 ## 5. freeze 与运行
 
-- [ ] 我会先在 `bootstrap/` 收敛，再一次性复制到 `frozen_final/`。
+- [ ] 我会先在 `bootstrap/` 收敛，再用 `freeze_openvins_orbbec_config.py` 冻结到 `frozen_final/`。
 - [ ] 我知道 `openvins_orbbec.launch.py` 默认只读 `frozen_final/estimator_config.flight.yaml`。
 - [ ] 我知道 `minimal_control.launch.py` 默认也只读 `frozen_final/estimator_config.flight.yaml`。
 - [ ] 我知道运行阶段必须保持 `calib_cam_extrinsics=false`。

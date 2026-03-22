@@ -144,6 +144,7 @@ ament_target_dependencies(openvins_px4_vision_bridge_node
   nav_msgs
   px4_msgs
   rclcpp
+  std_msgs
   tf2
 )
 

@@ -38,6 +38,13 @@ class UavControlNode : public rclcpp::Node
     GazeboSim = 1,
   };
 
+  enum class PreTakeoffResetState : uint8_t
+  {
+    Idle = 0,
+    RequestInFlight = 1,
+    WaitingForRecovery = 2,
+  };
+
 public:
   UavControlNode()
   : Node("uav_control_node")
@@ -56,6 +63,7 @@ public:
     this->declare_parameter<std::string>("land_service", "/uav/control/command/land");
     this->declare_parameter<std::string>("abort_service", "/uav/control/command/abort");
     this->declare_parameter<std::string>("disarm_service", "/uav/control/command/disarm");
+    this->declare_parameter<std::string>("pre_takeoff_reset_service", "");
     this->declare_parameter<double>("publish_rate_hz", 50.0);
     this->declare_parameter<int>("warmup_cycles", 20);
     this->declare_parameter<int>("target_system", 1);
@@ -92,6 +100,7 @@ public:
     land_service_ = this->get_parameter("land_service").as_string();
     abort_service_ = this->get_parameter("abort_service").as_string();
     disarm_service_ = this->get_parameter("disarm_service").as_string();
+    pre_takeoff_reset_service_ = this->get_parameter("pre_takeoff_reset_service").as_string();
     publish_rate_hz_ = this->get_parameter("publish_rate_hz").as_double();
     warmup_cycles_ = this->get_parameter("warmup_cycles").as_int();
     target_system_ = static_cast<uint8_t>(this->get_parameter("target_system").as_int());
@@ -130,6 +139,10 @@ public:
     trajectory_setpoint_pub_ = this->create_publisher<px4_msgs::msg::TrajectorySetpoint>(trajectory_setpoint_topic_, 10);
     vehicle_command_pub_ = this->create_publisher<px4_msgs::msg::VehicleCommand>(vehicle_command_topic_, 10);
 
+    if (!pre_takeoff_reset_service_.empty()) {
+      pre_takeoff_reset_client_ = this->create_client<Trigger>(pre_takeoff_reset_service_);
+    }
+
     auto velocity_body_qos = rclcpp::SensorDataQoS();
     velocity_body_qos.keep_last(1);
 
@@ -150,6 +163,7 @@ public:
       state_topic_, rclcpp::SensorDataQoS(),
       [this](const nav_msgs::msg::Odometry::SharedPtr msg)
       {
+        const auto received_at = this->now();
         const bool has_stamp =
           (msg->header.stamp.sec != 0) || (msg->header.stamp.nanosec != 0);
         current_position_enu_ = {
@@ -165,6 +179,7 @@ public:
         current_orientation_enu_flu_.normalize();
         current_state_frame_id_ = msg->header.frame_id;
         last_state_time_ = has_stamp ? rclcpp::Time(msg->header.stamp) : this->now();
+        last_state_receive_time_ = received_at;
         has_state_ = true;
       });
 
@@ -172,6 +187,7 @@ public:
       px4_local_position_topic_, rclcpp::SensorDataQoS(),
       [this](const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg)
       {
+        last_px4_local_position_receive_time_ = this->now();
         has_local_position_ = msg->xy_valid && msg->z_valid;
         has_local_velocity_ = hasValidVelocityEstimate(
           msg->v_xy_valid, msg->v_z_valid,
@@ -239,12 +255,15 @@ public:
       std::chrono::duration<double>(1.0 / publish_rate_hz_));
     timer_ = this->create_wall_timer(timer_period, std::bind(&UavControlNode::timerCallback, this));
 
+    const char * pre_takeoff_reset_label =
+      pre_takeoff_reset_service_.empty() ? "<disabled>" : pre_takeoff_reset_service_.c_str();
     RCLCPP_INFO(
       this->get_logger(),
-      "uav_control_node: position=%s velocity_body=%s state=%s takeoff=%s hold=%s position_mode=%s land=%s abort=%s disarm=%s",
+      "uav_control_node: position=%s velocity_body=%s state=%s takeoff=%s hold=%s position_mode=%s land=%s abort=%s disarm=%s pre_takeoff_reset=%s",
       position_topic_.c_str(), velocity_body_topic_.c_str(), state_topic_.c_str(),
       takeoff_service_.c_str(), hold_service_.c_str(), position_mode_service_.c_str(),
-      land_service_.c_str(), abort_service_.c_str(), disarm_service_.c_str());
+      land_service_.c_str(), abort_service_.c_str(), disarm_service_.c_str(),
+      pre_takeoff_reset_label);
   }
 
 private:
@@ -270,6 +289,30 @@ private:
   void resetWarmup()
   {
     setpoint_counter_ = 0;
+  }
+
+  void clearPendingPreTakeoffResetState()
+  {
+    pre_takeoff_reset_state_ = PreTakeoffResetState::Idle;
+    active_pre_takeoff_reset_request_id_ = 0;
+    reset_completed_at_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+  }
+
+  void cancelPendingPreTakeoffReset(const char * reason)
+  {
+    if (pre_takeoff_reset_state_ == PreTakeoffResetState::Idle) {
+      return;
+    }
+    RCLCPP_INFO(
+      this->get_logger(),
+      "canceling pending pre-takeoff OpenVINS reset (%s)",
+      reason);
+    clearPendingPreTakeoffResetState();
+  }
+
+  bool preTakeoffResetPending() const
+  {
+    return pre_takeoff_reset_state_ != PreTakeoffResetState::Idle;
   }
 
   void clearManualCommands()
@@ -324,6 +367,23 @@ private:
     return isPx4ExecutionReady() && has_local_velocity_;
   }
 
+  bool preTakeoffRecoveryReady() const
+  {
+    if (pre_takeoff_reset_state_ != PreTakeoffResetState::WaitingForRecovery) {
+      return false;
+    }
+    if (reset_completed_at_.nanoseconds() == 0) {
+      return false;
+    }
+    if (last_state_receive_time_.nanoseconds() <= reset_completed_at_.nanoseconds()) {
+      return false;
+    }
+    if (last_px4_local_position_receive_time_.nanoseconds() <= reset_completed_at_.nanoseconds()) {
+      return false;
+    }
+    return isPx4ExecutionReady();
+  }
+
   bool stateFresh() const
   {
     if (!has_state_ || last_state_time_.nanoseconds() == 0) {
@@ -362,11 +422,81 @@ private:
 
   void requestPx4PositionMode(const char * reason)
   {
+    cancelPendingPreTakeoffReset(reason);
     const auto previous = mode_tracker_.mode();
     mode_tracker_.requestPx4PositionHold();
     position_mode_retry_counter_ = 0;
     clearManualCommands();
     logModeChange(previous, reason);
+  }
+
+  void handlePreTakeoffResetResponse(
+    uint64_t request_id,
+    rclcpp::Client<Trigger>::SharedFuture future)
+  {
+    if (request_id == 0 || request_id != active_pre_takeoff_reset_request_id_) {
+      return;
+    }
+
+    try {
+      const auto response = future.get();
+      if (!response->success) {
+        RCLCPP_ERROR(
+          this->get_logger(),
+          "pre-takeoff OpenVINS reset failed on %s: %s",
+          pre_takeoff_reset_service_.c_str(), response->message.c_str());
+        clearPendingPreTakeoffResetState();
+        return;
+      }
+    } catch (const std::exception & error) {
+      RCLCPP_ERROR(
+        this->get_logger(),
+        "pre-takeoff OpenVINS reset request raised an exception: %s",
+        error.what());
+      clearPendingPreTakeoffResetState();
+      return;
+    }
+
+    pre_takeoff_reset_state_ = PreTakeoffResetState::WaitingForRecovery;
+    reset_completed_at_ = this->now();
+    resetWarmup();
+    RCLCPP_INFO(
+      this->get_logger(),
+      "OpenVINS reset completed, waiting for fresh odometry and PX4 local position before takeoff");
+  }
+
+  bool startTakeoff(const char * reason, std::string & message)
+  {
+    if (!captureCurrentPose(message)) {
+      return false;
+    }
+    hold_target_position_enu_[2] += takeoff_height_m_;
+    takeoff_reached_since_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+    const auto previous = mode_tracker_.mode();
+    mode_tracker_.requestTakeoff();
+    logModeChange(previous, reason);
+    message = "takeoff started";
+    return true;
+  }
+
+  void maybeStartTakeoffAfterPreReset()
+  {
+    if (!preTakeoffRecoveryReady()) {
+      return;
+    }
+
+    std::string message;
+    if (!startTakeoff("takeoff after OpenVINS reset", message)) {
+      RCLCPP_WARN(
+        this->get_logger(),
+        "canceling pending takeoff after OpenVINS reset: %s",
+        message.c_str());
+      clearPendingPreTakeoffResetState();
+      return;
+    }
+
+    clearPendingPreTakeoffResetState();
+    RCLCPP_INFO(this->get_logger(), "OpenVINS reset recovery complete, %s", message.c_str());
   }
 
   void maybeEnableOffboardAndArm()
@@ -553,6 +683,7 @@ private:
       return;
     }
 
+    cancelPendingPreTakeoffReset("position target");
     position_target_position_enu_ = {
       static_cast<float>(msg.pose.position.x),
       static_cast<float>(msg.pose.position.y),
@@ -610,6 +741,7 @@ private:
       return;
     }
 
+    cancelPendingPreTakeoffReset("velocity body command");
     last_velocity_body_cmd_ = msg;
     last_velocity_body_time_us_ = nowMicros();
     has_velocity_body_cmd_ = true;
@@ -620,20 +752,47 @@ private:
 
   bool handleTakeoffRequest(std::string & message)
   {
-    if (!captureCurrentPose(message)) {
+    if (pre_takeoff_reset_service_.empty()) {
+      return startTakeoff("takeoff", message);
+    }
+
+    if (preTakeoffResetPending()) {
+      message = "takeoff already pending pre-takeoff OpenVINS reset";
       return false;
     }
-    hold_target_position_enu_[2] += takeoff_height_m_;
-    takeoff_reached_since_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
-    const auto previous = mode_tracker_.mode();
-    mode_tracker_.requestTakeoff();
-    logModeChange(previous, "takeoff");
-    message = "takeoff started";
+    if (!pre_takeoff_reset_client_) {
+      message = "pre-takeoff OpenVINS reset client is not available";
+      return false;
+    }
+    if (!pre_takeoff_reset_client_->service_is_ready()) {
+      message = "pre-takeoff OpenVINS reset service is not ready";
+      return false;
+    }
+
+    try {
+      const uint64_t request_id = ++pre_takeoff_reset_request_sequence_;
+      active_pre_takeoff_reset_request_id_ = request_id;
+      pre_takeoff_reset_state_ = PreTakeoffResetState::RequestInFlight;
+      auto request = std::make_shared<Trigger::Request>();
+      pre_takeoff_reset_client_->async_send_request(
+        request,
+        [this, request_id](rclcpp::Client<Trigger>::SharedFuture future)
+        {
+          handlePreTakeoffResetResponse(request_id, future);
+        });
+    } catch (const std::exception & error) {
+      clearPendingPreTakeoffResetState();
+      message = std::string("failed to queue pre-takeoff OpenVINS reset: ") + error.what();
+      return false;
+    }
+
+    message = "takeoff queued: resetting OpenVINS before arming";
     return true;
   }
 
   bool handleHoldRequest(std::string & message)
   {
+    cancelPendingPreTakeoffReset("hold request");
     if (!captureCurrentPose(message)) {
       return false;
     }
@@ -646,6 +805,7 @@ private:
 
   bool handleLandRequest(std::string & message)
   {
+    cancelPendingPreTakeoffReset("land request");
     const auto previous = mode_tracker_.mode();
     mode_tracker_.requestLanding();
     land_command_sent_ = false;
@@ -787,6 +947,8 @@ private:
 
   void timerCallback()
   {
+    maybeStartTakeoffAfterPreReset();
+
     switch (mode_tracker_.mode()) {
       case UavControlMode::Hold:
         publishHoldTarget();
@@ -823,6 +985,7 @@ private:
   std::string land_service_;
   std::string abort_service_;
   std::string disarm_service_;
+  std::string pre_takeoff_reset_service_;
   std::string base_frame_id_;
   std::string position_command_frame_id_;
   std::string gz_world_name_;
@@ -868,9 +1031,15 @@ private:
   float position_target_yaw_enu_{0.0f};
   bool position_target_valid_{false};
   rclcpp::Time last_state_time_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time last_state_receive_time_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time last_px4_local_position_receive_time_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time reset_completed_at_{0, 0, RCL_ROS_TIME};
   rclcpp::Time takeoff_reached_since_{0, 0, RCL_ROS_TIME};
   int setpoint_counter_{0};
   int position_mode_retry_counter_{0};
+  PreTakeoffResetState pre_takeoff_reset_state_{PreTakeoffResetState::Idle};
+  uint64_t pre_takeoff_reset_request_sequence_{0};
+  uint64_t active_pre_takeoff_reset_request_id_{0};
   bool land_command_sent_{false};
   int landing_retry_counter_{0};
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr position_sub_;
@@ -881,6 +1050,7 @@ private:
   rclcpp::Publisher<px4_msgs::msg::OffboardControlMode>::SharedPtr offboard_mode_pub_;
   rclcpp::Publisher<px4_msgs::msg::TrajectorySetpoint>::SharedPtr trajectory_setpoint_pub_;
   rclcpp::Publisher<px4_msgs::msg::VehicleCommand>::SharedPtr vehicle_command_pub_;
+  rclcpp::Client<Trigger>::SharedPtr pre_takeoff_reset_client_;
   rclcpp::Service<Trigger>::SharedPtr takeoff_srv_;
   rclcpp::Service<Trigger>::SharedPtr hold_srv_;
   rclcpp::Service<Trigger>::SharedPtr position_mode_srv_;

@@ -9,6 +9,7 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <px4_msgs/msg/vehicle_odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/empty.hpp>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
 
@@ -38,6 +39,7 @@ public:
     this->declare_parameter<int>("quality", 100);
     this->declare_parameter<bool>("use_odometry_stamp_for_timestamp_sample", true);
     this->declare_parameter<bool>("log_debug", false);
+    this->declare_parameter<std::string>("reset_counter_bump_topic", "");
 
     odometry_topic_ = this->get_parameter("odometry_topic").as_string();
     visual_odometry_topic_ = this->get_parameter("visual_odometry_topic").as_string();
@@ -56,6 +58,7 @@ public:
     use_odometry_stamp_for_timestamp_sample_ =
       this->get_parameter("use_odometry_stamp_for_timestamp_sample").as_bool();
     log_debug_ = this->get_parameter("log_debug").as_bool();
+    reset_counter_bump_topic_ = this->get_parameter("reset_counter_bump_topic").as_string();
 
     sensor_rotation_in_body_.setRPY(
       sensor_roll_in_body_rad_, sensor_pitch_in_body_rad_, sensor_yaw_in_body_rad_);
@@ -64,6 +67,20 @@ public:
     odometry_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
       odometry_topic_, rclcpp::SensorDataQoS(),
       std::bind(&OpenVinsPx4VisionBridgeNode::odometryCallback, this, std::placeholders::_1));
+
+    if (!reset_counter_bump_topic_.empty()) {
+      reset_counter_bump_sub_ = this->create_subscription<std_msgs::msg::Empty>(
+        reset_counter_bump_topic_, rclcpp::QoS(10),
+        [this](const std_msgs::msg::Empty::SharedPtr)
+        {
+          ++reset_counter_;
+          last_timestamp_sample_ = 0U;
+          RCLCPP_INFO(
+            this->get_logger(),
+            "received OpenVINS reset counter bump, reset_counter=%u",
+            reset_counter_);
+        });
+    }
 
     visual_odometry_pub_ = this->create_publisher<px4_msgs::msg::VehicleOdometry>(
       visual_odometry_topic_, rclcpp::SensorDataQoS());
@@ -249,10 +266,12 @@ private:
   int quality_{100};
   bool use_odometry_stamp_for_timestamp_sample_{true};
   bool log_debug_{false};
+  std::string reset_counter_bump_topic_;
   uint64_t last_timestamp_sample_{0U};
   uint8_t reset_counter_{0U};
   tf2::Quaternion sensor_rotation_in_body_{0.0, 0.0, 0.0, 1.0};
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odometry_sub_;
+  rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr reset_counter_bump_sub_;
   rclcpp::Publisher<px4_msgs::msg::VehicleOdometry>::SharedPtr visual_odometry_pub_;
 };
 

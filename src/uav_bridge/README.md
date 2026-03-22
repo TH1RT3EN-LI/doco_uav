@@ -294,6 +294,7 @@ ros2 service call /uav/control/takeoff std_srvs/srv/Trigger "{}"
 - 读取当前 `/uav/odom`
 - 保持当前 `x/y/yaw`
 - 目标 `z += takeoff_height_m`
+- 如果配置了 `pre_takeoff_reset_service`，会先异步调用该 `Trigger` 服务，等 reset 完成后收到 reset 之后的新 `/uav/state/odometry` 和 PX4 local position，再进入原有起飞 warmup / arm 流程
 
 注意：
 

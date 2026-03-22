@@ -140,17 +140,24 @@ ros2 run uav_bringup apply_openvins_calibration_result.py \
 
 ```bash
 cd ~/uav_hw
+source /opt/ros/humble/setup.bash
+source install/setup.bash
 
-OV_ROOT=src/workspace/doco_uav/src/uav_bringup/config/openvins/orbbec_stereo_imu
-BOOT=$OV_ROOT/bootstrap
-FROZEN=$OV_ROOT/frozen_final
+ros2 run uav_bringup freeze_openvins_orbbec_config.py
+```
 
-mkdir -p $FROZEN
-cp $BOOT/estimator_config.flight.yaml $FROZEN/estimator_config.flight.yaml
-cp $BOOT/kalibr_imucam_chain.yaml $FROZEN/kalibr_imucam_chain.yaml
-cp $BOOT/kalibr_imu_chain.yaml $FROZEN/kalibr_imu_chain.yaml
-cp $BOOT/mask0.pgm $FROZEN/mask0.pgm
-cp $BOOT/mask1.pgm $FROZEN/mask1.pgm
+这个脚本会：
+
+- 检查 `bootstrap/` 下 5 个运行必需文件是否齐全
+- 检查运行态配置里 `calib_cam_extrinsics=false`
+- 检查运行态配置里 `calib_cam_timeoffset=false`
+- 检查相对配置路径和遮罩路径仍然指向当前目录内文件
+- 然后把 `bootstrap/` 的运行文件复制到 `frozen_final/`
+
+如果你明确知道自己在做什么，也可以强制覆盖：
+
+```bash
+ros2 run uav_bringup freeze_openvins_orbbec_config.py --force
 ```
 
 冻结完成后，运行态只认 `frozen_final/`。
@@ -167,6 +174,17 @@ source install/setup.bash
 ros2 launch uav_bringup openvins_orbbec.launch.py
 ```
 
+运行中如果需要重置 OpenVINS 状态，可调用：
+
+```bash
+ros2 service call /ov_msckf/reset std_srvs/srv/Trigger "{}"
+```
+
+这个入口会：
+
+- 重启 `ov_msckf/run_subscribe_msckf`
+- 同时通知 PX4 外部视觉桥接链路递增 `reset_counter`
+
 或者由最小控制入口带起：
 
 ```bash
@@ -174,9 +192,12 @@ cd ~/uav_hw
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 
-ros2 launch uav_bringup minimal_control.launch.py \
-  start_openvins_orbbec:=true
+ros2 launch uav_bringup minimal_control.launch.py
 ```
+
+`minimal_control.launch.py` 现在默认就会带起 Orbbec + OpenVINS。
+
+如果 `start_openvins_orbbec=true`，`/uav/control/command/takeoff` 在第一次自动 arm 前会先调用一次 `/<openvins_namespace>/reset`，等 `/uav/state/odometry` 和 PX4 local position 都恢复到 reset 之后的新输出，再继续原有 warmup / arm 流程。
 
 这两个入口默认都读取：
 

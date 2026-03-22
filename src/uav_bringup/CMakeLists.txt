@@ -15,7 +15,10 @@ install(DIRECTORY
 install(PROGRAMS
   scripts/generate_orbbec_openvins_bootstrap.py
   scripts/apply_openvins_calibration_result.py
+  scripts/freeze_openvins_orbbec_config.py
+  scripts/home_visual_landing_test_node.py
   scripts/monitor_topic_position.py
+  scripts/openvins_supervisor.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

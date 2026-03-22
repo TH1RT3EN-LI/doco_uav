@@ -158,12 +158,10 @@ CALIB=calib/gemini336_batch_01
 cp $CALIB/results_imucam/camchain-imucam-vi_dynamic.yaml $BOOT/kalibr_imucam_chain.yaml
 cp $CALIB/results_imucam/imu_initial.yaml $BOOT/kalibr_imu_chain.yaml
 
-mkdir -p $FROZEN
-cp $BOOT/estimator_config.flight.yaml $FROZEN/estimator_config.flight.yaml
-cp $BOOT/kalibr_imucam_chain.yaml $FROZEN/kalibr_imucam_chain.yaml
-cp $BOOT/kalibr_imu_chain.yaml $FROZEN/kalibr_imu_chain.yaml
-cp $BOOT/mask0.pgm $FROZEN/mask0.pgm
-cp $BOOT/mask1.pgm $FROZEN/mask1.pgm
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+
+ros2 run uav_bringup freeze_openvins_orbbec_config.py
 ```
 
 ## 7. 规则

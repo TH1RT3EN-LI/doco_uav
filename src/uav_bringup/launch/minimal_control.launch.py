@@ -154,6 +154,15 @@ def generate_launch_description():
     start_orbbec_camera_for_openvins = PythonExpression(
         ["'false' if '", start_orbbec_depth_camera, "' == 'true' else 'true'"]
     )
+    pre_takeoff_reset_service = PythonExpression(
+        [
+            "'' if '",
+            start_openvins_orbbec,
+            "'.lower() != 'true' else '/' + '",
+            openvins_orbbec_namespace,
+            "'.lstrip('/') + '/reset'",
+        ]
+    )
 
     mono_camera_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(bringup_share, "launch", "mono_camera.launch.py")),
@@ -329,6 +338,7 @@ def generate_launch_description():
             {"land_service": "/uav/control/command/land"},
             {"abort_service": "/uav/control/command/abort"},
             {"disarm_service": "/uav/control/command/disarm"},
+            {"pre_takeoff_reset_service": pre_takeoff_reset_service},
             {"takeoff_height_m": takeoff_height_m},
             {"max_velocity_setpoint_mps": max_velocity_setpoint_mps},
             {"max_acceleration_setpoint_mps2": max_acceleration_setpoint_mps2},
@@ -356,7 +366,7 @@ def generate_launch_description():
         DeclareLaunchArgument("max_acceleration_setpoint_mps2", default_value="0.60"),
         DeclareLaunchArgument("start_mono_camera", default_value="true"),
         DeclareLaunchArgument("start_orbbec_depth_camera", default_value="false"),
-        DeclareLaunchArgument("start_openvins_orbbec", default_value="false"),
+        DeclareLaunchArgument("start_openvins_orbbec", default_value="true"),
         DeclareLaunchArgument("publish_px4_external_vision", default_value="true"),
         DeclareLaunchArgument("openvins_orbbec_namespace", default_value="ov_msckf"),
         DeclareLaunchArgument(

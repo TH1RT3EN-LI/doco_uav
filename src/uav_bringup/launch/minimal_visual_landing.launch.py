@@ -33,6 +33,13 @@ def generate_launch_description():
     record_video_output_path = LaunchConfiguration("record_video_output_path")
     record_video_fps = LaunchConfiguration("record_video_fps")
     record_video_fourcc = LaunchConfiguration("record_video_fourcc")
+    start_openvins_orbbec = LaunchConfiguration("start_openvins_orbbec")
+    publish_px4_external_vision = LaunchConfiguration("publish_px4_external_vision")
+    openvins_orbbec_namespace = LaunchConfiguration("openvins_orbbec_namespace")
+    openvins_orbbec_config_path = LaunchConfiguration("openvins_orbbec_config_path")
+    openvins_sensor_roll_in_body_rad = LaunchConfiguration("openvins_sensor_roll_in_body_rad")
+    openvins_sensor_pitch_in_body_rad = LaunchConfiguration("openvins_sensor_pitch_in_body_rad")
+    openvins_sensor_yaw_in_body_rad = LaunchConfiguration("openvins_sensor_yaw_in_body_rad")
 
     fmu_namespace = "/fmu"
     vehicle_local_position_topic = f"{fmu_namespace}/out/vehicle_local_position"
@@ -51,6 +58,13 @@ def generate_launch_description():
             "image_topic": MONO_IMAGE_TOPIC,
             "camera_info_topic": CAMERA_INFO_TOPIC,
             "record_mono_video": "false",
+            "start_openvins_orbbec": start_openvins_orbbec,
+            "publish_px4_external_vision": publish_px4_external_vision,
+            "openvins_orbbec_namespace": openvins_orbbec_namespace,
+            "openvins_orbbec_config_path": openvins_orbbec_config_path,
+            "openvins_sensor_roll_in_body_rad": openvins_sensor_roll_in_body_rad,
+            "openvins_sensor_pitch_in_body_rad": openvins_sensor_pitch_in_body_rad,
+            "openvins_sensor_yaw_in_body_rad": openvins_sensor_yaw_in_body_rad,
         }.items(),
     )
 
@@ -100,6 +114,25 @@ def generate_launch_description():
         ],
     )
 
+    home_visual_landing_test = Node(
+        package="uav_bringup",
+        executable="home_visual_landing_test_node.py",
+        name="home_visual_landing_test_node",
+        output="screen",
+        parameters=[
+            {"state_topic": "/uav/state/odometry"},
+            {"position_topic": "/uav/control/pose"},
+            {"takeoff_service": "/uav/control/command/takeoff"},
+            {"hold_service": "/uav/control/command/hold"},
+            {"visual_landing_start_service": "/uav/visual_landing/command/start"},
+            {"visual_landing_state_topic": CONTROLLER_STATE_TOPIC},
+            {"home_takeoff_service": "/uav/test/home_takeoff"},
+            {"home_visual_land_service": "/uav/test/home_visual_land"},
+            {"arrival_xy_tolerance_m": 0.15},
+            {"state_timeout_s": 0.20},
+        ],
+    )
+
     debug_video_recorder = Node(
         package="uav_bridge",
         executable="mono_video_recorder_node",
@@ -140,9 +173,27 @@ def generate_launch_description():
         DeclareLaunchArgument("record_video_output_path", default_value=default_recording_path),
         DeclareLaunchArgument("record_video_fps", default_value="30.0"),
         DeclareLaunchArgument("record_video_fourcc", default_value="MJPG"),
+        DeclareLaunchArgument("start_openvins_orbbec", default_value="true"),
+        DeclareLaunchArgument("publish_px4_external_vision", default_value="true"),
+        DeclareLaunchArgument("openvins_orbbec_namespace", default_value="ov_msckf"),
+        DeclareLaunchArgument(
+            "openvins_orbbec_config_path",
+            default_value=os.path.join(
+                bringup_share,
+                "config",
+                "openvins",
+                "orbbec_stereo_imu",
+                "frozen_final",
+                "estimator_config.flight.yaml",
+            ),
+        ),
+        DeclareLaunchArgument("openvins_sensor_roll_in_body_rad", default_value="0.0"),
+        DeclareLaunchArgument("openvins_sensor_pitch_in_body_rad", default_value="0.0"),
+        DeclareLaunchArgument("openvins_sensor_yaw_in_body_rad", default_value="0.0"),
         minimal_control_launch,
         aruco_detector,
         visual_landing,
+        home_visual_landing_test,
         debug_video_recorder,
         mono_video_recorder,
     ])

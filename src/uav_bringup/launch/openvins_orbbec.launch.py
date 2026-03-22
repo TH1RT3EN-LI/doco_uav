@@ -121,21 +121,23 @@ def generate_launch_description():
     )
 
     openvins_node = Node(
-        package="ov_msckf",
-        executable="run_subscribe_msckf",
+        package="uav_bringup",
+        executable="openvins_supervisor.py",
         condition=IfCondition(start_openvins),
         namespace=openvins_namespace,
+        name="openvins_supervisor",
         output="screen",
         parameters=[
+            {"child_namespace": openvins_namespace},
             {"verbosity": openvins_verbosity},
-            {"use_stereo": True},
-            {"max_cameras": 2},
             {"save_total_state": openvins_save_total_state},
             {"publish_calibration_tf": openvins_publish_calibration_tf},
             {"filepath_est": openvins_filepath_est},
             {"filepath_std": openvins_filepath_std},
             {"filepath_gt": openvins_filepath_gt},
             {"config_path": openvins_config_path},
+            {"reset_service_name": "reset"},
+            {"reset_counter_bump_topic": "reset_counter_bump"},
         ],
     )
 
@@ -153,6 +155,7 @@ def generate_launch_description():
             {"sensor_roll_in_body_rad": sensor_roll_in_body_rad},
             {"sensor_pitch_in_body_rad": sensor_pitch_in_body_rad},
             {"sensor_yaw_in_body_rad": sensor_yaw_in_body_rad},
+            {"reset_counter_bump_topic": ["/", openvins_namespace, "/reset_counter_bump"]},
         ],
     )
 

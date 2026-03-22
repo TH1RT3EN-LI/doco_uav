@@ -68,6 +68,15 @@ uav_bringup/config/openvins/orbbec_stereo_imu/
 - 遇到高 final speed / 几何突变时默认失败退出
 - 只有 `--force` 可以绕过
 
+### freeze 脚本
+
+`uav_bringup/scripts/freeze_openvins_orbbec_config.py`
+
+- 只把 `bootstrap/` 的运行文件冻结到 `frozen_final/`
+- 默认检查运行态配置是否仍然安全
+- 默认拒绝冻结错误打开了标定参数的 flight config
+- 只有 `--force` 可以绕过
+
 ### 运行入口
 
 - `uav_bringup/launch/openvins_orbbec.launch.py`
@@ -91,7 +100,7 @@ uav_bringup/config/openvins/orbbec_stereo_imu/
 3. 起 `openvins_orbbec_calibration.launch.py`
 4. 用 `apply_openvins_calibration_result.py` 原地写回 `bootstrap/kalibr_imucam_chain.yaml`
 5. 多轮重复 3-4 直到收敛
-6. 一次性复制到 `frozen_final/`
+6. 运行 `freeze_openvins_orbbec_config.py` 冻结到 `frozen_final/`
 7. 真机运行只读 `frozen_final/`
 
 ## 6. 运行态不可违反的约束
