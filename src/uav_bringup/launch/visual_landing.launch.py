@@ -83,7 +83,6 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {"namespaced_fmu_prefix": fmu_namespace},
-            {"global_fmu_prefix": "/fmu"},
         ],
     )
 
@@ -95,14 +94,6 @@ def generate_launch_description():
         parameters=[
             {"vehicle_local_position_topic": vehicle_local_position_topic},
             {"vehicle_odometry_topic": vehicle_odometry_topic},
-            {"output_odometry_topic": "/uav/state/odometry"},
-            {"map_frame_id": "uav_map"},
-            {"odom_frame_id": "uav_odom"},
-            {"base_frame_id": "uav_base_link"},
-            {"publish_rate_hz": 50.0},
-            {"publish_odometry": True},
-            {"publish_tf": True},
-            {"publish_map_to_odom_tf": True},
         ],
     )
 
@@ -112,19 +103,11 @@ def generate_launch_description():
         name="uav_control",
         output="screen",
         parameters=[
-            {"velocity_body_topic": "/uav/control/setpoint/velocity_body"},
-            {"state_topic": "/uav/state/odometry"},
             {"offboard_mode_topic": offboard_mode_topic},
             {"trajectory_setpoint_topic": trajectory_setpoint_topic},
             {"vehicle_command_topic": vehicle_command_topic},
             {"px4_local_position_topic": vehicle_local_position_topic},
             {"vehicle_status_topic": vehicle_status_topic},
-            {"takeoff_service": "/uav/control/command/takeoff"},
-            {"hold_service": "/uav/control/command/hold"},
-            {"position_mode_service": "/uav/control/command/position_mode"},
-            {"land_service": "/uav/control/command/land"},
-            {"abort_service": "/uav/control/command/abort"},
-            {"disarm_service": "/uav/control/command/disarm"},
         ],
     )
 
@@ -134,13 +117,8 @@ def generate_launch_description():
         name="aruco_detector_node",
         output="screen",
         parameters=[
-            {"target_marker_id": 0},
-            {"tag_size_m": 0.1625},
             {"image_topic": image_topic},
             {"camera_info_topic": camera_info_topic},
-            {"target_observation_topic": "/uav/visual_landing/target_observation"},
-            {"controller_state_topic": "/uav/visual_landing/controller_state"},
-            {"debug_image_topic": "/uav/visual_landing/debug_image"},
         ],
     )
 
@@ -151,17 +129,9 @@ def generate_launch_description():
         output="screen",
         parameters=[
             visual_landing_config,
-            {"target_observation_topic": "/uav/visual_landing/target_observation"},
-            {"state_topic": "/uav/state/odometry"},
-            {"velocity_body_topic": "/uav/control/setpoint/velocity_body"},
-            {"controller_state_topic": "/uav/visual_landing/controller_state"},
-            {"hold_service": "/uav/control/command/hold"},
-            {"land_service": "/uav/control/command/land"},
             {"height_measurement_mode": height_measurement_mode},
             {"range_topic": distance_sensor_topic},
             {"vehicle_local_position_topic": vehicle_local_position_topic},
-            {"start_service": "/uav/visual_landing/command/start"},
-            {"stop_service": "/uav/visual_landing/command/stop"},
         ],
     )
 

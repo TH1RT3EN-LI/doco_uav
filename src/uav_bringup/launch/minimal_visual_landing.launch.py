@@ -12,9 +12,6 @@ from launch_ros.actions import Node
 
 
 DEBUG_IMAGE_TOPIC = "/uav/visual_landing/debug_image"
-MONO_IMAGE_TOPIC = "/uav/camera/image_raw"
-CAMERA_INFO_TOPIC = "/uav/camera/camera_info"
-TARGET_OBSERVATION_TOPIC = "/uav/visual_landing/target_observation"
 CONTROLLER_STATE_TOPIC = "/uav/visual_landing/controller_state"
 
 
@@ -53,10 +50,7 @@ def generate_launch_description():
             os.path.join(bringup_share, "launch", "minimal_control.launch.py")
         ),
         launch_arguments={
-            "fmu_namespace": fmu_namespace,
             "takeoff_height_m": takeoff_height_m,
-            "image_topic": MONO_IMAGE_TOPIC,
-            "camera_info_topic": CAMERA_INFO_TOPIC,
             "record_mono_video": "false",
             "start_openvins_orbbec": start_openvins_orbbec,
             "publish_px4_external_vision": publish_px4_external_vision,
@@ -78,13 +72,7 @@ def generate_launch_description():
         name="aruco_detector_node",
         output="screen",
         parameters=[
-            {"target_marker_id": 0},
             {"tag_size_m": tag_size_m},
-            {"image_topic": MONO_IMAGE_TOPIC},
-            {"camera_info_topic": CAMERA_INFO_TOPIC},
-            {"target_observation_topic": TARGET_OBSERVATION_TOPIC},
-            {"controller_state_topic": CONTROLLER_STATE_TOPIC},
-            {"debug_image_topic": DEBUG_IMAGE_TOPIC},
         ],
     )
 
@@ -100,17 +88,8 @@ def generate_launch_description():
             {"max_vxy": max_vxy},
             {"align_enter_lateral_m": align_enter_lateral_m},
             {"align_exit_lateral_m": align_exit_lateral_m},
-            {"target_observation_topic": TARGET_OBSERVATION_TOPIC},
-            {"state_topic": "/uav/state/odometry"},
-            {"velocity_body_topic": "/uav/control/setpoint/velocity_body"},
-            {"controller_state_topic": CONTROLLER_STATE_TOPIC},
-            {"hold_service": "/uav/control/command/hold"},
-            {"land_service": "/uav/control/command/land"},
-            {"height_measurement_mode": "distance_sensor"},
             {"range_topic": distance_sensor_topic},
             {"vehicle_local_position_topic": vehicle_local_position_topic},
-            {"start_service": "/uav/visual_landing/command/start"},
-            {"stop_service": "/uav/visual_landing/command/stop"},
         ],
     )
 
@@ -154,7 +133,6 @@ def generate_launch_description():
         output="screen",
         condition=IfCondition(PythonExpression(["'", record_video_source, "' == 'mono'"])),
         parameters=[
-            {"image_topic": MONO_IMAGE_TOPIC},
             {"output_path": record_video_output_path},
             {"fps": record_video_fps},
             {"fourcc": record_video_fourcc},

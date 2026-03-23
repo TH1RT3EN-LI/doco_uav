@@ -144,7 +144,6 @@ def generate_launch_description():
             "'",
         ]
     )
-    effective_orbbec_enable_publish_extrinsic = orbbec_enable_publish_extrinsic
     effective_orbbec_enable_accel = PythonExpression(
         ["'true' if '", start_openvins_orbbec, "' == 'true' else '", orbbec_enable_accel, "'"]
     )
@@ -215,7 +214,7 @@ def generate_launch_description():
             "enable_point_cloud": effective_orbbec_enable_point_cloud,
             "enable_colored_point_cloud": effective_orbbec_enable_colored_point_cloud,
             "enable_sync_output_accel_gyro": effective_orbbec_enable_sync_output_accel_gyro,
-            "enable_publish_extrinsic": effective_orbbec_enable_publish_extrinsic,
+            "enable_publish_extrinsic": orbbec_enable_publish_extrinsic,
             "enable_accel": effective_orbbec_enable_accel,
             "enable_gyro": effective_orbbec_enable_gyro,
             "accel_rate": orbbec_accel_rate,
@@ -260,7 +259,7 @@ def generate_launch_description():
             "enable_point_cloud": effective_orbbec_enable_point_cloud,
             "enable_colored_point_cloud": effective_orbbec_enable_colored_point_cloud,
             "enable_sync_output_accel_gyro": effective_orbbec_enable_sync_output_accel_gyro,
-            "enable_publish_extrinsic": effective_orbbec_enable_publish_extrinsic,
+            "enable_publish_extrinsic": orbbec_enable_publish_extrinsic,
             "enable_accel": effective_orbbec_enable_accel,
             "enable_gyro": effective_orbbec_enable_gyro,
             "accel_rate": orbbec_accel_rate,
@@ -297,7 +296,6 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {"namespaced_fmu_prefix": fmu_namespace},
-            {"global_fmu_prefix": "/fmu"},
         ],
     )
 
@@ -309,14 +307,7 @@ def generate_launch_description():
         parameters=[
             {"vehicle_local_position_topic": vehicle_local_position_topic},
             {"vehicle_odometry_topic": vehicle_odometry_topic},
-            {"output_odometry_topic": "/uav/state/odometry"},
-            {"map_frame_id": "uav_map"},
-            {"odom_frame_id": "uav_odom"},
             {"base_frame_id": base_frame_id},
-            {"publish_rate_hz": 50.0},
-            {"publish_odometry": True},
-            {"publish_tf": True},
-            {"publish_map_to_odom_tf": True},
         ],
     )
 
@@ -326,18 +317,11 @@ def generate_launch_description():
         name="uav_control",
         output="screen",
         parameters=[
-            {"state_topic": "/uav/state/odometry"},
             {"offboard_mode_topic": offboard_mode_topic},
             {"trajectory_setpoint_topic": trajectory_setpoint_topic},
             {"vehicle_command_topic": vehicle_command_topic},
             {"px4_local_position_topic": vehicle_local_position_topic},
             {"vehicle_status_topic": vehicle_status_topic},
-            {"takeoff_service": "/uav/control/command/takeoff"},
-            {"hold_service": "/uav/control/command/hold"},
-            {"position_mode_service": "/uav/control/command/position_mode"},
-            {"land_service": "/uav/control/command/land"},
-            {"abort_service": "/uav/control/command/abort"},
-            {"disarm_service": "/uav/control/command/disarm"},
             {"pre_takeoff_reset_service": pre_takeoff_reset_service},
             {"takeoff_height_m": takeoff_height_m},
             {"max_velocity_setpoint_mps": max_velocity_setpoint_mps},

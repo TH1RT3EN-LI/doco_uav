@@ -136,8 +136,6 @@ def generate_launch_description():
             {"filepath_std": openvins_filepath_std},
             {"filepath_gt": openvins_filepath_gt},
             {"config_path": openvins_config_path},
-            {"reset_service_name": "reset"},
-            {"reset_counter_bump_topic": "reset_counter_bump"},
         ],
     )
 
@@ -150,8 +148,6 @@ def generate_launch_description():
         parameters=[
             {"odometry_topic": ["/", openvins_namespace, "/odomimu"]},
             {"visual_odometry_topic": [fmu_namespace, "/in/vehicle_visual_odometry"]},
-            {"expected_odom_frame_id": "global"},
-            {"expected_child_frame_id": "imu"},
             {"sensor_roll_in_body_rad": sensor_roll_in_body_rad},
             {"sensor_pitch_in_body_rad": sensor_pitch_in_body_rad},
             {"sensor_yaw_in_body_rad": sensor_yaw_in_body_rad},

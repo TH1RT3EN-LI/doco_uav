@@ -28,7 +28,6 @@ def generate_launch_description():
                 "world_frame_id": world_frame_id,
                 "base_frame_id": base_frame_id,
                 "publish_rate_hz": publish_rate_hz,
-                "publish_odometry": True,
                 "log_state": log_state,
             }
         ],
