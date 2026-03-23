@@ -153,7 +153,7 @@ def generate_launch_description():
             DeclareLaunchArgument("ir_exposure", default_value="-1"),
             DeclareLaunchArgument("ir_gain", default_value="-1"),
             DeclareLaunchArgument("ir_ae_max_exposure", default_value="-1"),
-            DeclareLaunchArgument("ir_brightness", default_value="255"),
+            DeclareLaunchArgument("ir_brightness", default_value="-1"),
             DeclareLaunchArgument("enable_laser", default_value="false"),
             DeclareLaunchArgument("enable_ldp", default_value="false"),
             DeclareLaunchArgument("enable_point_cloud", default_value="false"),

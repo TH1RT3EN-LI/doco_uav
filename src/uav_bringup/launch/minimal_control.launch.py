@@ -427,7 +427,7 @@ def generate_launch_description():
         DeclareLaunchArgument("orbbec_ir_exposure", default_value="-1"),
         DeclareLaunchArgument("orbbec_ir_gain", default_value="-1"),
         DeclareLaunchArgument("orbbec_ir_ae_max_exposure", default_value="-1"),
-        DeclareLaunchArgument("orbbec_ir_brightness", default_value="255"),
+        DeclareLaunchArgument("orbbec_ir_brightness", default_value="-1"),
         DeclareLaunchArgument("orbbec_enable_laser", default_value="false"),
         DeclareLaunchArgument("orbbec_enable_ldp", default_value="false"),
         mono_camera_launch,
