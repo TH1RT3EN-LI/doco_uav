@@ -6,6 +6,8 @@ from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 
+from uav_bringup.profile_defaults import DEFAULT_ORBBEC_IR_EXPOSURE, DEFAULT_ORBBEC_IR_STREAM
+
 
 def generate_launch_description():
     bringup_share = get_package_share_directory("uav_bringup")
@@ -63,19 +65,19 @@ def generate_launch_description():
             DeclareLaunchArgument("camera_pitch", default_value="0.0"),
             DeclareLaunchArgument("camera_yaw", default_value=str(-3.141592653589793 / 2.0)),
             DeclareLaunchArgument("publish_mount_tf", default_value="true"),
-            DeclareLaunchArgument("left_ir_width", default_value="0"),
-            DeclareLaunchArgument("left_ir_height", default_value="0"),
-            DeclareLaunchArgument("left_ir_fps", default_value="0"),
-            DeclareLaunchArgument("left_ir_format", default_value="ANY"),
-            DeclareLaunchArgument("right_ir_width", default_value="0"),
-            DeclareLaunchArgument("right_ir_height", default_value="0"),
-            DeclareLaunchArgument("right_ir_fps", default_value="0"),
-            DeclareLaunchArgument("right_ir_format", default_value="ANY"),
-            DeclareLaunchArgument("enable_ir_auto_exposure", default_value="true"),
-            DeclareLaunchArgument("ir_exposure", default_value="-1"),
-            DeclareLaunchArgument("ir_gain", default_value="-1"),
-            DeclareLaunchArgument("ir_ae_max_exposure", default_value="-1"),
-            DeclareLaunchArgument("ir_brightness", default_value="-1"),
+            DeclareLaunchArgument("left_ir_width", default_value=DEFAULT_ORBBEC_IR_STREAM["width"]),
+            DeclareLaunchArgument("left_ir_height", default_value=DEFAULT_ORBBEC_IR_STREAM["height"]),
+            DeclareLaunchArgument("left_ir_fps", default_value=DEFAULT_ORBBEC_IR_STREAM["fps"]),
+            DeclareLaunchArgument("left_ir_format", default_value=DEFAULT_ORBBEC_IR_STREAM["format"]),
+            DeclareLaunchArgument("right_ir_width", default_value=DEFAULT_ORBBEC_IR_STREAM["width"]),
+            DeclareLaunchArgument("right_ir_height", default_value=DEFAULT_ORBBEC_IR_STREAM["height"]),
+            DeclareLaunchArgument("right_ir_fps", default_value=DEFAULT_ORBBEC_IR_STREAM["fps"]),
+            DeclareLaunchArgument("right_ir_format", default_value=DEFAULT_ORBBEC_IR_STREAM["format"]),
+            DeclareLaunchArgument("enable_ir_auto_exposure", default_value=DEFAULT_ORBBEC_IR_EXPOSURE["enable_auto_exposure"]),
+            DeclareLaunchArgument("ir_exposure", default_value=DEFAULT_ORBBEC_IR_EXPOSURE["exposure"]),
+            DeclareLaunchArgument("ir_gain", default_value=DEFAULT_ORBBEC_IR_EXPOSURE["gain"]),
+            DeclareLaunchArgument("ir_ae_max_exposure", default_value=DEFAULT_ORBBEC_IR_EXPOSURE["ae_max_exposure"]),
+            DeclareLaunchArgument("ir_brightness", default_value=DEFAULT_ORBBEC_IR_EXPOSURE["brightness"]),
             DeclareLaunchArgument("enable_laser", default_value="true"),
             DeclareLaunchArgument("enable_ldp", default_value="true"),
             DeclareLaunchArgument("accel_rate", default_value="200hz"),

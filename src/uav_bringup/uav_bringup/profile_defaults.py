@@ -18,3 +18,18 @@ DEFAULT_STEREO_CAMERA_TO_BODY = {
     "y": "0.0",
     "z": "0.1043",
 }
+
+DEFAULT_ORBBEC_IR_STREAM = {
+    "width": "848",
+    "height": "480",
+    "fps": "30",
+    "format": "ANY",
+}
+
+DEFAULT_ORBBEC_IR_EXPOSURE = {
+    "enable_auto_exposure": "true",
+    "exposure": "-1",
+    "gain": "-1",
+    "ae_max_exposure": "-1",
+    "brightness": "-1",
+}
