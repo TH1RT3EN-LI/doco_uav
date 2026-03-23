@@ -55,7 +55,7 @@ public:
     confidence_full_marker_span_px_ =
       static_cast<float>(this->get_parameter("confidence_full_marker_span_px").as_double());
 
-    tag_dict_ = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_APRILTAG_16h5);
+    tag_dict_ = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_APRILTAG_36h11);
     tag_params_ = cv::aruco::DetectorParameters::create();
     tag_params_->cornerRefinementMethod = cv::aruco::CORNER_REFINE_SUBPIX;
 
