@@ -21,9 +21,9 @@ from uav_bringup.profile_defaults import (
 
 _OPENVINS_TUNING_PRESETS = {
     "default": "estimator_config.calibration.yaml",
-    "balanced": "estimator_config.calibration.autoexposure_balanced.yaml",
-    "msckf_bias": "estimator_config.calibration.autoexposure_msckf_bias.yaml",
     "slam_bias": "estimator_config.calibration.autoexposure_slam_bias.yaml",
+    "slam_bias_dense": "estimator_config.calibration.autoexposure_slam_bias_dense.yaml",
+    "slam_bias_window": "estimator_config.calibration.autoexposure_slam_bias_window.yaml",
 }
 
 

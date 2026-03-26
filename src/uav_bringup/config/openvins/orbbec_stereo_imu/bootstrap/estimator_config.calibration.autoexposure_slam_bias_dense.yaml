@@ -13,11 +13,11 @@ calib_cam_timeoffset: true
 calib_imu_intrinsics: false
 calib_imu_g_sensitivity: false
 
-max_clones: 15
-max_slam: 8
-max_slam_in_update: 4
-max_msckf_in_update: 110
-dt_slam_delay: 3
+max_clones: 11
+max_slam: 42
+max_slam_in_update: 20
+max_msckf_in_update: 50
+dt_slam_delay: 1
 
 gravity_mag: 9.81
 
@@ -34,8 +34,8 @@ zupt_only_at_beginning: true
 
 init_window_time: 2.0
 init_imu_thresh: 1.5
-init_max_disparity: 18.0
-init_max_features: 140
+init_max_disparity: 15.0
+init_max_features: 160
 
 init_dyn_use: false
 init_dyn_mle_opt_calib: false
@@ -64,12 +64,12 @@ filepath_gt: "/tmp/ov_groundtruth.txt"
 
 use_klt: true
 num_pts: 360
-fast_threshold: 10
+fast_threshold: 9
 grid_x: 5
 grid_y: 5
 min_px_dist: 10
 knn_ratio: 0.70
-track_frequency: 15
+track_frequency: 20
 downsample_cameras: false
 num_opencv_threads: 4
 histogram_method: "CLAHE"
