@@ -3,7 +3,12 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
+from launch.actions import (
+    DeclareLaunchArgument,
+    IncludeLaunchDescription,
+    OpaqueFunction,
+    SetLaunchConfiguration,
+)
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 
@@ -14,31 +19,47 @@ from uav_bringup.profile_defaults import (
 )
 
 
+_OPENVINS_TUNING_PRESETS = {
+    "default": "estimator_config.calibration.yaml",
+    "balanced": "estimator_config.calibration.autoexposure_balanced.yaml",
+    "msckf_bias": "estimator_config.calibration.autoexposure_msckf_bias.yaml",
+    "slam_bias": "estimator_config.calibration.autoexposure_slam_bias.yaml",
+}
+
+
+def _resolve_openvins_config_path(bringup_share: str, profile: str, explicit_path: str) -> Path:
+    if explicit_path:
+        return Path(explicit_path)
+
+    if profile not in _OPENVINS_TUNING_PRESETS:
+        available_profiles = ", ".join(sorted(_OPENVINS_TUNING_PRESETS.keys()))
+        raise RuntimeError(
+            f"Unknown OpenVINS tuning profile '{profile}'. Available profiles: {available_profiles}."
+        )
+
+    return Path(bringup_share) / "config" / "openvins" / "orbbec_stereo_imu" / "bootstrap" / _OPENVINS_TUNING_PRESETS[profile]
+
+
 def _prepare_calibration(context, *_args, **_kwargs):
+    bringup_share = get_package_share_directory("uav_bringup")
+
     state_output_dir = Path(LaunchConfiguration("state_output_dir").perform(context))
     state_output_dir.mkdir(parents=True, exist_ok=True)
 
-    config_path = Path(LaunchConfiguration("openvins_config_path").perform(context))
+    profile = LaunchConfiguration("openvins_tuning_profile").perform(context).strip()
+    explicit_config_path = LaunchConfiguration("openvins_config_path").perform(context).strip()
+    config_path = _resolve_openvins_config_path(bringup_share, profile, explicit_config_path)
     if not config_path.exists():
         raise RuntimeError(
             "OpenVINS calibration config not found: "
             f"{config_path}. Run generate_orbbec_openvins_bootstrap.py first."
         )
 
-    return []
+    return [SetLaunchConfiguration("resolved_openvins_config_path", str(config_path))]
 
 
 def generate_launch_description():
     bringup_share = get_package_share_directory("uav_bringup")
-    default_config_path = os.path.join(
-        bringup_share,
-        "config",
-        "openvins",
-        "orbbec_stereo_imu",
-        "bootstrap",
-        "estimator_config.calibration.yaml",
-    )
-
     state_output_dir = LaunchConfiguration("state_output_dir")
 
     calibration_launch = IncludeLaunchDescription(
@@ -81,7 +102,7 @@ def generate_launch_description():
             "frame_aggregate_mode": LaunchConfiguration("frame_aggregate_mode"),
             "log_level": LaunchConfiguration("log_level"),
             "openvins_namespace": LaunchConfiguration("openvins_namespace"),
-            "openvins_config_path": LaunchConfiguration("openvins_config_path"),
+            "openvins_config_path": LaunchConfiguration("resolved_openvins_config_path"),
             "openvins_verbosity": LaunchConfiguration("openvins_verbosity"),
             "openvins_save_total_state": "true",
             "openvins_filepath_est": [state_output_dir, "/ov_estimate.txt"],
@@ -128,7 +149,8 @@ def generate_launch_description():
             DeclareLaunchArgument("frame_aggregate_mode", default_value="full_frame"),
             DeclareLaunchArgument("log_level", default_value="none"),
             DeclareLaunchArgument("openvins_namespace", default_value="ov_msckf"),
-            DeclareLaunchArgument("openvins_config_path", default_value=default_config_path),
+            DeclareLaunchArgument("openvins_tuning_profile", default_value="default"),
+            DeclareLaunchArgument("openvins_config_path", default_value=""),
             DeclareLaunchArgument("openvins_verbosity", default_value="INFO"),
             DeclareLaunchArgument(
                 "state_output_dir", default_value="/tmp/openvins_orbbec_calibration"
