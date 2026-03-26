@@ -1,7 +1,0 @@
-{
-  "package_name": "uav_mode_supervisor",
-  "non_idl_tuples": [
-    "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_mode_supervisor:msg/SupervisorState.msg",
-    "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_mode_supervisor:srv/CommandSupervisor.srv"
-  ]
-}

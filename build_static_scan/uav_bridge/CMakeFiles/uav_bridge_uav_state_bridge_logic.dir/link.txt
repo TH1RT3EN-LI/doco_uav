@@ -1,2 +1,0 @@
-/usr/bin/ar qc libuav_bridge_uav_state_bridge_logic.a CMakeFiles/uav_bridge_uav_state_bridge_logic.dir/src/uav_state_bridge_logic.cpp.o
-/usr/bin/ranlib libuav_bridge_uav_state_bridge_logic.a

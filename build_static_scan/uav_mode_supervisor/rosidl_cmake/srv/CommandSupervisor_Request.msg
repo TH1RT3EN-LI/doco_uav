@@ -1,2 +1,0 @@
-string command
-float32 tracking_target_height_m

@@ -1,6 +1,0 @@
-setup.py
-uav_mode_supervisor/__init__.py
-uav_mode_supervisor.egg-info/PKG-INFO
-uav_mode_supervisor.egg-info/SOURCES.txt
-uav_mode_supervisor.egg-info/dependency_links.txt
-uav_mode_supervisor.egg-info/top_level.txt

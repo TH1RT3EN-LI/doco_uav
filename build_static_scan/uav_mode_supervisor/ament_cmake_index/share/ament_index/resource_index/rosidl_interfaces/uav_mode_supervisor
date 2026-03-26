@@ -1,6 +1,0 @@
-msg/SupervisorState.idl
-msg/SupervisorState.msg
-srv/CommandSupervisor.idl
-srv/CommandSupervisor.srv
-srv/CommandSupervisor_Request.msg
-srv/CommandSupervisor_Response.msg
