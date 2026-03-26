@@ -60,6 +60,9 @@ def generate_launch_description():
     accel_rate = LaunchConfiguration("accel_rate")
     enable_gyro = LaunchConfiguration("enable_gyro")
     gyro_rate = LaunchConfiguration("gyro_rate")
+    enable_frame_sync = LaunchConfiguration("enable_frame_sync")
+    time_domain = LaunchConfiguration("time_domain")
+    frame_aggregate_mode = LaunchConfiguration("frame_aggregate_mode")
     log_level = LaunchConfiguration("log_level")
 
     depth_camera_launch = IncludeLaunchDescription(
@@ -96,6 +99,9 @@ def generate_launch_description():
             "accel_rate": accel_rate,
             "enable_gyro": enable_gyro,
             "gyro_rate": gyro_rate,
+            "enable_frame_sync": enable_frame_sync,
+            "time_domain": time_domain,
+            "frame_aggregate_mode": frame_aggregate_mode,
             "publish_tf": enable_publish_extrinsic,
             "depth_optical_frame_id": camera_frame_id,
             "cloud_frame_id": camera_frame_id,
@@ -169,6 +175,9 @@ def generate_launch_description():
             DeclareLaunchArgument("accel_rate", default_value=DEFAULT_ORBBEC_STANDALONE_PROFILE["accel_rate"]),
             DeclareLaunchArgument("enable_gyro", default_value=DEFAULT_ORBBEC_STANDALONE_PROFILE["enable_gyro"]),
             DeclareLaunchArgument("gyro_rate", default_value=DEFAULT_ORBBEC_STANDALONE_PROFILE["gyro_rate"]),
+            DeclareLaunchArgument("enable_frame_sync", default_value="true"),
+            DeclareLaunchArgument("time_domain", default_value="global"),
+            DeclareLaunchArgument("frame_aggregate_mode", default_value="ANY"),
             DeclareLaunchArgument("log_level", default_value="none"),
             camera_mount_tf,
             depth_camera_launch,

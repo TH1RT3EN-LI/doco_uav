@@ -65,6 +65,9 @@ def generate_launch_description():
     ir_brightness = LaunchConfiguration("ir_brightness")
     enable_laser = LaunchConfiguration("enable_laser")
     enable_ldp = LaunchConfiguration("enable_ldp")
+    enable_frame_sync = LaunchConfiguration("enable_frame_sync")
+    time_domain = LaunchConfiguration("time_domain")
+    frame_aggregate_mode = LaunchConfiguration("frame_aggregate_mode")
     log_level = LaunchConfiguration("log_level")
 
     openvins_namespace = LaunchConfiguration("openvins_namespace")
@@ -122,6 +125,9 @@ def generate_launch_description():
             "ir_brightness": ir_brightness,
             "enable_laser": enable_laser,
             "enable_ldp": enable_ldp,
+            "enable_frame_sync": enable_frame_sync,
+            "time_domain": time_domain,
+            "frame_aggregate_mode": frame_aggregate_mode,
             "log_level": log_level,
         }.items(),
     )
@@ -201,6 +207,9 @@ def generate_launch_description():
             DeclareLaunchArgument("ir_brightness", default_value=DEFAULT_ORBBEC_IR_EXPOSURE["brightness"]),
             DeclareLaunchArgument("enable_laser", default_value=DEFAULT_ORBBEC_OPENVINS_PROFILE["enable_laser"]),
             DeclareLaunchArgument("enable_ldp", default_value=DEFAULT_ORBBEC_OPENVINS_PROFILE["enable_ldp"]),
+            DeclareLaunchArgument("enable_frame_sync", default_value="true"),
+            DeclareLaunchArgument("time_domain", default_value="global"),
+            DeclareLaunchArgument("frame_aggregate_mode", default_value="ANY"),
             DeclareLaunchArgument("log_level", default_value="none"),
             DeclareLaunchArgument("openvins_namespace", default_value="ov_msckf"),
             DeclareLaunchArgument("openvins_config_path", default_value=default_config_path),
