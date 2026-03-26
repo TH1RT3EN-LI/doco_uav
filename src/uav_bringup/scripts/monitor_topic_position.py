@@ -6,6 +6,7 @@ import threading
 import time
 import tkinter as tk
 from dataclasses import dataclass, field
+from math import ceil
 from typing import Callable, Dict, List, Optional
 
 import rclpy
@@ -126,7 +127,7 @@ class PositionMonitorGui:
 
     def _build_window(self):
         self.root.title("位置实时监视")
-        self.root.geometry("1360x880")
+        self.root.geometry("1520x920")
         self.root.configure(bg="#eef3f8")
 
         header = tk.Frame(self.root, bg="#0f172a", padx=16, pady=12)
@@ -171,13 +172,18 @@ class PositionMonitorGui:
         grid = tk.Frame(self.root, bg="#eef3f8", padx=12, pady=4)
         grid.pack(fill="both", expand=True)
 
-        for row in range(3):
+        column_count = 2
+        row_count = max(1, ceil(len(self.source_states) / column_count))
+        for row in range(row_count):
             grid.grid_rowconfigure(row, weight=1)
-        grid.grid_columnconfigure(0, weight=1)
+        for column in range(column_count):
+            grid.grid_columnconfigure(column, weight=1)
 
         for index, state in enumerate(self.source_states):
             frame = self._create_source_frame(grid, state)
-            frame.grid(row=index, column=0, sticky="nsew", pady=8)
+            row = index // column_count
+            column = index % column_count
+            frame.grid(row=row, column=column, sticky="nsew", padx=8, pady=8)
 
     def _create_source_frame(self, parent: tk.Widget, state: SourceState):
         frame = tk.LabelFrame(
@@ -288,7 +294,7 @@ class PositionMonitorGui:
             textvariable=variable,
             justify="left",
             anchor="w",
-            wraplength=620,
+            wraplength=420,
             font=("Sans", 11),
             bg="#ffffff",
             fg="#111827",
@@ -311,7 +317,7 @@ class PositionMonitorGui:
             font=("Consolas", 18, "bold"),
             bg="#f8fafc",
             fg="#0f172a",
-            width=16,
+            width=14,
         ).grid(row=row, column=1, sticky="e", pady=4, padx=(10, 0))
 
     def _reset_all_origins(self):
@@ -402,6 +408,14 @@ def describe_px4_pose_frame(pose_frame: int) -> str:
     return mapping.get(pose_frame, f"PX4 未知 pose_frame={pose_frame}")
 
 
+def convert_px4_position_to_ros_xyz(x: float, y: float, z: float, pose_frame: int):
+    if pose_frame == 1:
+        return y, x, -z, "ROS ENU（由 PX4 NED 转换）"
+    if pose_frame == 2:
+        return x, -y, -z, "ROS FLU（由 PX4 FRD 转换）"
+    return x, y, z, f"ROS 默认方向显示（原始: {describe_px4_pose_frame(pose_frame)})"
+
+
 def make_openvins_spec(topic_name: str) -> SourceSpec:
     from nav_msgs.msg import Odometry
 
@@ -436,12 +450,18 @@ def make_px4_spec(key: str, source_label: str, topic_name: str) -> SourceSpec:
     def extract(msg):
         stamp_us = int(msg.timestamp_sample) if int(msg.timestamp_sample) > 0 else int(msg.timestamp)
         pose_frame = int(msg.pose_frame)
+        ros_x, ros_y, ros_z, ros_frame_label = convert_px4_position_to_ros_xyz(
+            float(msg.position[0]),
+            float(msg.position[1]),
+            float(msg.position[2]),
+            pose_frame,
+        )
         return PositionSample(
-            x=float(msg.position[0]),
-            y=float(msg.position[1]),
-            z=float(msg.position[2]),
+            x=ros_x,
+            y=ros_y,
+            z=ros_z,
             stamp_s=float(stamp_us) * 1e-6,
-            frame_label=describe_px4_pose_frame(pose_frame),
+            frame_label=ros_frame_label,
         )
 
     return SourceSpec(
