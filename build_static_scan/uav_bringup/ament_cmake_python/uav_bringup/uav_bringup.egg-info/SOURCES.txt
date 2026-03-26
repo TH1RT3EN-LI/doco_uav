@@ -1,0 +1,7 @@
+setup.py
+uav_bringup/__init__.py
+uav_bringup/profile_defaults.py
+uav_bringup.egg-info/PKG-INFO
+uav_bringup.egg-info/SOURCES.txt
+uav_bringup.egg-info/dependency_links.txt
+uav_bringup.egg-info/top_level.txt

@@ -1,0 +1,313 @@
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found ament_cmake: 1.3.13 (/opt/ros/humble/share/ament_cmake/cmake)
+-- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+-- Found ament_cmake_gtest: 1.3.13 (/opt/ros/humble/share/ament_cmake_gtest/cmake)
+-- Found diagnostic_msgs: 4.9.1 (/opt/ros/humble/share/diagnostic_msgs/cmake)
+-- Found rosidl_generator_c: 3.1.8 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+-- Found rosidl_adapter: 3.1.8 (/opt/ros/humble/share/rosidl_adapter/cmake)
+-- Found rosidl_generator_cpp: 3.1.8 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+-- Found rclcpp: 16.0.18 (/opt/ros/humble/share/rclcpp/cmake)
+-- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+-- Found rmw_fastrtps_cpp: 6.2.10 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+-- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.2")  
+-- Found FastRTPS: /opt/ros/humble/include  
+-- Using RMW implementation 'rmw_fastrtps_cpp' as default
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- Found relative_position_fusion: 0.0.1 (/home/th1rt3en/doco/sim_full/install/relative_position_fusion/share/relative_position_fusion/cmake)
+-- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+-- Found std_srvs: 4.9.1 (/opt/ros/humble/share/std_srvs/cmake)
+-- Found uav_visual_landing: 0.0.0 (/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing/share/uav_visual_landing/cmake)
+-- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)
+-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+-- Found PythonInterp: /usr/bin/python3 (found suitable version "3.10.12", minimum required is "3.6") 
+-- Found python_cmake_module: 0.10.0 (/opt/ros/humble/share/python_cmake_module/cmake)
+-- Found PythonLibs: /usr/lib/x86_64-linux-gnu/libpython3.10.so (found suitable version "3.10.12", minimum required is "3.5") 
+-- Using PYTHON_EXECUTABLE: /usr/bin/python3
+-- Using PYTHON_INCLUDE_DIRS: /usr/include/python3.10
+-- Using PYTHON_LIBRARIES: /usr/lib/x86_64-linux-gnu/libpython3.10.so
+-- Found PythonExtra: .so  
+-- Found gtest sources under '/opt/ros/humble/src/gtest_vendor': C++ tests using 'Google Test' will be built
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_mode_supervisor
+[  2%] Generating C code for ROS interfaces
+[ 10%] Building CXX object CMakeFiles/uav_mode_supervisor_core.dir/src/supervisor_logic.cpp.o
+[ 10%] Building CXX object gtest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o
+[ 10%] Building CXX object gtest/CMakeFiles/gtest.dir/src/gtest-all.cc.o
+[ 10%] Generating C++ code for ROS interfaces
+[ 10%] Built target ament_cmake_python_copy_uav_mode_supervisor
+running egg_info
+creating uav_mode_supervisor.egg-info
+writing uav_mode_supervisor.egg-info/PKG-INFO
+writing dependency_links to uav_mode_supervisor.egg-info/dependency_links.txt
+writing top-level names to uav_mode_supervisor.egg-info/top_level.txt
+writing manifest file 'uav_mode_supervisor.egg-info/SOURCES.txt'
+reading manifest file 'uav_mode_supervisor.egg-info/SOURCES.txt'
+writing manifest file 'uav_mode_supervisor.egg-info/SOURCES.txt'
+[ 10%] Built target ament_cmake_python_build_uav_mode_supervisor_egg
+[ 14%] Building C object CMakeFiles/uav_mode_supervisor__rosidl_generator_c.dir/rosidl_generator_c/uav_mode_supervisor/srv/detail/command_supervisor__functions.c.o
+[ 14%] Building C object CMakeFiles/uav_mode_supervisor__rosidl_generator_c.dir/rosidl_generator_c/uav_mode_supervisor/msg/detail/supervisor_state__functions.c.o
+[ 14%] Built target uav_mode_supervisor__cpp
+[ 18%] Generating C++ introspection for ROS interfaces
+[ 18%] Generating C++ type support dispatch for ROS interfaces
+[ 20%] Generating C++ type support for eProsima Fast-RTPS
+[ 22%] Linking C shared library libuav_mode_supervisor__rosidl_generator_c.so
+[ 22%] Built target uav_mode_supervisor__rosidl_generator_c
+[ 24%] Generating C type support for eProsima Fast-RTPS
+[ 28%] Generating C type support dispatch for ROS interfaces
+[ 28%] Generating C introspection for ROS interfaces
+[ 30%] Linking CXX shared library libuav_mode_supervisor_core.so
+[ 30%] Built target uav_mode_supervisor_core
+[ 32%] Building CXX object CMakeFiles/uav_mode_supervisor__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/uav_mode_supervisor/msg/supervisor_state__type_support.cpp.o
+[ 34%] Building CXX object CMakeFiles/uav_mode_supervisor__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/uav_mode_supervisor/srv/command_supervisor__type_support.cpp.o
+[ 38%] Building CXX object CMakeFiles/uav_mode_supervisor__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/uav_mode_supervisor/msg/detail/supervisor_state__type_support.cpp.o
+[ 38%] Building CXX object CMakeFiles/uav_mode_supervisor__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/uav_mode_supervisor/srv/detail/command_supervisor__type_support.cpp.o
+[ 40%] Building CXX object CMakeFiles/uav_mode_supervisor__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/uav_mode_supervisor/msg/detail/dds_fastrtps/supervisor_state__type_support.cpp.o
+[ 42%] Building CXX object CMakeFiles/uav_mode_supervisor__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/uav_mode_supervisor/srv/detail/dds_fastrtps/command_supervisor__type_support.cpp.o
+[ 46%] Building C object CMakeFiles/uav_mode_supervisor__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/uav_mode_supervisor/msg/detail/supervisor_state__type_support.c.o
+[ 46%] Building C object CMakeFiles/uav_mode_supervisor__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/uav_mode_supervisor/srv/detail/command_supervisor__type_support.c.o
+[ 48%] Building CXX object CMakeFiles/uav_mode_supervisor__rosidl_typesupport_c.dir/rosidl_typesupport_c/uav_mode_supervisor/msg/supervisor_state__type_support.cpp.o
+[ 51%] Building CXX object CMakeFiles/uav_mode_supervisor__rosidl_typesupport_c.dir/rosidl_typesupport_c/uav_mode_supervisor/srv/command_supervisor__type_support.cpp.o
+[ 53%] Linking C shared library libuav_mode_supervisor__rosidl_typesupport_introspection_c.so
+[ 59%] Building CXX object CMakeFiles/uav_mode_supervisor__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/uav_mode_supervisor/msg/detail/supervisor_state__type_support_c.cpp.o
+[ 59%] Building CXX object CMakeFiles/uav_mode_supervisor__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/uav_mode_supervisor/srv/detail/command_supervisor__type_support_c.cpp.o
+[ 59%] Linking CXX shared library libuav_mode_supervisor__rosidl_typesupport_c.so
+[ 59%] Built target uav_mode_supervisor__rosidl_typesupport_introspection_c
+[ 59%] Built target uav_mode_supervisor__rosidl_typesupport_c
+[ 61%] Linking CXX static library libgtest_main.a
+[ 63%] Linking CXX shared library libuav_mode_supervisor__rosidl_typesupport_cpp.so
+[ 63%] Built target gtest_main
+[ 63%] Built target uav_mode_supervisor__rosidl_typesupport_cpp
+[ 65%] Linking CXX shared library libuav_mode_supervisor__rosidl_typesupport_introspection_cpp.so
+[ 67%] Linking CXX shared library libuav_mode_supervisor__rosidl_typesupport_fastrtps_cpp.so
+[ 67%] Built target uav_mode_supervisor__rosidl_typesupport_introspection_cpp
+[ 69%] Linking CXX shared library libuav_mode_supervisor__rosidl_typesupport_fastrtps_c.so
+[ 69%] Built target uav_mode_supervisor__rosidl_typesupport_fastrtps_cpp
+[ 69%] Built target uav_mode_supervisor__rosidl_typesupport_fastrtps_c
+[ 69%] Built target uav_mode_supervisor
+[ 73%] Building CXX object CMakeFiles/uav_mode_supervisor_node.dir/src/uav_mode_supervisor_node.cpp.o
+[ 73%] Generating Python code for ROS interfaces
+[ 73%] Built target uav_mode_supervisor__py
+[ 77%] Building C object CMakeFiles/uav_mode_supervisor__rosidl_generator_py.dir/rosidl_generator_py/uav_mode_supervisor/msg/_supervisor_state_s.c.o
+[ 77%] Building C object CMakeFiles/uav_mode_supervisor__rosidl_generator_py.dir/rosidl_generator_py/uav_mode_supervisor/srv/_command_supervisor_s.c.o
+[ 79%] Linking C shared library rosidl_generator_py/uav_mode_supervisor/libuav_mode_supervisor__rosidl_generator_py.so
+[ 79%] Built target uav_mode_supervisor__rosidl_generator_py
+[ 85%] Building C object CMakeFiles/uav_mode_supervisor__rosidl_typesupport_fastrtps_c__pyext.dir/rosidl_generator_py/uav_mode_supervisor/_uav_mode_supervisor_s.ep.rosidl_typesupport_fastrtps_c.c.o
+[ 85%] Building C object CMakeFiles/uav_mode_supervisor__rosidl_typesupport_c__pyext.dir/rosidl_generator_py/uav_mode_supervisor/_uav_mode_supervisor_s.ep.rosidl_typesupport_c.c.o
+[ 85%] Building C object CMakeFiles/uav_mode_supervisor__rosidl_typesupport_introspection_c__pyext.dir/rosidl_generator_py/uav_mode_supervisor/_uav_mode_supervisor_s.ep.rosidl_typesupport_introspection_c.c.o
+[ 91%] Linking C shared library rosidl_generator_py/uav_mode_supervisor/uav_mode_supervisor_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+[ 91%] Linking C shared library rosidl_generator_py/uav_mode_supervisor/uav_mode_supervisor_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+[ 91%] Linking C shared library rosidl_generator_py/uav_mode_supervisor/uav_mode_supervisor_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+[ 91%] Built target uav_mode_supervisor__rosidl_typesupport_fastrtps_c__pyext
+[ 91%] Built target uav_mode_supervisor__rosidl_typesupport_introspection_c__pyext
+[ 91%] Built target uav_mode_supervisor__rosidl_typesupport_c__pyext
+[ 93%] Linking CXX static library libgtest.a
+[ 93%] Built target gtest
+[ 95%] Building CXX object CMakeFiles/test_supervisor_logic.dir/test/test_supervisor_logic.cpp.o
+[ 97%] Linking CXX executable test_supervisor_logic
+[ 97%] Built target test_supervisor_logic
+[100%] Linking CXX executable uav_mode_supervisor_node
+[100%] Built target uav_mode_supervisor_node
+-- Install configuration: ""
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/ament_index/resource_index/rosidl_interfaces/uav_mode_supervisor
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail/command_supervisor__type_support.h
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail/command_supervisor__functions.c
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail/command_supervisor__struct.h
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail/command_supervisor__functions.h
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/command_supervisor.h
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail/supervisor_state__functions.h
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail/supervisor_state__type_support.h
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail/supervisor_state__struct.h
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail/supervisor_state__functions.c
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/rosidl_generator_c__visibility_control.h
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/supervisor_state.h
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/environment/library_path.sh
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/environment/library_path.dsv
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_generator_c.so
+-- Set runtime path of "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_generator_c.so" to ""
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail/command_supervisor__rosidl_typesupport_fastrtps_c.h
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail/supervisor_state__rosidl_typesupport_fastrtps_c.h
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/rosidl_typesupport_fastrtps_c__visibility_control.h
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_typesupport_fastrtps_c.so
+-- Set runtime path of "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_typesupport_fastrtps_c.so" to ""
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/command_supervisor.hpp
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail/command_supervisor__type_support.hpp
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail/command_supervisor__traits.hpp
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail/command_supervisor__builder.hpp
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail/command_supervisor__struct.hpp
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/rosidl_generator_cpp__visibility_control.hpp
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail/supervisor_state__builder.hpp
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail/supervisor_state__traits.hpp
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail/supervisor_state__type_support.hpp
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail/supervisor_state__struct.hpp
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/supervisor_state.hpp
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail/command_supervisor__rosidl_typesupport_fastrtps_cpp.hpp
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail/dds_fastrtps
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail/supervisor_state__rosidl_typesupport_fastrtps_cpp.hpp
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail/dds_fastrtps
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/rosidl_typesupport_fastrtps_cpp__visibility_control.h
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_typesupport_fastrtps_cpp.so
+-- Set runtime path of "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_typesupport_fastrtps_cpp.so" to ""
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail/command_supervisor__rosidl_typesupport_introspection_c.h
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail/command_supervisor__type_support.c
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/rosidl_typesupport_introspection_c__visibility_control.h
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail/supervisor_state__rosidl_typesupport_introspection_c.h
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail/supervisor_state__type_support.c
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_typesupport_introspection_c.so
+-- Set runtime path of "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_typesupport_introspection_c.so" to ""
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_typesupport_c.so
+-- Set runtime path of "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_typesupport_c.so" to ""
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail/command_supervisor__rosidl_typesupport_introspection_cpp.hpp
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/srv/detail/command_supervisor__type_support.cpp
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail/supervisor_state__type_support.cpp
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/uav_mode_supervisor/msg/detail/supervisor_state__rosidl_typesupport_introspection_cpp.hpp
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_typesupport_introspection_cpp.so
+-- Set runtime path of "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_typesupport_introspection_cpp.so" to ""
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_typesupport_cpp.so
+-- Set runtime path of "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_typesupport_cpp.so" to ""
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/environment/pythonpath.sh
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/environment/pythonpath.dsv
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor-0.0.0-py3.10.egg-info
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor-0.0.0-py3.10.egg-info/top_level.txt
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor-0.0.0-py3.10.egg-info/PKG-INFO
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor-0.0.0-py3.10.egg-info/SOURCES.txt
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor-0.0.0-py3.10.egg-info/dependency_links.txt
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/uav_mode_supervisor_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/uav_mode_supervisor_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/__init__.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/srv
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/srv/__init__.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/srv/_command_supervisor.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/srv/_command_supervisor_s.c
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/_uav_mode_supervisor_s.ep.rosidl_typesupport_c.c
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/_uav_mode_supervisor_s.ep.rosidl_typesupport_fastrtps_c.c
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/libuav_mode_supervisor__rosidl_generator_py.so
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/uav_mode_supervisor_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/_uav_mode_supervisor_s.ep.rosidl_typesupport_introspection_c.c
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/msg
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/msg/__init__.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/msg/_supervisor_state_s.c
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/msg/_supervisor_state.py
+Listing '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor'...
+Compiling '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/__init__.py'...
+Listing '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/msg'...
+Compiling '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/msg/__init__.py'...
+Compiling '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/msg/_supervisor_state.py'...
+Listing '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/srv'...
+Compiling '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/srv/__init__.py'...
+Compiling '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/srv/_command_supervisor.py'...
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/uav_mode_supervisor_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+-- Set runtime path of "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/uav_mode_supervisor_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so" to ""
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/uav_mode_supervisor_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+-- Set runtime path of "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/uav_mode_supervisor_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so" to ""
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/uav_mode_supervisor_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+-- Set runtime path of "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/local/lib/python3.10/dist-packages/uav_mode_supervisor/uav_mode_supervisor_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so" to ""
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_generator_py.so
+-- Set runtime path of "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor__rosidl_generator_py.so" to ""
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/msg/SupervisorState.idl
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/srv/CommandSupervisor.idl
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/msg/SupervisorState.msg
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/srv/CommandSupervisor.srv
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/srv/CommandSupervisor_Request.msg
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/srv/CommandSupervisor_Response.msg
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/libuav_mode_supervisor_core.so
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/uav_mode_supervisor/uav_mode_supervisor_node
+-- Set runtime path of "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/lib/uav_mode_supervisor/uav_mode_supervisor_node" to ""
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include
+-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/include/uav_mode_supervisor/supervisor_logic.hpp
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/launch
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/launch/uav_mode_supervisor.launch.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/launch/__pycache__
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/launch/__pycache__/uav_mode_supervisor.launch.cpython-310.pyc
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/config
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/config/uav_mode_supervisor.yaml
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/README.md
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/ament_index/resource_index/package_run_dependencies/uav_mode_supervisor
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/ament_index/resource_index/parent_prefix_path/uav_mode_supervisor
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/environment/ament_prefix_path.sh
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/environment/ament_prefix_path.dsv
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/environment/path.sh
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/environment/path.dsv
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/local_setup.bash
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/local_setup.sh
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/local_setup.zsh
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/local_setup.dsv
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/package.dsv
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/ament_index/resource_index/packages/uav_mode_supervisor
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/export_uav_mode_supervisor__rosidl_generator_cExport.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/export_uav_mode_supervisor__rosidl_generator_cExport-noconfig.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/export_uav_mode_supervisor__rosidl_typesupport_fastrtps_cExport.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/export_uav_mode_supervisor__rosidl_typesupport_fastrtps_cExport-noconfig.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/export_uav_mode_supervisor__rosidl_generator_cppExport.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/export_uav_mode_supervisor__rosidl_typesupport_fastrtps_cppExport.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/export_uav_mode_supervisor__rosidl_typesupport_fastrtps_cppExport-noconfig.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/uav_mode_supervisor__rosidl_typesupport_introspection_cExport.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/uav_mode_supervisor__rosidl_typesupport_introspection_cExport-noconfig.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/uav_mode_supervisor__rosidl_typesupport_cExport.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/uav_mode_supervisor__rosidl_typesupport_cExport-noconfig.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/uav_mode_supervisor__rosidl_typesupport_introspection_cppExport.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/uav_mode_supervisor__rosidl_typesupport_introspection_cppExport-noconfig.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/uav_mode_supervisor__rosidl_typesupport_cppExport.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/uav_mode_supervisor__rosidl_typesupport_cppExport-noconfig.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/export_uav_mode_supervisor__rosidl_generator_pyExport.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/export_uav_mode_supervisor__rosidl_generator_pyExport-noconfig.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/rosidl_cmake-extras.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/ament_cmake_export_dependencies-extras.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/ament_cmake_export_include_directories-extras.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/ament_cmake_export_libraries-extras.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/ament_cmake_export_targets-extras.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/rosidl_cmake_export_typesupport_targets-extras.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/rosidl_cmake_export_typesupport_libraries-extras.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/uav_mode_supervisorConfig.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/cmake/uav_mode_supervisorConfig-version.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor/share/uav_mode_supervisor/package.xml

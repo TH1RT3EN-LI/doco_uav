@@ -38,7 +38,7 @@ public:
     output_odom_topic_ = this->get_parameter("output_odom_topic").as_string();
     world_frame_id_ = this->get_parameter("world_frame_id").as_string();
     base_frame_id_ = this->get_parameter("base_frame_id").as_string();
-    publish_rate_hz_ = this->get_parameter("publish_rate_hz").as_double();
+    publish_rate_hz_ = std::max(1.0, this->get_parameter("publish_rate_hz").as_double());
     publish_odometry_ = this->get_parameter("publish_odometry").as_bool();
     log_state_ = this->get_parameter("log_state").as_bool();
 

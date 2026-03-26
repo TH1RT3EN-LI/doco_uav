@@ -1,0 +1,258 @@
+[0.125s] DEBUG:colcon:Command line arguments: ['/home/th1rt3en/.local/bin/colcon', '--log-base', 'log_static_scan', 'build', '--build-base', 'build_static_scan', '--install-base', 'install_static_scan', '--cmake-args', '-DBUILD_TESTING=ON', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON', '--event-handlers', 'console_direct+']
+[0.126s] DEBUG:colcon:Parsed command line arguments: Namespace(log_base='log_static_scan', log_level=None, verb_name='build', build_base='/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan', install_base='/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan', merge_install=False, symlink_install=False, test_result_base=None, continue_on_error=False, executor='parallel', parallel_workers=16, event_handlers=['console_direct+'], ignore_user_meta=False, metas=['./colcon.meta'], base_paths=['.'], packages_ignore=None, packages_ignore_regex=None, paths=None, packages_up_to=None, packages_up_to_regex=None, packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_select_by_dep=None, packages_skip_by_dep=None, packages_skip_up_to=None, packages_select_build_failed=False, packages_skip_build_finished=False, packages_select_test_failures=False, packages_skip_test_passed=False, packages_select=None, packages_skip=None, packages_select_regex=None, packages_skip_regex=None, packages_start=None, packages_end=None, cmake_args=['-DBUILD_TESTING=ON', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON'], cmake_target=None, cmake_target_skip_unavailable=False, cmake_clean_cache=False, cmake_clean_first=False, cmake_force_configure=False, ament_cmake_args=None, catkin_cmake_args=None, catkin_skip_building_tests=False, verb_parser=<colcon_defaults.argument_parser.defaults.DefaultArgumentsDecorator object at 0x715644a2d270>, verb_extension=<colcon_core.verb.build.BuildVerb object at 0x715644a2ccd0>, main=<bound method BuildVerb.main of <colcon_core.verb.build.BuildVerb object at 0x715644a2ccd0>>)
+[0.246s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) check parameters
+[0.246s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) check parameters
+[0.246s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) check parameters
+[0.246s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) check parameters
+[0.246s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) discover
+[0.246s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) discover
+[0.246s] INFO:colcon.colcon_core.package_discovery:Crawling recursively for packages in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav'
+[0.246s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ignore', 'ignore_ament_install']
+[0.246s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore'
+[0.246s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore_ament_install'
+[0.246s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_pkg']
+[0.246s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_pkg'
+[0.246s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_meta']
+[0.246s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_meta'
+[0.246s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ros']
+[0.246s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ros'
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['cmake', 'python']
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'cmake'
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python'
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['python_setup_py']
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python_setup_py'
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extensions ['ignore', 'ignore_ament_install']
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extension 'ignore'
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(build) ignored
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(build_static_check) by extensions ['ignore', 'ignore_ament_install']
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(build_static_check) by extension 'ignore'
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(build_static_check) ignored
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(build_static_scan) by extensions ['ignore', 'ignore_ament_install']
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(build_static_scan) by extension 'ignore'
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(build_static_scan) ignored
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extensions ['ignore', 'ignore_ament_install']
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extension 'ignore'
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(install) ignored
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(install_static_check) by extensions ['ignore', 'ignore_ament_install']
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(install_static_check) by extension 'ignore'
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(install_static_check) ignored
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(install_static_scan) by extensions ['ignore', 'ignore_ament_install']
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(install_static_scan) by extension 'ignore'
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(install_static_scan) ignored
+[0.255s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extensions ['ignore', 'ignore_ament_install']
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extension 'ignore'
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(log) ignored
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(log_static_check) by extensions ['ignore', 'ignore_ament_install']
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(log_static_check) by extension 'ignore'
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(log_static_check) ignored
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(log_static_scan) by extensions ['ignore', 'ignore_ament_install']
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(log_static_scan) by extension 'ignore'
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(log_static_scan) ignored
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['ignore', 'ignore_ament_install']
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ignore'
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ignore_ament_install'
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['colcon_pkg']
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'colcon_pkg'
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['colcon_meta']
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'colcon_meta'
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['ros']
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ros'
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['cmake', 'python']
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'cmake'
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'python'
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['python_setup_py']
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'python_setup_py'
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bridge) by extensions ['ignore', 'ignore_ament_install']
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bridge) by extension 'ignore'
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bridge) by extension 'ignore_ament_install'
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bridge) by extensions ['colcon_pkg']
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bridge) by extension 'colcon_pkg'
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bridge) by extensions ['colcon_meta']
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bridge) by extension 'colcon_meta'
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bridge) by extensions ['ros']
+[0.256s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bridge) by extension 'ros'
+[0.258s] DEBUG:colcon.colcon_core.package_identification:Package 'src/uav_bridge' with type 'ros.ament_cmake' and name 'uav_bridge'
+[0.258s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bringup) by extensions ['ignore', 'ignore_ament_install']
+[0.258s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bringup) by extension 'ignore'
+[0.258s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bringup) by extension 'ignore_ament_install'
+[0.258s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bringup) by extensions ['colcon_pkg']
+[0.258s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bringup) by extension 'colcon_pkg'
+[0.258s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bringup) by extensions ['colcon_meta']
+[0.258s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bringup) by extension 'colcon_meta'
+[0.258s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bringup) by extensions ['ros']
+[0.258s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_bringup) by extension 'ros'
+[0.259s] DEBUG:colcon.colcon_core.package_identification:Package 'src/uav_bringup' with type 'ros.ament_cmake' and name 'uav_bringup'
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_description) by extensions ['ignore', 'ignore_ament_install']
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_description) by extension 'ignore'
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_description) by extension 'ignore_ament_install'
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_description) by extensions ['colcon_pkg']
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_description) by extension 'colcon_pkg'
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_description) by extensions ['colcon_meta']
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_description) by extension 'colcon_meta'
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_description) by extensions ['ros']
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_description) by extension 'ros'
+[0.259s] DEBUG:colcon.colcon_core.package_identification:Package 'src/uav_description' with type 'ros.ament_cmake' and name 'uav_description'
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_mode_supervisor) by extensions ['ignore', 'ignore_ament_install']
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_mode_supervisor) by extension 'ignore'
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_mode_supervisor) by extension 'ignore_ament_install'
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_mode_supervisor) by extensions ['colcon_pkg']
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_mode_supervisor) by extension 'colcon_pkg'
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_mode_supervisor) by extensions ['colcon_meta']
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_mode_supervisor) by extension 'colcon_meta'
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_mode_supervisor) by extensions ['ros']
+[0.259s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_mode_supervisor) by extension 'ros'
+[0.260s] DEBUG:colcon.colcon_core.package_identification:Package 'src/uav_mode_supervisor' with type 'ros.ament_cmake' and name 'uav_mode_supervisor'
+[0.260s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_visual_landing) by extensions ['ignore', 'ignore_ament_install']
+[0.260s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_visual_landing) by extension 'ignore'
+[0.260s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_visual_landing) by extension 'ignore_ament_install'
+[0.260s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_visual_landing) by extensions ['colcon_pkg']
+[0.260s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_visual_landing) by extension 'colcon_pkg'
+[0.260s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_visual_landing) by extensions ['colcon_meta']
+[0.260s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_visual_landing) by extension 'colcon_meta'
+[0.260s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_visual_landing) by extensions ['ros']
+[0.260s] Level 1:colcon.colcon_core.package_identification:_identify(src/uav_visual_landing) by extension 'ros'
+[0.261s] DEBUG:colcon.colcon_core.package_identification:Package 'src/uav_visual_landing' with type 'ros.ament_cmake' and name 'uav_visual_landing'
+[0.262s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) using defaults
+[0.262s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) discover
+[0.262s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) using defaults
+[0.262s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) discover
+[0.262s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) using defaults
+[0.276s] Level 5:colcon.colcon_core.verb:set package 'uav_bridge' build argument 'cmake_args' from command line to '['-DBUILD_TESTING=ON', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON']'
+[0.276s] Level 5:colcon.colcon_core.verb:set package 'uav_bridge' build argument 'cmake_target' from command line to 'None'
+[0.276s] Level 5:colcon.colcon_core.verb:set package 'uav_bridge' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.276s] Level 5:colcon.colcon_core.verb:set package 'uav_bridge' build argument 'cmake_clean_cache' from command line to 'False'
+[0.276s] Level 5:colcon.colcon_core.verb:set package 'uav_bridge' build argument 'cmake_clean_first' from command line to 'False'
+[0.276s] Level 5:colcon.colcon_core.verb:set package 'uav_bridge' build argument 'cmake_force_configure' from command line to 'False'
+[0.276s] Level 5:colcon.colcon_core.verb:set package 'uav_bridge' build argument 'ament_cmake_args' from command line to 'None'
+[0.276s] Level 5:colcon.colcon_core.verb:set package 'uav_bridge' build argument 'catkin_cmake_args' from command line to 'None'
+[0.276s] Level 5:colcon.colcon_core.verb:set package 'uav_bridge' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.276s] DEBUG:colcon.colcon_core.verb:Building package 'uav_bridge' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_bridge', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': ['-DBUILD_TESTING=ON', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON'], 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge', 'merge_install': False, 'path': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_bridge', 'symlink_install': False, 'test_result_base': None}
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_description' build argument 'cmake_args' from command line to '['-DBUILD_TESTING=ON', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON']'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_description' build argument 'cmake_target' from command line to 'None'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_description' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_description' build argument 'cmake_clean_cache' from command line to 'False'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_description' build argument 'cmake_clean_first' from command line to 'False'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_description' build argument 'cmake_force_configure' from command line to 'False'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_description' build argument 'ament_cmake_args' from command line to 'None'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_description' build argument 'catkin_cmake_args' from command line to 'None'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_description' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.277s] DEBUG:colcon.colcon_core.verb:Building package 'uav_description' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_description', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': ['-DBUILD_TESTING=ON', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON'], 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description', 'merge_install': False, 'path': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_description', 'symlink_install': False, 'test_result_base': None}
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_visual_landing' build argument 'cmake_args' from command line to '['-DBUILD_TESTING=ON', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON']'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_visual_landing' build argument 'cmake_target' from command line to 'None'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_visual_landing' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_visual_landing' build argument 'cmake_clean_cache' from command line to 'False'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_visual_landing' build argument 'cmake_clean_first' from command line to 'False'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_visual_landing' build argument 'cmake_force_configure' from command line to 'False'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_visual_landing' build argument 'ament_cmake_args' from command line to 'None'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_visual_landing' build argument 'catkin_cmake_args' from command line to 'None'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_visual_landing' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.277s] DEBUG:colcon.colcon_core.verb:Building package 'uav_visual_landing' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_visual_landing', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': ['-DBUILD_TESTING=ON', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON'], 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing', 'merge_install': False, 'path': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_visual_landing', 'symlink_install': False, 'test_result_base': None}
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_bringup' build argument 'cmake_args' from command line to '['-DBUILD_TESTING=ON', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON']'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_bringup' build argument 'cmake_target' from command line to 'None'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_bringup' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_bringup' build argument 'cmake_clean_cache' from command line to 'False'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_bringup' build argument 'cmake_clean_first' from command line to 'False'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_bringup' build argument 'cmake_force_configure' from command line to 'False'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_bringup' build argument 'ament_cmake_args' from command line to 'None'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_bringup' build argument 'catkin_cmake_args' from command line to 'None'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_bringup' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.277s] DEBUG:colcon.colcon_core.verb:Building package 'uav_bringup' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_bringup', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': ['-DBUILD_TESTING=ON', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON'], 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup', 'merge_install': False, 'path': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_bringup', 'symlink_install': False, 'test_result_base': None}
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_mode_supervisor' build argument 'cmake_args' from command line to '['-DBUILD_TESTING=ON', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON']'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_mode_supervisor' build argument 'cmake_target' from command line to 'None'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_mode_supervisor' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.277s] Level 5:colcon.colcon_core.verb:set package 'uav_mode_supervisor' build argument 'cmake_clean_cache' from command line to 'False'
+[0.278s] Level 5:colcon.colcon_core.verb:set package 'uav_mode_supervisor' build argument 'cmake_clean_first' from command line to 'False'
+[0.278s] Level 5:colcon.colcon_core.verb:set package 'uav_mode_supervisor' build argument 'cmake_force_configure' from command line to 'False'
+[0.278s] Level 5:colcon.colcon_core.verb:set package 'uav_mode_supervisor' build argument 'ament_cmake_args' from command line to 'None'
+[0.278s] Level 5:colcon.colcon_core.verb:set package 'uav_mode_supervisor' build argument 'catkin_cmake_args' from command line to 'None'
+[0.278s] Level 5:colcon.colcon_core.verb:set package 'uav_mode_supervisor' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.278s] DEBUG:colcon.colcon_core.verb:Building package 'uav_mode_supervisor' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_mode_supervisor', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': ['-DBUILD_TESTING=ON', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON'], 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_mode_supervisor', 'merge_install': False, 'path': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_mode_supervisor', 'symlink_install': False, 'test_result_base': None}
+[0.278s] INFO:colcon.colcon_core.executor:Executing jobs using 'parallel' executor
+[0.279s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete
+[0.279s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_visual_landing' with build type 'ament_cmake'
+[0.279s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_visual_landing'
+[0.280s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_core.shell.bat': Not used on non-Windows systems
+[0.280s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.280s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.283s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_bridge' with build type 'ament_cmake'
+[0.283s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_bridge'
+[0.283s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.283s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.285s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_description' with build type 'ament_cmake'
+[0.285s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_description'
+[0.285s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.285s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.290s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_visual_landing': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_visual_landing -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_INSTALL_PREFIX=/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing
+[0.292s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_bridge': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_bridge -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_INSTALL_PREFIX=/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge
+[0.293s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_description': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_description -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_INSTALL_PREFIX=/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description
+[0.939s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_description' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_description -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_INSTALL_PREFIX=/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description
+[0.940s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_description': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_description -- -j16 -l16
+[0.993s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_description' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_description -- -j16 -l16
+[1.007s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_description': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_description
+[1.049s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(uav_description)
+[1.050s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_description' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_description
+[1.052s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description' for CMake module files
+[1.053s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description' for CMake config files
+[1.053s] Level 1:colcon.colcon_core.shell:create_environment_hook('uav_description', 'cmake_prefix_path')
+[1.054s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/hook/cmake_prefix_path.ps1'
+[1.054s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/hook/cmake_prefix_path.dsv'
+[1.055s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/hook/cmake_prefix_path.sh'
+[1.056s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/bin'
+[1.056s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/lib/pkgconfig/uav_description.pc'
+[1.058s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/lib/python3.10/site-packages'
+[1.058s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/bin'
+[1.059s] INFO:colcon.colcon_core.shell:Creating package script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/package.ps1'
+[1.060s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/package.dsv'
+[1.060s] INFO:colcon.colcon_core.shell:Creating package script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/package.sh'
+[1.061s] INFO:colcon.colcon_core.shell:Creating package script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/package.bash'
+[1.062s] INFO:colcon.colcon_core.shell:Creating package script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/package.zsh'
+[1.062s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/colcon-core/packages/uav_description)
+[1.066s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(uav_description)
+[1.067s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description' for CMake module files
+[1.067s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description' for CMake config files
+[1.067s] Level 1:colcon.colcon_core.shell:create_environment_hook('uav_description', 'cmake_prefix_path')
+[1.068s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/hook/cmake_prefix_path.ps1'
+[1.069s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/hook/cmake_prefix_path.dsv'
+[1.069s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/hook/cmake_prefix_path.sh'
+[1.070s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/bin'
+[1.070s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/lib/pkgconfig/uav_description.pc'
+[1.070s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/lib/python3.10/site-packages'
+[1.071s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/bin'
+[1.071s] INFO:colcon.colcon_core.shell:Creating package script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/package.ps1'
+[1.072s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/package.dsv'
+[1.072s] INFO:colcon.colcon_core.shell:Creating package script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/package.sh'
+[1.073s] INFO:colcon.colcon_core.shell:Creating package script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/package.bash'
+[1.073s] INFO:colcon.colcon_core.shell:Creating package script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/uav_description/package.zsh'
+[1.074s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_description/share/colcon-core/packages/uav_description)
+[1.396s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_visual_landing' returned '1': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_visual_landing -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_INSTALL_PREFIX=/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing
+[1.415s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(uav_visual_landing)
+[1.415s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing' for CMake module files
+[1.416s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing' for CMake config files
+[1.416s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing/bin'
+[1.416s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing/lib/pkgconfig/uav_visual_landing.pc'
+[1.416s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing/lib/python3.10/site-packages'
+[1.416s] Level 1:colcon.colcon_core.environment:checking '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing/bin'
+[1.416s] INFO:colcon.colcon_core.shell:Creating package script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing/share/uav_visual_landing/package.ps1'
+[1.417s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing/share/uav_visual_landing/package.dsv'
+[1.418s] INFO:colcon.colcon_core.shell:Creating package script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing/share/uav_visual_landing/package.sh'
+[1.418s] INFO:colcon.colcon_core.shell:Creating package script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing/share/uav_visual_landing/package.bash'
+[1.418s] INFO:colcon.colcon_core.shell:Creating package script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing/share/uav_visual_landing/package.zsh'
+[1.419s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_visual_landing/share/colcon-core/packages/uav_visual_landing)
+[1.531s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:closing loop
+[1.532s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:loop closed
+[1.532s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete finished with '1'
+[1.532s] DEBUG:colcon.colcon_core.event_reactor:joining thread
+[1.587s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.terminal_notifier': Not used on non-Darwin systems
+[1.588s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.win32': Not used on non-Windows systems
+[1.588s] INFO:colcon.colcon_notification.desktop_notification:Sending desktop notification using 'notify2'
+[1.599s] DEBUG:colcon.colcon_core.event_reactor:joined thread
+[1.599s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/local_setup.ps1'
+[1.600s] INFO:colcon.colcon_core.shell:Creating prefix util module '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/_local_setup_util_ps1.py'
+[1.602s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/setup.ps1'
+[1.603s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/local_setup.sh'
+[1.603s] INFO:colcon.colcon_core.shell:Creating prefix util module '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/_local_setup_util_sh.py'
+[1.604s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/setup.sh'
+[1.605s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/local_setup.bash'
+[1.605s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/setup.bash'
+[1.606s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/local_setup.zsh'
+[1.606s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/setup.zsh'

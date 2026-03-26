@@ -1,0 +1,2 @@
+/usr/bin/ar qc libuav_bridge_px4_odom_adapter_logic.a CMakeFiles/uav_bridge_px4_odom_adapter_logic.dir/src/px4_odom_adapter_logic.cpp.o
+/usr/bin/ranlib libuav_bridge_px4_odom_adapter_logic.a

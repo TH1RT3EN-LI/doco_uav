@@ -1,0 +1,17 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/uav_mode_supervisor__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/uav_mode_supervisor/msg/detail/supervisor_state__type_support.cpp.o"
+  "CMakeFiles/uav_mode_supervisor__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/uav_mode_supervisor/msg/detail/supervisor_state__type_support.cpp.o.d"
+  "CMakeFiles/uav_mode_supervisor__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/uav_mode_supervisor/srv/detail/command_supervisor__type_support.cpp.o"
+  "CMakeFiles/uav_mode_supervisor__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/uav_mode_supervisor/srv/detail/command_supervisor__type_support.cpp.o.d"
+  "libuav_mode_supervisor__rosidl_typesupport_introspection_cpp.pdb"
+  "libuav_mode_supervisor__rosidl_typesupport_introspection_cpp.so"
+  "rosidl_typesupport_introspection_cpp/uav_mode_supervisor/msg/detail/supervisor_state__rosidl_typesupport_introspection_cpp.hpp"
+  "rosidl_typesupport_introspection_cpp/uav_mode_supervisor/msg/detail/supervisor_state__type_support.cpp"
+  "rosidl_typesupport_introspection_cpp/uav_mode_supervisor/srv/detail/command_supervisor__rosidl_typesupport_introspection_cpp.hpp"
+  "rosidl_typesupport_introspection_cpp/uav_mode_supervisor/srv/detail/command_supervisor__type_support.cpp"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/uav_mode_supervisor__rosidl_typesupport_introspection_cpp.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

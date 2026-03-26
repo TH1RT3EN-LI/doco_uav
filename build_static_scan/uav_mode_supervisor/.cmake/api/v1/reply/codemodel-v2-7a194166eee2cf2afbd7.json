@@ -1,0 +1,308 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-6bd2ef666cb7f638ac85.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						4,
+						5,
+						6,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22
+					]
+				},
+				{
+					"build" : "uav_mode_supervisor__py",
+					"jsonFile" : "directory-uav_mode_supervisor__py-fff330c979b524589cfd.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_mode_supervisor/uav_mode_supervisor__py",
+					"targetIndexes" : 
+					[
+						7
+					]
+				},
+				{
+					"build" : "gtest",
+					"jsonFile" : "directory-gtest-a2408fe1a73b92c5e636.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "/opt/ros/humble/src/gtest_vendor",
+					"targetIndexes" : 
+					[
+						2,
+						3
+					]
+				}
+			],
+			"name" : "",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						1
+					],
+					"name" : "uav_mode_supervisor",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2
+					],
+					"name" : "gtest",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						2,
+						3
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "ament_cmake_python_build_uav_mode_supervisor_egg::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ament_cmake_python_build_uav_mode_supervisor_egg-399faf2cc4d45e7ed5fd.json",
+					"name" : "ament_cmake_python_build_uav_mode_supervisor_egg",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ament_cmake_python_copy_uav_mode_supervisor::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ament_cmake_python_copy_uav_mode_supervisor-d65a9387c73039fb82b2.json",
+					"name" : "ament_cmake_python_copy_uav_mode_supervisor",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "gtest::@0af4add9fe94340e763e",
+					"jsonFile" : "target-gtest-313f1038a2e3f97f4944.json",
+					"name" : "gtest",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "gtest_main::@0af4add9fe94340e763e",
+					"jsonFile" : "target-gtest_main-8b067bcce44c2e811c48.json",
+					"name" : "gtest_main",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "test_supervisor_logic::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-test_supervisor_logic-c28d011b94d19f2b5110.json",
+					"name" : "test_supervisor_logic",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor-eedea275344042e00c79.json",
+					"name" : "uav_mode_supervisor",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor__cpp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor__cpp-4668e1e17c7253dffdf6.json",
+					"name" : "uav_mode_supervisor__cpp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "uav_mode_supervisor__py::@bfaf80783a4bd1a1fa53",
+					"jsonFile" : "target-uav_mode_supervisor__py-e873a5d8da77857ccb73.json",
+					"name" : "uav_mode_supervisor__py",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor__rosidl_generator_c::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor__rosidl_generator_c-b210535b647ed442b2bd.json",
+					"name" : "uav_mode_supervisor__rosidl_generator_c",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor__rosidl_generator_py::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor__rosidl_generator_py-b80b209c283fefee99b3.json",
+					"name" : "uav_mode_supervisor__rosidl_generator_py",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor__rosidl_typesupport_c::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor__rosidl_typesupport_c-62f3bc25cce905e36ae2.json",
+					"name" : "uav_mode_supervisor__rosidl_typesupport_c",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor__rosidl_typesupport_c__pyext::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor__rosidl_typesupport_c__pyext-c24f568c5439da5b9457.json",
+					"name" : "uav_mode_supervisor__rosidl_typesupport_c__pyext",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor__rosidl_typesupport_cpp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor__rosidl_typesupport_cpp-20881d3f5c2bb98c9147.json",
+					"name" : "uav_mode_supervisor__rosidl_typesupport_cpp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor__rosidl_typesupport_fastrtps_c::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor__rosidl_typesupport_fastrtps_c-e76d16b93fd575c3607b.json",
+					"name" : "uav_mode_supervisor__rosidl_typesupport_fastrtps_c",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor__rosidl_typesupport_fastrtps_c__pyext::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor__rosidl_typesupport_fastrtps_c__pyext-c64e86ee4014e8b22880.json",
+					"name" : "uav_mode_supervisor__rosidl_typesupport_fastrtps_c__pyext",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor__rosidl_typesupport_fastrtps_cpp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor__rosidl_typesupport_fastrtps_cpp-5f2094e9a10c01e06adc.json",
+					"name" : "uav_mode_supervisor__rosidl_typesupport_fastrtps_cpp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor__rosidl_typesupport_introspection_c::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor__rosidl_typesupport_introspection_c-85178de0ab665ffe690c.json",
+					"name" : "uav_mode_supervisor__rosidl_typesupport_introspection_c",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor__rosidl_typesupport_introspection_c__pyext::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor__rosidl_typesupport_introspection_c__pyext-06a1f823df7317553809.json",
+					"name" : "uav_mode_supervisor__rosidl_typesupport_introspection_c__pyext",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor__rosidl_typesupport_introspection_cpp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor__rosidl_typesupport_introspection_cpp-9fc2236663dfdcfa5dc3.json",
+					"name" : "uav_mode_supervisor__rosidl_typesupport_introspection_cpp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor_core::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor_core-5b058b3e22c72c300973.json",
+					"name" : "uav_mode_supervisor_core",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor_node::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor_node-d923a7d752762feb1a99.json",
+					"name" : "uav_mode_supervisor_node",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uav_mode_supervisor_uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uav_mode_supervisor_uninstall-3da18f422e59a2196d81.json",
+					"name" : "uav_mode_supervisor_uninstall",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uninstall-bc06a6210b4a0cf8f116.json",
+					"name" : "uninstall",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_mode_supervisor",
+		"source" : "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_mode_supervisor"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

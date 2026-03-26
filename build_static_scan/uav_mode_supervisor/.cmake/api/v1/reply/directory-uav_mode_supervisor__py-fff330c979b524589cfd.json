@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "uav_mode_supervisor__py",
+		"source" : "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_mode_supervisor/uav_mode_supervisor__py"
+	}
+}

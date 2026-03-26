@@ -395,14 +395,47 @@ private:
     cv::Mat gray;
     const int h = static_cast<int>(gz_msg.height());
     const int w = static_cast<int>(gz_msg.width());
+    const size_t src_step = static_cast<size_t>(gz_msg.step());
+    const size_t height = static_cast<size_t>(std::max(h, 0));
+    const std::string &data = gz_msg.data();
+
+    if (h <= 0 || w <= 0) {
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *get_clock(), 5000,
+        "Ignoring optical flow image with invalid size: width=%d height=%d",
+        w, h);
+      return;
+    }
 
     if (gz_msg.pixel_format_type() == gz::msgs::PixelFormatType::RGB_INT8) {
-      cv::Mat rgb(h, w, CV_8UC3,
-                  const_cast<char *>(gz_msg.data().data()));
+      const size_t min_step = static_cast<size_t>(w) * 3U;
+      const size_t required_bytes = src_step * height;
+      if (src_step < min_step || data.size() < required_bytes) {
+        RCLCPP_WARN_THROTTLE(
+          get_logger(), *get_clock(), 5000,
+          "Ignoring malformed optical flow RGB image: step=%zu min_step=%zu size=%zu need=%zu",
+          src_step, min_step, data.size(), required_bytes);
+        return;
+      }
+      cv::Mat rgb(
+        h, w, CV_8UC3,
+        const_cast<char *>(data.data()),
+        src_step);
       cv::cvtColor(rgb, gray, cv::COLOR_RGB2GRAY);
     } else if (gz_msg.pixel_format_type() == gz::msgs::PixelFormatType::L_INT8) {
-      gray = cv::Mat(h, w, CV_8UC1,
-                     const_cast<char *>(gz_msg.data().data())).clone();
+      const size_t min_step = static_cast<size_t>(w);
+      const size_t required_bytes = src_step * height;
+      if (src_step < min_step || data.size() < required_bytes) {
+        RCLCPP_WARN_THROTTLE(
+          get_logger(), *get_clock(), 5000,
+          "Ignoring malformed optical flow mono image: step=%zu min_step=%zu size=%zu need=%zu",
+          src_step, min_step, data.size(), required_bytes);
+        return;
+      }
+      gray = cv::Mat(
+        h, w, CV_8UC1,
+        const_cast<char *>(data.data()),
+        src_step).clone();
     } else {
       RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 5000,
                            "Unsupported pixel format: %d", static_cast<int>(gz_msg.pixel_format_type()));

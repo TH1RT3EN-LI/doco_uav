@@ -1,0 +1,118 @@
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found ament_cmake: 1.3.13 (/opt/ros/humble/share/ament_cmake/cmake)
+-- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+-- Configuring done
+-- Generating done
+CMake Warning:
+  Manually-specified variables were not used by the project:
+
+    CMAKE_EXPORT_COMPILE_COMMANDS
+
+
+-- Build files have been written to: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_bringup
+Built target ament_cmake_python_copy_uav_bringup
+running egg_info
+creating uav_bringup.egg-info
+writing uav_bringup.egg-info/PKG-INFO
+writing dependency_links to uav_bringup.egg-info/dependency_links.txt
+writing top-level names to uav_bringup.egg-info/top_level.txt
+writing manifest file 'uav_bringup.egg-info/SOURCES.txt'
+reading manifest file 'uav_bringup.egg-info/SOURCES.txt'
+writing manifest file 'uav_bringup.egg-info/SOURCES.txt'
+Built target ament_cmake_python_build_uav_bringup_egg
+-- Install configuration: ""
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/environment/pythonpath.sh
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/environment/pythonpath.dsv
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/local/lib/python3.10/dist-packages/uav_bringup-0.1.0-py3.10.egg-info
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/local/lib/python3.10/dist-packages/uav_bringup-0.1.0-py3.10.egg-info/top_level.txt
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/local/lib/python3.10/dist-packages/uav_bringup-0.1.0-py3.10.egg-info/PKG-INFO
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/local/lib/python3.10/dist-packages/uav_bringup-0.1.0-py3.10.egg-info/SOURCES.txt
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/local/lib/python3.10/dist-packages/uav_bringup-0.1.0-py3.10.egg-info/dependency_links.txt
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/local/lib/python3.10/dist-packages/uav_bringup
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/local/lib/python3.10/dist-packages/uav_bringup/__init__.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/local/lib/python3.10/dist-packages/uav_bringup/profile_defaults.py
+Listing '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/local/lib/python3.10/dist-packages/uav_bringup'...
+Compiling '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/local/lib/python3.10/dist-packages/uav_bringup/__init__.py'...
+Compiling '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/local/lib/python3.10/dist-packages/uav_bringup/profile_defaults.py'...
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/openvins_orbbec_bootstrap_source.launch.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/orbbec_depth_camera.launch.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/openvins_orbbec.launch.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/visual_landing.launch.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/px4_planar_odom.launch.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/minimal_visual_landing.launch.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/mono_camera.launch.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/minimal_control.launch.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/__pycache__
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/__pycache__/minimal_control.launch.cpython-310.pyc
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/__pycache__/openvins_orbbec_bootstrap_source.launch.cpython-310.pyc
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/__pycache__/mono_camera.launch.cpython-310.pyc
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/__pycache__/minimal_visual_landing.launch.cpython-310.pyc
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/__pycache__/orbbec_depth_camera.launch.cpython-310.pyc
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/__pycache__/openvins_orbbec.launch.cpython-310.pyc
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/__pycache__/openvins_orbbec_calibration.launch.cpython-310.pyc
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/__pycache__/px4_planar_odom.launch.cpython-310.pyc
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/__pycache__/visual_landing.launch.cpython-310.pyc
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/launch/openvins_orbbec_calibration.launch.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/estimator_config.flight.yaml
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/mask1.pgm
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/kalibr_imucam_chain.yaml
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/backups
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/backups/20260320_pre_drift_suppression
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/backups/20260320_pre_drift_suppression/estimator_config.flight.yaml
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/backups/20260320_pre_drift_suppression/kalibr_imucam_chain.yaml
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/backups/20260320_pre_drift_suppression/kalibr_imu_chain.yaml
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/kalibr_imu_chain.yaml
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/frozen_final/mask0.pgm
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/estimator_config.flight.yaml
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/estimator_config.calibration.yaml
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/mask1.pgm
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/kalibr_imucam_chain.yaml
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/kalibr_imu_chain.yaml
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/openvins/orbbec_stereo_imu/bootstrap/mask0.pgm
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/camera
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/camera/uav_mono_camera.example.yaml
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/px4
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/px4/airframes
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/px4/airframes/4901_gz_uav
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/px4/rc
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/px4/rc/px4-rc.params
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/px4/rc/frames
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/config/px4/rc/frames/uav.params
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/lib/uav_bringup/generate_orbbec_openvins_bootstrap.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/lib/uav_bringup/apply_openvins_calibration_result.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/lib/uav_bringup/freeze_openvins_orbbec_config.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/lib/uav_bringup/home_visual_landing_test_node.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/lib/uav_bringup/monitor_topic_position.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/lib/uav_bringup/openvins_supervisor.py
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/ament_index/resource_index/package_run_dependencies/uav_bringup
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/ament_index/resource_index/parent_prefix_path/uav_bringup
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/environment/ament_prefix_path.sh
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/environment/ament_prefix_path.dsv
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/environment/path.sh
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/environment/path.dsv
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/local_setup.bash
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/local_setup.sh
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/local_setup.zsh
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/local_setup.dsv
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/package.dsv
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/ament_index/resource_index/packages/uav_bringup
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/cmake/uav_bringupConfig.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/cmake/uav_bringupConfig-version.cmake
+-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bringup/share/uav_bringup/package.xml

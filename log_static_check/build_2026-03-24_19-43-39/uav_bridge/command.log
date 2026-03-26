@@ -1,0 +1,1 @@
+Invoking command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_check/uav_bridge': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_bridge -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check

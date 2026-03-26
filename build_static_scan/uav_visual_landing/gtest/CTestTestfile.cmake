@@ -1,0 +1,6 @@
+# CMake generated Testfile for 
+# Source directory: /opt/ros/humble/src/gtest_vendor
+# Build directory: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_visual_landing/gtest
+# 
+# This file includes the relevant testing commands required for 
+# testing this directory and lists subdirectories to be tested as well.

@@ -65,6 +65,43 @@ public:
   }
 
 private:
+  static bool validateGzImageBuffer(
+    const gz::msgs::Image & gz_msg,
+    size_t min_step,
+    const char * format_name,
+    rclcpp::Logger logger)
+  {
+    const size_t width = static_cast<size_t>(gz_msg.width());
+    const size_t height = static_cast<size_t>(gz_msg.height());
+    const size_t src_step = static_cast<size_t>(gz_msg.step());
+    const std::string & data = gz_msg.data();
+
+    if (src_step < min_step) {
+      RCLCPP_WARN(
+        logger,
+        "Gazebo %s image step too small: step=%zu min=%zu width=%zu height=%zu",
+        format_name,
+        src_step,
+        min_step,
+        width,
+        height);
+      return false;
+    }
+
+    const size_t required_bytes = src_step * height;
+    if (data.size() < required_bytes) {
+      RCLCPP_WARN(
+        logger,
+        "Gazebo %s image payload too small: got=%zu need=%zu",
+        format_name,
+        data.size(),
+        required_bytes);
+      return false;
+    }
+
+    return true;
+  }
+
   static bool fillRosMonoImage(
     const gz::msgs::Image & gz_msg,
     sensor_msgs::msg::Image & ros_msg,
@@ -76,15 +113,13 @@ private:
 
     const size_t width = static_cast<size_t>(ros_msg.width);
     const size_t height = static_cast<size_t>(ros_msg.height);
-    const size_t src_step = static_cast<size_t>(gz_msg.step());
     const std::string & data = gz_msg.data();
-    const size_t required_bytes = src_step * height;
-    if (data.size() < required_bytes) {
-      RCLCPP_WARN(logger, "Gazebo mono image payload too small: got=%zu need=%zu", data.size(), required_bytes);
-      return false;
-    }
+    const size_t src_step = static_cast<size_t>(gz_msg.step());
 
     if (gz_msg.pixel_format_type() == gz::msgs::PixelFormatType::L_INT8) {
+      if (!validateGzImageBuffer(gz_msg, width, "mono", logger)) {
+        return false;
+      }
       ros_msg.data.resize(width * height);
       const uint8_t * src = reinterpret_cast<const uint8_t *>(data.data());
       uint8_t * dst = ros_msg.data.data();
@@ -95,6 +130,9 @@ private:
     }
 
     if (gz_msg.pixel_format_type() == gz::msgs::PixelFormatType::RGB_INT8) {
+      if (!validateGzImageBuffer(gz_msg, width * 3U, "rgb", logger)) {
+        return false;
+      }
       ros_msg.data.resize(width * height);
       const uint8_t * src = reinterpret_cast<const uint8_t *>(data.data());
       uint8_t * dst = ros_msg.data.data();

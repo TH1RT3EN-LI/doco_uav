@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/test_uav_control_logic.dir/test/test_uav_control_logic.cpp.o -o test_uav_control_logic  gtest/libgtest_main.a gtest/libgtest.a -pthread 

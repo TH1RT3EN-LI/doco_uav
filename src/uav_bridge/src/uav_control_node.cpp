@@ -101,7 +101,7 @@ public:
     abort_service_ = this->get_parameter("abort_service").as_string();
     disarm_service_ = this->get_parameter("disarm_service").as_string();
     pre_takeoff_reset_service_ = this->get_parameter("pre_takeoff_reset_service").as_string();
-    publish_rate_hz_ = this->get_parameter("publish_rate_hz").as_double();
+    publish_rate_hz_ = std::max(1.0, this->get_parameter("publish_rate_hz").as_double());
     warmup_cycles_ = this->get_parameter("warmup_cycles").as_int();
     target_system_ = static_cast<uint8_t>(this->get_parameter("target_system").as_int());
     target_component_ = static_cast<uint8_t>(this->get_parameter("target_component").as_int());

@@ -179,8 +179,78 @@ private:
     return sensor_msgs::msg::PointField::FLOAT32;
   }
 
-  static void
+  static bool ValidateImagePayload(
+    const gz::msgs::Image &gz_msg,
+    size_t min_step,
+    const char *stream_name,
+    rclcpp::Logger logger) {
+    const size_t width = static_cast<size_t>(gz_msg.width());
+    const size_t height = static_cast<size_t>(gz_msg.height());
+    const size_t step = static_cast<size_t>(gz_msg.step());
+    const size_t required_bytes = step * height;
+
+    if (step < min_step) {
+      RCLCPP_WARN(
+        logger,
+        "Dropping malformed %s image: step=%zu min_step=%zu width=%zu height=%zu",
+        stream_name, step, min_step, width, height);
+      return false;
+    }
+
+    if (gz_msg.data().size() < required_bytes) {
+      RCLCPP_WARN(
+        logger,
+        "Dropping truncated %s image: size=%zu need=%zu",
+        stream_name, gz_msg.data().size(), required_bytes);
+      return false;
+    }
+
+    return true;
+  }
+
+  static bool ValidatePointCloudPayload(
+    const gz::msgs::PointCloudPacked &gz_msg,
+    rclcpp::Logger logger) {
+    const size_t width = static_cast<size_t>(gz_msg.width());
+    const size_t height = static_cast<size_t>(gz_msg.height());
+    const size_t point_step = static_cast<size_t>(gz_msg.point_step());
+    const size_t row_step = static_cast<size_t>(gz_msg.row_step());
+
+    if (point_step < (sizeof(float) * 3U)) {
+      RCLCPP_WARN(
+        logger,
+        "Dropping malformed stereo point cloud: point_step=%zu is smaller than xyz payload",
+        point_step);
+      return false;
+    }
+
+    const size_t min_row_step = point_step * width;
+    if (row_step < min_row_step) {
+      RCLCPP_WARN(
+        logger,
+        "Dropping malformed stereo point cloud: row_step=%zu min_row_step=%zu width=%zu point_step=%zu",
+        row_step, min_row_step, width, point_step);
+      return false;
+    }
+
+    const size_t required_bytes = row_step * height;
+    if (gz_msg.data().size() < required_bytes) {
+      RCLCPP_WARN(
+        logger,
+        "Dropping truncated stereo point cloud: size=%zu need=%zu",
+        gz_msg.data().size(), required_bytes);
+      return false;
+    }
+
+    return true;
+  }
+
+  static bool
   RotatePointCloudToOptical(sensor_msgs::msg::PointCloud2 &ros_msg) {
+    if (ros_msg.point_step < (sizeof(float) * 3U)) {
+      return false;
+    }
+
     const size_t point_count =
         static_cast<size_t>(ros_msg.width) * ros_msg.height;
     uint8_t *data = ros_msg.data.data();
@@ -201,9 +271,19 @@ private:
       std::memcpy(p + 4, &y_opt, sizeof(float));
       std::memcpy(p + 8, &z_opt, sizeof(float));
     }
+
+    return true;
   }
 
   void OnGzRgbImage(const gz::msgs::Image &gz_msg) {
+    if (!ValidateImagePayload(
+          gz_msg,
+          static_cast<size_t>(gz_msg.width()) * 3U,
+          "stereo rgb",
+          this->get_logger())) {
+      return;
+    }
+
     sensor_msgs::msg::Image ros_msg;
 
     ros_msg.header.stamp = ResolveStamp(gz_msg);
@@ -226,6 +306,14 @@ private:
   }
 
   void OnGzDepthImage(const gz::msgs::Image &gz_msg) {
+    if (!ValidateImagePayload(
+          gz_msg,
+          static_cast<size_t>(gz_msg.width()) * sizeof(float),
+          "stereo depth",
+          this->get_logger())) {
+      return;
+    }
+
     sensor_msgs::msg::Image ros_msg;
 
     ros_msg.header.stamp = ResolveStamp(gz_msg);
@@ -249,6 +337,10 @@ private:
   }
 
   void OnGzPoints(const gz::msgs::PointCloudPacked &gz_msg) {
+    if (!ValidatePointCloudPayload(gz_msg, this->get_logger())) {
+      return;
+    }
+
     sensor_msgs::msg::PointCloud2 ros_msg;
 
     ros_msg.header.stamp = ResolveStamp(gz_msg);
@@ -302,7 +394,10 @@ private:
       ros_field.count = gz_field.count();
     }
 
-    RotatePointCloudToOptical(ros_msg);
+    if (!RotatePointCloudToOptical(ros_msg)) {
+      RCLCPP_WARN(this->get_logger(), "Dropping stereo point cloud with unsupported xyz layout");
+      return;
+    }
 
     _points_pub->publish(std::move(ros_msg));
   }

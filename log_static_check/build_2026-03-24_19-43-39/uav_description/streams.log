@@ -1,0 +1,54 @@
+[0.007s] Invoking command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_check/uav_description': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_description -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check
+[0.124s] -- The C compiler identification is GNU 11.4.0
+[0.207s] -- The CXX compiler identification is GNU 11.4.0
+[0.216s] -- Detecting C compiler ABI info
+[0.282s] -- Detecting C compiler ABI info - done
+[0.288s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.288s] -- Detecting C compile features
+[0.289s] -- Detecting C compile features - done
+[0.291s] -- Detecting CXX compiler ABI info
+[0.367s] -- Detecting CXX compiler ABI info - done
+[0.375s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.375s] -- Detecting CXX compile features
+[0.375s] -- Detecting CXX compile features - done
+[0.379s] -- Found ament_cmake: 1.3.13 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.512s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[0.642s] -- Configuring done
+[0.645s] -- Generating done
+[0.646s] -- Build files have been written to: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_check/uav_description
+[0.651s] Invoked command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_check/uav_description' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_description -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check
+[0.653s] Invoking command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_check/uav_description': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_check/uav_description -- -j16 -l16
+[0.696s] Invoked command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_check/uav_description' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_check/uav_description -- -j16 -l16
+[0.708s] Invoking command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_check/uav_description': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_check/uav_description
+[0.716s] -- Install configuration: "RelWithDebInfo"
+[0.716s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/models
+[0.716s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/models/uav_base
+[0.716s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/models/uav_base/model.config
+[0.716s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/models/uav_base/meshes
+[0.716s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/models/uav_base/meshes/motor_2306_base.dae
+[0.717s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/models/uav_base/meshes/propeller_5x3.stl
+[0.721s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/models/uav_base/meshes/dj250_airframe.dae
+[0.734s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/models/uav_base/meshes/motor_2306_bell.dae
+[0.734s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/models/uav_base/meshes/camera_orbbec_gemini336_link.stl
+[0.740s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/models/uav_base/model.sdf
+[0.740s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/models/uav
+[0.740s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/models/uav/model.config
+[0.740s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/models/uav/model.sdf
+[0.740s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/urdf
+[0.740s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/urdf/uav.urdf.xacro
+[0.740s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/ament_index/resource_index/package_run_dependencies/uav_description
+[0.740s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/ament_index/resource_index/parent_prefix_path/uav_description
+[0.740s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/environment/ament_prefix_path.sh
+[0.741s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/environment/ament_prefix_path.dsv
+[0.741s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/environment/path.sh
+[0.741s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/environment/path.dsv
+[0.741s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/local_setup.bash
+[0.741s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/local_setup.sh
+[0.741s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/local_setup.zsh
+[0.741s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/local_setup.dsv
+[0.741s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/package.dsv
+[0.742s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/ament_index/resource_index/packages/uav_description
+[0.742s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/cmake/uav_descriptionConfig.cmake
+[0.742s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/cmake/uav_descriptionConfig-version.cmake
+[0.742s] -- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_check/share/uav_description/package.xml
+[0.746s] Invoked command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_check/uav_description' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_check/uav_description

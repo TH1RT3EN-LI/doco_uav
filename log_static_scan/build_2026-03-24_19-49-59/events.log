@@ -1,0 +1,629 @@
+[0.000000] (-) TimerEvent: {}
+[0.000524] (-) JobUnselected: {'identifier': 'uav_bringup'}
+[0.000582] (-) JobUnselected: {'identifier': 'uav_description'}
+[0.000620] (-) JobUnselected: {'identifier': 'uav_mode_supervisor'}
+[0.000661] (-) JobUnselected: {'identifier': 'uav_visual_landing'}
+[0.000891] (uav_bridge) JobQueued: {'identifier': 'uav_bridge', 'dependencies': OrderedDict()}
+[0.000929] (uav_bridge) JobStarted: {'identifier': 'uav_bridge'}
+[0.029732] (uav_bridge) JobProgress: {'identifier': 'uav_bridge', 'progress': 'cmake'}
+[0.031980] (uav_bridge) Command: {'cmd': ['/usr/bin/cmake', '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_bridge', '-DBUILD_TESTING=ON', '-DCMAKE_INSTALL_PREFIX=/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge'], 'cwd': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_bridge', 'env': OrderedDict([('GJS_DEBUG_TOPICS', 'JS ERROR;JS LOG'), ('LESSOPEN', '| /usr/bin/lesspipe %s'), ('VSCODE_CWD', '/home/th1rt3en'), ('VSCODE_ESM_ENTRYPOINT', 'vs/workbench/api/node/extensionHostProcess'), ('HTTPS_PROXY', 'http://127.0.0.1:7897'), ('CODEX_CI', '1'), ('LANGUAGE', 'en_US:en'), ('USER', 'th1rt3en'), ('LC_TIME', 'zh_CN.UTF-8'), ('CODEX_INTERNAL_ORIGINATOR_OVERRIDE', 'codex_vscode'), ('VSCODE_NLS_CONFIG', '{"userLocale":"zh-cn","osLocale":"en-us","resolvedLanguage":"zh-cn","defaultMessagesFile":"/usr/share/code/resources/app/out/nls.messages.json","languagePack":{"translationsConfigFile":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/tcf.json","messagesFile":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/61b3d0ab13be7dda2389f1d3e60a119c7f660cc3/nls.messages.json","corruptMarkerFile":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/corrupted.info"},"locale":"zh-cn","availableLanguages":{"*":"zh-cn"},"_languagePackId":"8cf2986bc5520a04dfa330f7d54677ff.zh-cn","_languagePackSupport":true,"_translationsConfigFile":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/tcf.json","_cacheRoot":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn","_resolvedLanguagePackCoreLocation":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/61b3d0ab13be7dda2389f1d3e60a119c7f660cc3","_corruptedFile":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/corrupted.info"}'), ('VSCODE_HANDLES_UNCAUGHT_ERRORS', 'true'), ('XDG_SESSION_TYPE', 'x11'), ('DEBUG', 'release'), ('SHLVL', '0'), ('LD_LIBRARY_PATH', '/home/th1rt3en/doco/sim_full/install/ugv_teleop/lib:/home/th1rt3en/doco/sim_full/install/uav_mode_supervisor/lib:/home/th1rt3en/doco/sim_full/install/uav_visual_landing/lib:/home/th1rt3en/doco/sim_full/install/relative_position_fusion/lib:/home/th1rt3en/doco/sim_full/install/quadrotor_msgs/lib:/home/th1rt3en/doco/sim_full/install/px4_msgs/lib:/home/th1rt3en/doco/sim_full/install/px4/lib:/home/th1rt3en/doco/sim_full/install/orbbec_camera/lib:/home/th1rt3en/doco/sim_full/install/orbbec_camera_msgs/lib:/home/th1rt3en/doco/sim_full/install/lslidar_msgs/lib:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('HOME', '/home/th1rt3en'), ('CHROME_DESKTOP', 'code.desktop'), ('OLDPWD', '/home/th1rt3en/doco'), ('DESKTOP_SESSION', 'ubuntu-xorg'), ('VSCODE_IPC_HOOK', '/run/user/1000/vscode-a48a504d-1.11-main.sock'), ('GIO_LAUNCHED_DESKTOP_FILE', '/usr/share/applications/code.desktop'), ('ROS_PYTHON_VERSION', '3'), ('GNOME_SHELL_SESSION_MODE', 'ubuntu'), ('GTK_MODULES', 'gail:atk-bridge'), ('SDL_IM_MODULE', 'fcitx'), ('PAGER', 'cat'), ('LC_MONETARY', 'zh_CN.UTF-8'), ('MANAGERPID', '1400'), ('LC_CTYPE', 'C.UTF-8'), ('SYSTEMD_EXEC_PID', '3006'), ('NO_COLOR', '1'), ('DBUS_SESSION_BUS_ADDRESS', 'unix:path=/run/user/1000/bus'), ('COLORTERM', ''), ('GIO_LAUNCHED_DESKTOP_FILE_PID', '8718'), ('VSCODE_CRASH_REPORTER_PROCESS_TYPE', 'extensionHost'), ('MANDATORY_PATH', '/usr/share/gconf/ubuntu-xorg.mandatory.path'), ('COLCON_PREFIX_PATH', '/home/th1rt3en/doco/sim_full/install'), ('ROS_DISTRO', 'humble'), ('GTK_IM_MODULE', 'fcitx'), ('LOGNAME', 'th1rt3en'), ('JOURNAL_STREAM', '8:20051'), ('_', '/home/th1rt3en/.local/bin/colcon'), ('ROS_VERSION', '2'), ('XDG_SESSION_CLASS', 'user'), ('DEFAULTS_PATH', '/usr/share/gconf/ubuntu-xorg.default.path'), ('RUST_LOG', 'warn'), ('USERNAME', 'th1rt3en'), ('TERM', 'dumb'), ('GNOME_DESKTOP_SESSION_ID', 'this-is-deprecated'), ('FC_FONTATIONS', '1'), ('ROS_LOCALHOST_ONLY', '0'), ('WINDOWPATH', '2'), ('PATH', '/opt/gcc-arm-none-eabi-9-2020-q2-update/bin:/home/th1rt3en/.local/bin:/home/th1rt3en/.codex/tmp/arg0/codex-arg0J4muaF:/opt/gcc-arm-none-eabi-9-2020-q2-update/bin:/home/th1rt3en/.local/bin:/opt/ros/humble/bin:/opt/gcc-arm-none-eabi-9-2020-q2-update/bin:/home/th1rt3en/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/opt/xtensa-esp-elf/bin/:/home/th1rt3en/.vscode/extensions/openai.chatgpt-26.304.20706-linux-x64/bin/linux-x86_64'), ('SESSION_MANAGER', 'local/TH1RT3EN-LAB:@/tmp/.ICE-unix/2981,unix/TH1RT3EN-LAB:/tmp/.ICE-unix/2981'), ('INVOCATION_ID', '5ddc5091c5ef4af49c7d7cb928cafb62'), ('PAPERSIZE', 'a4'), ('XDG_MENU_PREFIX', 'gnome-'), ('LC_ADDRESS', 'zh_CN.UTF-8'), ('XDG_RUNTIME_DIR', '/run/user/1000'), ('GDK_BACKEND', 'x11'), ('DISPLAY', ':1'), ('LANG', 'en_US.UTF-8'), ('XDG_CURRENT_DESKTOP', 'ubuntu:GNOME'), ('LC_TELEPHONE', 'zh_CN.UTF-8'), ('XMODIFIERS', '@im=fcitx'), ('GH_PAGER', 'cat'), ('XDG_SESSION_DESKTOP', 'ubuntu-xorg'), ('XAUTHORITY', '/run/user/1000/gdm/Xauthority'), ('SSH_AGENT_LAUNCHER', 'gnome-keyring'), ('SSH_AUTH_SOCK', '/run/user/1000/keyring/ssh'), ('ROS_DOMAIN_ID', '13'), ('AMENT_PREFIX_PATH', '/home/th1rt3en/doco/sim_full/install/duojin01_bringup:/home/th1rt3en/doco/sim_full/install/ugv_sim_bringup:/home/th1rt3en/doco/sim_full/install/ugv_bringup:/home/th1rt3en/doco/sim_full/install/ugv_teleop:/home/th1rt3en/doco/sim_full/install/ugv_slam_tools:/home/th1rt3en/doco/sim_full/install/uav_sim_bringup:/home/th1rt3en/doco/sim_full/install/sim_worlds:/home/th1rt3en/doco/sim_full/install/ugv_sim_tools:/home/th1rt3en/doco/sim_full/install/ugv_safety_watchdog:/home/th1rt3en/doco/sim_full/install/ugv_description:/home/th1rt3en/doco/sim_full/install/ugv_controller_emulator:/home/th1rt3en/doco/sim_full/install/ugv_base_driver:/home/th1rt3en/doco/sim_full/install/uav_mode_supervisor:/home/th1rt3en/doco/sim_full/install/uav_bringup:/home/th1rt3en/doco/sim_full/install/uav_visual_landing:/home/th1rt3en/doco/sim_full/install/uav_gz_bridge:/home/th1rt3en/doco/sim_full/install/uav_description:/home/th1rt3en/doco/sim_full/install/uav_bridge:/home/th1rt3en/doco/sim_full/install/relative_position_fusion:/home/th1rt3en/doco/sim_full/install/quadrotor_msgs:/home/th1rt3en/doco/sim_full/install/px4_msgs:/home/th1rt3en/doco/sim_full/install/px4:/home/th1rt3en/doco/sim_full/install/orbbec_description:/home/th1rt3en/doco/sim_full/install/orbbec_camera:/home/th1rt3en/doco/sim_full/install/orbbec_camera_msgs:/home/th1rt3en/doco/sim_full/install/lslidar_driver:/home/th1rt3en/doco/sim_full/install/lslidar_msgs:/opt/ros/humble'), ('SHELL', '/bin/bash'), ('LC_NAME', 'zh_CN.UTF-8'), ('QT_ACCESSIBILITY', '1'), ('ELECTRON_RUN_AS_NODE', '1'), ('GDMSESSION', 'ubuntu-xorg'), ('LESSCLOSE', '/usr/bin/lesspipe %s %s'), ('CODEX_THREAD_ID', '019d1fa7-71cb-71e2-ae99-79f6fcfacc4d'), ('LC_MEASUREMENT', 'zh_CN.UTF-8'), ('GPG_AGENT_INFO', '/run/user/1000/gnupg/S.gpg-agent:0:1'), ('GJS_DEBUG_OUTPUT', 'stderr'), ('LC_IDENTIFICATION', 'zh_CN.UTF-8'), ('GIT_PAGER', 'cat'), ('QT_IM_MODULE', 'fcitx'), ('PWD', '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_bridge'), ('LC_ALL', 'en_US.UTF-8'), ('XDG_CONFIG_DIRS', '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg'), ('VSCODE_CODE_CACHE_PATH', '/home/th1rt3en/.config/Code/CachedData/61b3d0ab13be7dda2389f1d3e60a119c7f660cc3'), ('XDG_DATA_DIRS', '/usr/share/ubuntu-xorg:/usr/share/gnome:/home/th1rt3en/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop'), ('PYTHONPATH', '/home/th1rt3en/doco/sim_full/install/duojin01_bringup/lib/python3.10/site-packages:/home/th1rt3en/doco/sim_full/install/ugv_bringup/lib/python3.10/site-packages:/home/th1rt3en/doco/sim_full/install/sim_worlds/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/ugv_description/lib/python3.10/site-packages:/home/th1rt3en/doco/sim_full/install/uav_mode_supervisor/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/uav_bringup/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/uav_visual_landing/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/relative_position_fusion/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/quadrotor_msgs/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/px4_msgs/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/orbbec_camera_msgs/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/lslidar_msgs/local/lib/python3.10/dist-packages:/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('HTTP_PROXY', 'http://127.0.0.1:7897'), ('LC_NUMERIC', 'zh_CN.UTF-8'), ('LC_PAPER', 'zh_CN.UTF-8'), ('COLCON', '1'), ('CMAKE_PREFIX_PATH', '/home/th1rt3en/doco/sim_full/install/ugv_sim_bringup:/home/th1rt3en/doco/sim_full/install/ugv_teleop:/home/th1rt3en/doco/sim_full/install/ugv_slam_tools:/home/th1rt3en/doco/sim_full/install/uav_sim_bringup:/home/th1rt3en/doco/sim_full/install/sim_worlds:/home/th1rt3en/doco/sim_full/install/ugv_sim_tools:/home/th1rt3en/doco/sim_full/install/ugv_safety_watchdog:/home/th1rt3en/doco/sim_full/install/ugv_controller_emulator:/home/th1rt3en/doco/sim_full/install/ugv_base_driver:/home/th1rt3en/doco/sim_full/install/uav_mode_supervisor:/home/th1rt3en/doco/sim_full/install/uav_bringup:/home/th1rt3en/doco/sim_full/install/uav_visual_landing:/home/th1rt3en/doco/sim_full/install/uav_gz_bridge:/home/th1rt3en/doco/sim_full/install/uav_description:/home/th1rt3en/doco/sim_full/install/uav_bridge:/home/th1rt3en/doco/sim_full/install/relative_position_fusion:/home/th1rt3en/doco/sim_full/install/quadrotor_msgs:/home/th1rt3en/doco/sim_full/install/px4_msgs:/home/th1rt3en/doco/sim_full/install/px4:/home/th1rt3en/doco/sim_full/install/orbbec_description:/home/th1rt3en/doco/sim_full/install/orbbec_camera:/home/th1rt3en/doco/sim_full/install/orbbec_camera_msgs:/home/th1rt3en/doco/sim_full/install/lslidar_driver:/home/th1rt3en/doco/sim_full/install/lslidar_msgs:/home/th1rt3en/doco/sim_full/install/duojin01_bringup:/home/th1rt3en/doco/sim_full/install/ugv_bringup:/home/th1rt3en/doco/sim_full/install/ugv_description:/opt/ros/humble'), ('VSCODE_PID', '8718')]), 'shell': False}
+[0.075234] (uav_bridge) StdoutLine: {'line': b'-- Found ament_cmake: 1.3.13 (/opt/ros/humble/share/ament_cmake/cmake)\n'}
+[0.098726] (-) TimerEvent: {}
+[0.201713] (-) TimerEvent: {}
+[0.302036] (-) TimerEvent: {}
+[0.402459] (-) TimerEvent: {}
+[0.406677] (uav_bridge) StdoutLine: {'line': b'-- Found rclcpp: 16.0.18 (/opt/ros/humble/share/rclcpp/cmake)\n'}
+[0.454993] (uav_bridge) StdoutLine: {'line': b'-- Found rosidl_generator_c: 3.1.8 (/opt/ros/humble/share/rosidl_generator_c/cmake)\n'}
+[0.459691] (uav_bridge) StdoutLine: {'line': b'-- Found rosidl_adapter: 3.1.8 (/opt/ros/humble/share/rosidl_adapter/cmake)\n'}
+[0.473087] (uav_bridge) StdoutLine: {'line': b'-- Found rosidl_generator_cpp: 3.1.8 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)\n'}
+[0.490572] (uav_bridge) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c\n'}
+[0.502653] (-) TimerEvent: {}
+[0.510238] (uav_bridge) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp\n'}
+[0.554129] (uav_bridge) StdoutLine: {'line': b'-- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)\n'}
+[0.556830] (uav_bridge) StdoutLine: {'line': b'-- Found rmw_fastrtps_cpp: 6.2.10 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)\n'}
+[0.602769] (-) TimerEvent: {}
+[0.703114] (-) TimerEvent: {}
+[0.791876] (uav_bridge) StdoutLine: {'line': b"-- Using RMW implementation 'rmw_fastrtps_cpp' as default\n"}
+[0.803325] (-) TimerEvent: {}
+[0.900420] (uav_bridge) StdoutLine: {'line': b'-- Found sensor_msgs: 4.9.1 (/opt/ros/humble/share/sensor_msgs/cmake)\n'}
+[0.903446] (-) TimerEvent: {}
+[0.960933] (uav_bridge) StdoutLine: {'line': b'-- Found nav_msgs: 4.9.1 (/opt/ros/humble/share/nav_msgs/cmake)\n'}
+[0.995116] (uav_bridge) StdoutLine: {'line': b'-- Found std_srvs: 4.9.1 (/opt/ros/humble/share/std_srvs/cmake)\n'}
+[1.003599] (-) TimerEvent: {}
+[1.013021] (uav_bridge) StdoutLine: {'line': b'-- Found tf2: 0.25.19 (/opt/ros/humble/share/tf2/cmake)\n'}
+[1.020776] (uav_bridge) StdoutLine: {'line': b'-- Found tf2_ros: 0.25.19 (/opt/ros/humble/share/tf2_ros/cmake)\n'}
+[1.103826] (-) TimerEvent: {}
+[1.147540] (uav_bridge) StdoutLine: {'line': b'-- Found quadrotor_msgs: 0.0.0 (/home/th1rt3en/doco/sim_full/install/quadrotor_msgs/share/quadrotor_msgs/cmake)\n'}
+[1.200728] (uav_bridge) StdoutLine: {'line': b'-- Found px4_msgs: 2.0.1 (/home/th1rt3en/doco/sim_full/install/px4_msgs/share/px4_msgs/cmake)\n'}
+[1.203939] (-) TimerEvent: {}
+[1.304204] (uav_bridge) StdoutLine: {'line': b'-- Found ament_cmake_gtest: 1.3.13 (/opt/ros/humble/share/ament_cmake_gtest/cmake)\n'}
+[1.304664] (-) TimerEvent: {}
+[1.305662] (uav_bridge) StdoutLine: {'line': b'-- Found ament_lint_auto: 0.12.15 (/opt/ros/humble/share/ament_lint_auto/cmake)\n'}
+[1.404883] (-) TimerEvent: {}
+[1.470073] (uav_bridge) StdoutLine: {'line': b"-- Found gtest sources under '/opt/ros/humble/src/gtest_vendor': C++ tests using 'Google Test' will be built\n"}
+[1.490760] (uav_bridge) StdoutLine: {'line': b"-- Added test 'cppcheck' to perform static code analysis on C / C++ code\n"}
+[1.491202] (uav_bridge) StdoutLine: {'line': b'-- Configured cppcheck include dirs: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_bridge/include\n'}
+[1.491288] (uav_bridge) StdoutLine: {'line': b'-- Configured cppcheck exclude dirs and/or files: \n'}
+[1.492265] (uav_bridge) StdoutLine: {'line': b"-- Added test 'lint_cmake' to check CMake code style\n"}
+[1.494797] (uav_bridge) StdoutLine: {'line': b"-- Added test 'uncrustify' to check C / C++ code style\n"}
+[1.494989] (uav_bridge) StdoutLine: {'line': b'-- Configured uncrustify additional arguments: \n'}
+[1.495281] (uav_bridge) StdoutLine: {'line': b"-- Added test 'xmllint' to check XML markup files\n"}
+[1.496495] (uav_bridge) StdoutLine: {'line': b'-- Configuring done\n'}
+[1.505022] (-) TimerEvent: {}
+[1.596310] (uav_bridge) StdoutLine: {'line': b'-- Generating done\n'}
+[1.605193] (-) TimerEvent: {}
+[1.625300] (uav_bridge) StdoutLine: {'line': b'-- Build files have been written to: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_bridge\n'}
+[1.658783] (uav_bridge) CommandEnded: {'returncode': 0}
+[1.660324] (uav_bridge) JobProgress: {'identifier': 'uav_bridge', 'progress': 'build'}
+[1.662278] (uav_bridge) Command: {'cmd': ['/usr/bin/cmake', '--build', '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_bridge', '--', '-j16', '-l16'], 'cwd': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_bridge', 'env': OrderedDict([('GJS_DEBUG_TOPICS', 'JS ERROR;JS LOG'), ('LESSOPEN', '| /usr/bin/lesspipe %s'), ('VSCODE_CWD', '/home/th1rt3en'), ('VSCODE_ESM_ENTRYPOINT', 'vs/workbench/api/node/extensionHostProcess'), ('HTTPS_PROXY', 'http://127.0.0.1:7897'), ('CODEX_CI', '1'), ('LANGUAGE', 'en_US:en'), ('USER', 'th1rt3en'), ('LC_TIME', 'zh_CN.UTF-8'), ('CODEX_INTERNAL_ORIGINATOR_OVERRIDE', 'codex_vscode'), ('VSCODE_NLS_CONFIG', '{"userLocale":"zh-cn","osLocale":"en-us","resolvedLanguage":"zh-cn","defaultMessagesFile":"/usr/share/code/resources/app/out/nls.messages.json","languagePack":{"translationsConfigFile":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/tcf.json","messagesFile":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/61b3d0ab13be7dda2389f1d3e60a119c7f660cc3/nls.messages.json","corruptMarkerFile":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/corrupted.info"},"locale":"zh-cn","availableLanguages":{"*":"zh-cn"},"_languagePackId":"8cf2986bc5520a04dfa330f7d54677ff.zh-cn","_languagePackSupport":true,"_translationsConfigFile":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/tcf.json","_cacheRoot":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn","_resolvedLanguagePackCoreLocation":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/61b3d0ab13be7dda2389f1d3e60a119c7f660cc3","_corruptedFile":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/corrupted.info"}'), ('VSCODE_HANDLES_UNCAUGHT_ERRORS', 'true'), ('XDG_SESSION_TYPE', 'x11'), ('DEBUG', 'release'), ('SHLVL', '0'), ('LD_LIBRARY_PATH', '/home/th1rt3en/doco/sim_full/install/ugv_teleop/lib:/home/th1rt3en/doco/sim_full/install/uav_mode_supervisor/lib:/home/th1rt3en/doco/sim_full/install/uav_visual_landing/lib:/home/th1rt3en/doco/sim_full/install/relative_position_fusion/lib:/home/th1rt3en/doco/sim_full/install/quadrotor_msgs/lib:/home/th1rt3en/doco/sim_full/install/px4_msgs/lib:/home/th1rt3en/doco/sim_full/install/px4/lib:/home/th1rt3en/doco/sim_full/install/orbbec_camera/lib:/home/th1rt3en/doco/sim_full/install/orbbec_camera_msgs/lib:/home/th1rt3en/doco/sim_full/install/lslidar_msgs/lib:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('HOME', '/home/th1rt3en'), ('CHROME_DESKTOP', 'code.desktop'), ('OLDPWD', '/home/th1rt3en/doco'), ('DESKTOP_SESSION', 'ubuntu-xorg'), ('VSCODE_IPC_HOOK', '/run/user/1000/vscode-a48a504d-1.11-main.sock'), ('GIO_LAUNCHED_DESKTOP_FILE', '/usr/share/applications/code.desktop'), ('ROS_PYTHON_VERSION', '3'), ('GNOME_SHELL_SESSION_MODE', 'ubuntu'), ('GTK_MODULES', 'gail:atk-bridge'), ('SDL_IM_MODULE', 'fcitx'), ('PAGER', 'cat'), ('LC_MONETARY', 'zh_CN.UTF-8'), ('MANAGERPID', '1400'), ('LC_CTYPE', 'C.UTF-8'), ('SYSTEMD_EXEC_PID', '3006'), ('NO_COLOR', '1'), ('DBUS_SESSION_BUS_ADDRESS', 'unix:path=/run/user/1000/bus'), ('COLORTERM', ''), ('GIO_LAUNCHED_DESKTOP_FILE_PID', '8718'), ('VSCODE_CRASH_REPORTER_PROCESS_TYPE', 'extensionHost'), ('MANDATORY_PATH', '/usr/share/gconf/ubuntu-xorg.mandatory.path'), ('COLCON_PREFIX_PATH', '/home/th1rt3en/doco/sim_full/install'), ('ROS_DISTRO', 'humble'), ('GTK_IM_MODULE', 'fcitx'), ('LOGNAME', 'th1rt3en'), ('JOURNAL_STREAM', '8:20051'), ('_', '/home/th1rt3en/.local/bin/colcon'), ('ROS_VERSION', '2'), ('XDG_SESSION_CLASS', 'user'), ('DEFAULTS_PATH', '/usr/share/gconf/ubuntu-xorg.default.path'), ('RUST_LOG', 'warn'), ('USERNAME', 'th1rt3en'), ('TERM', 'dumb'), ('GNOME_DESKTOP_SESSION_ID', 'this-is-deprecated'), ('FC_FONTATIONS', '1'), ('ROS_LOCALHOST_ONLY', '0'), ('WINDOWPATH', '2'), ('PATH', '/opt/gcc-arm-none-eabi-9-2020-q2-update/bin:/home/th1rt3en/.local/bin:/home/th1rt3en/.codex/tmp/arg0/codex-arg0J4muaF:/opt/gcc-arm-none-eabi-9-2020-q2-update/bin:/home/th1rt3en/.local/bin:/opt/ros/humble/bin:/opt/gcc-arm-none-eabi-9-2020-q2-update/bin:/home/th1rt3en/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/opt/xtensa-esp-elf/bin/:/home/th1rt3en/.vscode/extensions/openai.chatgpt-26.304.20706-linux-x64/bin/linux-x86_64'), ('SESSION_MANAGER', 'local/TH1RT3EN-LAB:@/tmp/.ICE-unix/2981,unix/TH1RT3EN-LAB:/tmp/.ICE-unix/2981'), ('INVOCATION_ID', '5ddc5091c5ef4af49c7d7cb928cafb62'), ('PAPERSIZE', 'a4'), ('XDG_MENU_PREFIX', 'gnome-'), ('LC_ADDRESS', 'zh_CN.UTF-8'), ('XDG_RUNTIME_DIR', '/run/user/1000'), ('GDK_BACKEND', 'x11'), ('DISPLAY', ':1'), ('LANG', 'en_US.UTF-8'), ('XDG_CURRENT_DESKTOP', 'ubuntu:GNOME'), ('LC_TELEPHONE', 'zh_CN.UTF-8'), ('XMODIFIERS', '@im=fcitx'), ('GH_PAGER', 'cat'), ('XDG_SESSION_DESKTOP', 'ubuntu-xorg'), ('XAUTHORITY', '/run/user/1000/gdm/Xauthority'), ('SSH_AGENT_LAUNCHER', 'gnome-keyring'), ('SSH_AUTH_SOCK', '/run/user/1000/keyring/ssh'), ('ROS_DOMAIN_ID', '13'), ('AMENT_PREFIX_PATH', '/home/th1rt3en/doco/sim_full/install/duojin01_bringup:/home/th1rt3en/doco/sim_full/install/ugv_sim_bringup:/home/th1rt3en/doco/sim_full/install/ugv_bringup:/home/th1rt3en/doco/sim_full/install/ugv_teleop:/home/th1rt3en/doco/sim_full/install/ugv_slam_tools:/home/th1rt3en/doco/sim_full/install/uav_sim_bringup:/home/th1rt3en/doco/sim_full/install/sim_worlds:/home/th1rt3en/doco/sim_full/install/ugv_sim_tools:/home/th1rt3en/doco/sim_full/install/ugv_safety_watchdog:/home/th1rt3en/doco/sim_full/install/ugv_description:/home/th1rt3en/doco/sim_full/install/ugv_controller_emulator:/home/th1rt3en/doco/sim_full/install/ugv_base_driver:/home/th1rt3en/doco/sim_full/install/uav_mode_supervisor:/home/th1rt3en/doco/sim_full/install/uav_bringup:/home/th1rt3en/doco/sim_full/install/uav_visual_landing:/home/th1rt3en/doco/sim_full/install/uav_gz_bridge:/home/th1rt3en/doco/sim_full/install/uav_description:/home/th1rt3en/doco/sim_full/install/uav_bridge:/home/th1rt3en/doco/sim_full/install/relative_position_fusion:/home/th1rt3en/doco/sim_full/install/quadrotor_msgs:/home/th1rt3en/doco/sim_full/install/px4_msgs:/home/th1rt3en/doco/sim_full/install/px4:/home/th1rt3en/doco/sim_full/install/orbbec_description:/home/th1rt3en/doco/sim_full/install/orbbec_camera:/home/th1rt3en/doco/sim_full/install/orbbec_camera_msgs:/home/th1rt3en/doco/sim_full/install/lslidar_driver:/home/th1rt3en/doco/sim_full/install/lslidar_msgs:/opt/ros/humble'), ('SHELL', '/bin/bash'), ('LC_NAME', 'zh_CN.UTF-8'), ('QT_ACCESSIBILITY', '1'), ('ELECTRON_RUN_AS_NODE', '1'), ('GDMSESSION', 'ubuntu-xorg'), ('LESSCLOSE', '/usr/bin/lesspipe %s %s'), ('CODEX_THREAD_ID', '019d1fa7-71cb-71e2-ae99-79f6fcfacc4d'), ('LC_MEASUREMENT', 'zh_CN.UTF-8'), ('GPG_AGENT_INFO', '/run/user/1000/gnupg/S.gpg-agent:0:1'), ('GJS_DEBUG_OUTPUT', 'stderr'), ('LC_IDENTIFICATION', 'zh_CN.UTF-8'), ('GIT_PAGER', 'cat'), ('QT_IM_MODULE', 'fcitx'), ('PWD', '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_bridge'), ('LC_ALL', 'en_US.UTF-8'), ('XDG_CONFIG_DIRS', '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg'), ('VSCODE_CODE_CACHE_PATH', '/home/th1rt3en/.config/Code/CachedData/61b3d0ab13be7dda2389f1d3e60a119c7f660cc3'), ('XDG_DATA_DIRS', '/usr/share/ubuntu-xorg:/usr/share/gnome:/home/th1rt3en/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop'), ('PYTHONPATH', '/home/th1rt3en/doco/sim_full/install/duojin01_bringup/lib/python3.10/site-packages:/home/th1rt3en/doco/sim_full/install/ugv_bringup/lib/python3.10/site-packages:/home/th1rt3en/doco/sim_full/install/sim_worlds/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/ugv_description/lib/python3.10/site-packages:/home/th1rt3en/doco/sim_full/install/uav_mode_supervisor/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/uav_bringup/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/uav_visual_landing/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/relative_position_fusion/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/quadrotor_msgs/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/px4_msgs/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/orbbec_camera_msgs/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/lslidar_msgs/local/lib/python3.10/dist-packages:/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('HTTP_PROXY', 'http://127.0.0.1:7897'), ('LC_NUMERIC', 'zh_CN.UTF-8'), ('LC_PAPER', 'zh_CN.UTF-8'), ('COLCON', '1'), ('CMAKE_PREFIX_PATH', '/home/th1rt3en/doco/sim_full/install/ugv_sim_bringup:/home/th1rt3en/doco/sim_full/install/ugv_teleop:/home/th1rt3en/doco/sim_full/install/ugv_slam_tools:/home/th1rt3en/doco/sim_full/install/uav_sim_bringup:/home/th1rt3en/doco/sim_full/install/sim_worlds:/home/th1rt3en/doco/sim_full/install/ugv_sim_tools:/home/th1rt3en/doco/sim_full/install/ugv_safety_watchdog:/home/th1rt3en/doco/sim_full/install/ugv_controller_emulator:/home/th1rt3en/doco/sim_full/install/ugv_base_driver:/home/th1rt3en/doco/sim_full/install/uav_mode_supervisor:/home/th1rt3en/doco/sim_full/install/uav_bringup:/home/th1rt3en/doco/sim_full/install/uav_visual_landing:/home/th1rt3en/doco/sim_full/install/uav_gz_bridge:/home/th1rt3en/doco/sim_full/install/uav_description:/home/th1rt3en/doco/sim_full/install/uav_bridge:/home/th1rt3en/doco/sim_full/install/relative_position_fusion:/home/th1rt3en/doco/sim_full/install/quadrotor_msgs:/home/th1rt3en/doco/sim_full/install/px4_msgs:/home/th1rt3en/doco/sim_full/install/px4:/home/th1rt3en/doco/sim_full/install/orbbec_description:/home/th1rt3en/doco/sim_full/install/orbbec_camera:/home/th1rt3en/doco/sim_full/install/orbbec_camera_msgs:/home/th1rt3en/doco/sim_full/install/lslidar_driver:/home/th1rt3en/doco/sim_full/install/lslidar_msgs:/home/th1rt3en/doco/sim_full/install/duojin01_bringup:/home/th1rt3en/doco/sim_full/install/ugv_bringup:/home/th1rt3en/doco/sim_full/install/ugv_description:/opt/ros/humble'), ('VSCODE_PID', '8718')]), 'shell': False}
+[1.705424] (-) TimerEvent: {}
+[1.789020] (uav_bridge) StdoutLine: {'line': b'Consolidate compiler generated dependencies of target uav_bridge_px4_odom_adapter_logic\n'}
+[1.789316] (uav_bridge) StdoutLine: {'line': b'Consolidate compiler generated dependencies of target uav_bridge_uav_state_bridge_logic\n'}
+[1.789428] (uav_bridge) StdoutLine: {'line': b'Consolidate compiler generated dependencies of target gtest_main\n'}
+[1.791971] (uav_bridge) StdoutLine: {'line': b'Consolidate compiler generated dependencies of target gtest\n'}
+[1.797238] (uav_bridge) StdoutLine: {'line': b'Consolidate compiler generated dependencies of target px4_planar_state_reader_node\n'}
+[1.797559] (uav_bridge) StdoutLine: {'line': b'Consolidate compiler generated dependencies of target fmu_topic_namespace_bridge_node\n'}
+[1.797668] (uav_bridge) StdoutLine: {'line': b'Consolidate compiler generated dependencies of target mono_video_recorder_node\n'}
+[1.797759] (uav_bridge) StdoutLine: {'line': b'Consolidate compiler generated dependencies of target mono_camera_source_node\n'}
+[1.797831] (uav_bridge) StdoutLine: {'line': b'Consolidate compiler generated dependencies of target uav_control_node\n'}
+[1.797909] (uav_bridge) StdoutLine: {'line': b'Consolidate compiler generated dependencies of target openvins_px4_vision_bridge_node\n'}
+[1.805557] (-) TimerEvent: {}
+[1.821579] (uav_bridge) StdoutLine: {'line': b'[ 25%] Built target uav_bridge_px4_odom_adapter_logic\n'}
+[1.822016] (uav_bridge) StdoutLine: {'line': b'[ 25%] Built target gtest_main\n'}
+[1.822141] (uav_bridge) StdoutLine: {'line': b'[ 25%] Built target uav_bridge_uav_state_bridge_logic\n'}
+[1.822230] (uav_bridge) StdoutLine: {'line': b'[ 25%] Built target gtest\n'}
+[1.824136] (uav_bridge) StdoutLine: {'line': b'[ 46%] Built target mono_camera_source_node\n'}
+[1.824388] (uav_bridge) StdoutLine: {'line': b'[ 46%] Built target mono_video_recorder_node\n'}
+[1.824471] (uav_bridge) StdoutLine: {'line': b'[ 46%] Building CXX object CMakeFiles/px4_planar_state_reader_node.dir/src/px4_planar_state_reader_node.cpp.o\n'}
+[1.824554] (uav_bridge) StdoutLine: {'line': b'[ 46%] Built target fmu_topic_namespace_bridge_node\n'}
+[1.828069] (uav_bridge) StdoutLine: {'line': b'[ 59%] Built target openvins_px4_vision_bridge_node\n'}
+[1.828433] (uav_bridge) StdoutLine: {'line': b'[ 59%] Building CXX object CMakeFiles/uav_control_node.dir/src/uav_control_node.cpp.o\n'}
+[1.851331] (uav_bridge) StdoutLine: {'line': b'Consolidate compiler generated dependencies of target test_uav_control_logic\n'}
+[1.854207] (uav_bridge) StdoutLine: {'line': b'Consolidate compiler generated dependencies of target test_uav_state_bridge_logic\n'}
+[1.858983] (uav_bridge) StdoutLine: {'line': b'Consolidate compiler generated dependencies of target test_px4_odom_adapter_logic\n'}
+[1.859355] (uav_bridge) StdoutLine: {'line': b'Consolidate compiler generated dependencies of target uav_state_bridge_node\n'}
+[1.863842] (uav_bridge) StdoutLine: {'line': b'Consolidate compiler generated dependencies of target px4_odom_adapter_node\n'}
+[1.881691] (uav_bridge) StdoutLine: {'line': b'[ 65%] Built target test_uav_control_logic\n'}
+[1.882124] (uav_bridge) StdoutLine: {'line': b'[ 71%] Built target test_uav_state_bridge_logic\n'}
+[1.888077] (uav_bridge) StdoutLine: {'line': b'[ 78%] Built target test_px4_odom_adapter_logic\n'}
+[1.888659] (uav_bridge) StdoutLine: {'line': b'[ 84%] Built target uav_state_bridge_node\n'}
+[1.899040] (uav_bridge) StdoutLine: {'line': b'[ 90%] Built target px4_odom_adapter_node\n'}
+[1.905708] (-) TimerEvent: {}
+[2.006147] (-) TimerEvent: {}
+[2.106802] (-) TimerEvent: {}
+[2.207265] (-) TimerEvent: {}
+[2.307707] (-) TimerEvent: {}
+[2.408096] (-) TimerEvent: {}
+[2.508547] (-) TimerEvent: {}
+[2.608953] (-) TimerEvent: {}
+[2.709333] (-) TimerEvent: {}
+[2.809707] (-) TimerEvent: {}
+[2.910278] (-) TimerEvent: {}
+[3.010777] (-) TimerEvent: {}
+[3.111235] (-) TimerEvent: {}
+[3.211746] (-) TimerEvent: {}
+[3.312129] (-) TimerEvent: {}
+[3.412534] (-) TimerEvent: {}
+[3.513023] (-) TimerEvent: {}
+[3.613468] (-) TimerEvent: {}
+[3.713906] (-) TimerEvent: {}
+[3.814348] (-) TimerEvent: {}
+[3.914824] (-) TimerEvent: {}
+[4.015363] (-) TimerEvent: {}
+[4.115853] (-) TimerEvent: {}
+[4.216302] (-) TimerEvent: {}
+[4.316746] (-) TimerEvent: {}
+[4.417159] (-) TimerEvent: {}
+[4.517665] (-) TimerEvent: {}
+[4.618120] (-) TimerEvent: {}
+[4.718482] (-) TimerEvent: {}
+[4.818924] (-) TimerEvent: {}
+[4.919426] (-) TimerEvent: {}
+[5.019957] (-) TimerEvent: {}
+[5.120484] (-) TimerEvent: {}
+[5.221007] (-) TimerEvent: {}
+[5.321468] (-) TimerEvent: {}
+[5.421958] (-) TimerEvent: {}
+[5.522515] (-) TimerEvent: {}
+[5.623032] (-) TimerEvent: {}
+[5.723532] (-) TimerEvent: {}
+[5.824032] (-) TimerEvent: {}
+[5.924516] (-) TimerEvent: {}
+[6.028015] (-) TimerEvent: {}
+[6.128519] (-) TimerEvent: {}
+[6.229013] (-) TimerEvent: {}
+[6.329422] (-) TimerEvent: {}
+[6.429790] (-) TimerEvent: {}
+[6.530205] (-) TimerEvent: {}
+[6.630625] (-) TimerEvent: {}
+[6.731123] (-) TimerEvent: {}
+[6.831547] (-) TimerEvent: {}
+[6.931921] (-) TimerEvent: {}
+[7.032261] (-) TimerEvent: {}
+[7.132705] (-) TimerEvent: {}
+[7.233026] (-) TimerEvent: {}
+[7.333368] (-) TimerEvent: {}
+[7.433753] (-) TimerEvent: {}
+[7.534090] (-) TimerEvent: {}
+[7.634497] (-) TimerEvent: {}
+[7.734914] (-) TimerEvent: {}
+[7.835219] (-) TimerEvent: {}
+[7.935616] (-) TimerEvent: {}
+[8.036106] (-) TimerEvent: {}
+[8.136527] (-) TimerEvent: {}
+[8.237026] (-) TimerEvent: {}
+[8.337358] (-) TimerEvent: {}
+[8.437813] (-) TimerEvent: {}
+[8.538303] (-) TimerEvent: {}
+[8.638951] (-) TimerEvent: {}
+[8.739482] (-) TimerEvent: {}
+[8.839844] (-) TimerEvent: {}
+[8.940151] (-) TimerEvent: {}
+[9.040563] (-) TimerEvent: {}
+[9.140956] (-) TimerEvent: {}
+[9.241326] (-) TimerEvent: {}
+[9.341809] (-) TimerEvent: {}
+[9.442187] (-) TimerEvent: {}
+[9.542672] (-) TimerEvent: {}
+[9.643011] (-) TimerEvent: {}
+[9.743388] (-) TimerEvent: {}
+[9.844396] (-) TimerEvent: {}
+[9.944891] (-) TimerEvent: {}
+[10.045307] (-) TimerEvent: {}
+[10.145849] (-) TimerEvent: {}
+[10.246288] (-) TimerEvent: {}
+[10.346623] (-) TimerEvent: {}
+[10.446961] (-) TimerEvent: {}
+[10.547388] (-) TimerEvent: {}
+[10.648051] (-) TimerEvent: {}
+[10.748528] (-) TimerEvent: {}
+[10.848946] (-) TimerEvent: {}
+[10.949340] (-) TimerEvent: {}
+[11.049758] (-) TimerEvent: {}
+[11.150085] (-) TimerEvent: {}
+[11.250461] (-) TimerEvent: {}
+[11.350751] (-) TimerEvent: {}
+[11.451109] (-) TimerEvent: {}
+[11.551507] (-) TimerEvent: {}
+[11.651935] (-) TimerEvent: {}
+[11.752328] (-) TimerEvent: {}
+[11.852735] (-) TimerEvent: {}
+[11.953194] (-) TimerEvent: {}
+[12.053666] (-) TimerEvent: {}
+[12.154051] (-) TimerEvent: {}
+[12.254436] (-) TimerEvent: {}
+[12.354928] (-) TimerEvent: {}
+[12.455495] (-) TimerEvent: {}
+[12.555977] (-) TimerEvent: {}
+[12.656437] (-) TimerEvent: {}
+[12.756914] (-) TimerEvent: {}
+[12.857367] (-) TimerEvent: {}
+[12.957735] (-) TimerEvent: {}
+[13.058076] (-) TimerEvent: {}
+[13.158374] (-) TimerEvent: {}
+[13.258691] (-) TimerEvent: {}
+[13.358962] (-) TimerEvent: {}
+[13.459319] (-) TimerEvent: {}
+[13.559832] (-) TimerEvent: {}
+[13.660317] (-) TimerEvent: {}
+[13.760683] (-) TimerEvent: {}
+[13.861062] (-) TimerEvent: {}
+[13.961607] (-) TimerEvent: {}
+[14.062096] (-) TimerEvent: {}
+[14.162541] (-) TimerEvent: {}
+[14.262976] (-) TimerEvent: {}
+[14.363365] (-) TimerEvent: {}
+[14.463802] (-) TimerEvent: {}
+[14.564331] (-) TimerEvent: {}
+[14.664854] (-) TimerEvent: {}
+[14.765239] (-) TimerEvent: {}
+[14.865609] (-) TimerEvent: {}
+[14.966013] (-) TimerEvent: {}
+[15.066348] (-) TimerEvent: {}
+[15.166730] (-) TimerEvent: {}
+[15.267077] (-) TimerEvent: {}
+[15.367438] (-) TimerEvent: {}
+[15.467882] (-) TimerEvent: {}
+[15.568229] (-) TimerEvent: {}
+[15.668684] (-) TimerEvent: {}
+[15.769108] (-) TimerEvent: {}
+[15.869532] (-) TimerEvent: {}
+[15.969980] (-) TimerEvent: {}
+[16.070493] (-) TimerEvent: {}
+[16.171026] (-) TimerEvent: {}
+[16.271537] (-) TimerEvent: {}
+[16.372090] (-) TimerEvent: {}
+[16.472678] (-) TimerEvent: {}
+[16.573260] (-) TimerEvent: {}
+[16.673819] (-) TimerEvent: {}
+[16.774275] (-) TimerEvent: {}
+[16.874621] (-) TimerEvent: {}
+[16.975006] (-) TimerEvent: {}
+[17.075446] (-) TimerEvent: {}
+[17.175874] (-) TimerEvent: {}
+[17.276299] (-) TimerEvent: {}
+[17.376758] (-) TimerEvent: {}
+[17.477353] (-) TimerEvent: {}
+[17.578388] (-) TimerEvent: {}
+[17.678778] (-) TimerEvent: {}
+[17.779262] (-) TimerEvent: {}
+[17.879710] (-) TimerEvent: {}
+[17.980068] (-) TimerEvent: {}
+[18.080555] (-) TimerEvent: {}
+[18.181070] (-) TimerEvent: {}
+[18.281535] (-) TimerEvent: {}
+[18.382066] (-) TimerEvent: {}
+[18.482465] (-) TimerEvent: {}
+[18.582916] (-) TimerEvent: {}
+[18.683365] (-) TimerEvent: {}
+[18.783760] (-) TimerEvent: {}
+[18.884154] (-) TimerEvent: {}
+[18.984529] (-) TimerEvent: {}
+[19.085041] (-) TimerEvent: {}
+[19.185743] (-) TimerEvent: {}
+[19.286265] (-) TimerEvent: {}
+[19.386682] (-) TimerEvent: {}
+[19.487329] (-) TimerEvent: {}
+[19.587702] (-) TimerEvent: {}
+[19.688133] (-) TimerEvent: {}
+[19.788590] (-) TimerEvent: {}
+[19.888917] (-) TimerEvent: {}
+[19.989251] (-) TimerEvent: {}
+[20.089669] (-) TimerEvent: {}
+[20.190248] (-) TimerEvent: {}
+[20.290788] (-) TimerEvent: {}
+[20.391279] (-) TimerEvent: {}
+[20.491711] (-) TimerEvent: {}
+[20.592130] (-) TimerEvent: {}
+[20.692488] (-) TimerEvent: {}
+[20.792888] (-) TimerEvent: {}
+[20.893315] (-) TimerEvent: {}
+[20.993758] (-) TimerEvent: {}
+[21.094266] (-) TimerEvent: {}
+[21.194825] (-) TimerEvent: {}
+[21.295246] (-) TimerEvent: {}
+[21.395757] (-) TimerEvent: {}
+[21.496175] (-) TimerEvent: {}
+[21.596535] (-) TimerEvent: {}
+[21.696874] (-) TimerEvent: {}
+[21.797187] (-) TimerEvent: {}
+[21.897556] (-) TimerEvent: {}
+[21.998055] (-) TimerEvent: {}
+[22.098492] (-) TimerEvent: {}
+[22.199005] (-) TimerEvent: {}
+[22.299461] (-) TimerEvent: {}
+[22.399928] (-) TimerEvent: {}
+[22.500356] (-) TimerEvent: {}
+[22.600793] (-) TimerEvent: {}
+[22.701220] (-) TimerEvent: {}
+[22.801701] (-) TimerEvent: {}
+[22.902333] (-) TimerEvent: {}
+[23.002997] (-) TimerEvent: {}
+[23.103478] (-) TimerEvent: {}
+[23.203957] (-) TimerEvent: {}
+[23.304396] (-) TimerEvent: {}
+[23.404838] (-) TimerEvent: {}
+[23.505221] (-) TimerEvent: {}
+[23.605687] (-) TimerEvent: {}
+[23.706140] (-) TimerEvent: {}
+[23.806525] (-) TimerEvent: {}
+[23.906963] (-) TimerEvent: {}
+[24.007363] (-) TimerEvent: {}
+[24.107793] (-) TimerEvent: {}
+[24.208203] (-) TimerEvent: {}
+[24.308615] (-) TimerEvent: {}
+[24.409054] (-) TimerEvent: {}
+[24.509437] (-) TimerEvent: {}
+[24.609793] (-) TimerEvent: {}
+[24.710184] (-) TimerEvent: {}
+[24.810668] (-) TimerEvent: {}
+[24.911324] (-) TimerEvent: {}
+[25.011790] (-) TimerEvent: {}
+[25.112237] (-) TimerEvent: {}
+[25.212699] (-) TimerEvent: {}
+[25.313081] (-) TimerEvent: {}
+[25.413435] (-) TimerEvent: {}
+[25.513887] (-) TimerEvent: {}
+[25.614339] (-) TimerEvent: {}
+[25.714830] (-) TimerEvent: {}
+[25.815240] (-) TimerEvent: {}
+[25.915670] (-) TimerEvent: {}
+[26.016111] (-) TimerEvent: {}
+[26.116573] (-) TimerEvent: {}
+[26.216932] (-) TimerEvent: {}
+[26.317271] (-) TimerEvent: {}
+[26.417601] (-) TimerEvent: {}
+[26.517943] (-) TimerEvent: {}
+[26.618285] (-) TimerEvent: {}
+[26.718691] (-) TimerEvent: {}
+[26.819270] (-) TimerEvent: {}
+[26.919800] (-) TimerEvent: {}
+[27.020296] (-) TimerEvent: {}
+[27.120758] (-) TimerEvent: {}
+[27.221150] (-) TimerEvent: {}
+[27.321562] (-) TimerEvent: {}
+[27.421967] (-) TimerEvent: {}
+[27.522379] (-) TimerEvent: {}
+[27.622794] (-) TimerEvent: {}
+[27.723190] (-) TimerEvent: {}
+[27.823558] (-) TimerEvent: {}
+[27.924004] (-) TimerEvent: {}
+[28.024384] (-) TimerEvent: {}
+[28.124803] (-) TimerEvent: {}
+[28.225159] (-) TimerEvent: {}
+[28.325487] (-) TimerEvent: {}
+[28.425927] (-) TimerEvent: {}
+[28.526857] (-) TimerEvent: {}
+[28.627359] (-) TimerEvent: {}
+[28.727753] (-) TimerEvent: {}
+[28.828195] (-) TimerEvent: {}
+[28.928759] (-) TimerEvent: {}
+[29.029278] (-) TimerEvent: {}
+[29.129748] (-) TimerEvent: {}
+[29.230157] (-) TimerEvent: {}
+[29.330605] (-) TimerEvent: {}
+[29.400514] (uav_bridge) StdoutLine: {'line': b'[ 93%] Linking CXX executable px4_planar_state_reader_node\n'}
+[29.430753] (-) TimerEvent: {}
+[29.531176] (-) TimerEvent: {}
+[29.631618] (-) TimerEvent: {}
+[29.731962] (-) TimerEvent: {}
+[29.832440] (-) TimerEvent: {}
+[29.932989] (-) TimerEvent: {}
+[30.001232] (<colcon_parallel_executor.executor.parallel.ParallelExecutorExtension object at 0x77f800f24c40>) ParallelStatus: {'processing': ('uav_bridge',)}
+[30.033108] (-) TimerEvent: {}
+[30.133428] (-) TimerEvent: {}
+[30.233758] (-) TimerEvent: {}
+[30.334249] (-) TimerEvent: {}
+[30.434837] (-) TimerEvent: {}
+[30.535293] (-) TimerEvent: {}
+[30.635776] (-) TimerEvent: {}
+[30.736204] (-) TimerEvent: {}
+[30.836601] (-) TimerEvent: {}
+[30.934564] (uav_bridge) StdoutLine: {'line': b'[ 93%] Built target px4_planar_state_reader_node\n'}
+[30.936732] (-) TimerEvent: {}
+[31.037125] (-) TimerEvent: {}
+[31.137570] (-) TimerEvent: {}
+[31.237999] (-) TimerEvent: {}
+[31.338404] (-) TimerEvent: {}
+[31.438832] (-) TimerEvent: {}
+[31.539279] (-) TimerEvent: {}
+[31.639633] (-) TimerEvent: {}
+[31.740051] (-) TimerEvent: {}
+[31.840548] (-) TimerEvent: {}
+[31.941038] (-) TimerEvent: {}
+[32.041440] (-) TimerEvent: {}
+[32.141757] (-) TimerEvent: {}
+[32.242076] (-) TimerEvent: {}
+[32.342496] (-) TimerEvent: {}
+[32.442882] (-) TimerEvent: {}
+[32.543278] (-) TimerEvent: {}
+[32.643662] (-) TimerEvent: {}
+[32.744002] (-) TimerEvent: {}
+[32.844469] (-) TimerEvent: {}
+[32.944965] (-) TimerEvent: {}
+[33.045371] (-) TimerEvent: {}
+[33.145801] (-) TimerEvent: {}
+[33.246205] (-) TimerEvent: {}
+[33.346621] (-) TimerEvent: {}
+[33.447088] (-) TimerEvent: {}
+[33.547515] (-) TimerEvent: {}
+[33.648051] (-) TimerEvent: {}
+[33.748490] (-) TimerEvent: {}
+[33.848961] (-) TimerEvent: {}
+[33.949368] (-) TimerEvent: {}
+[34.049774] (-) TimerEvent: {}
+[34.150140] (-) TimerEvent: {}
+[34.250504] (-) TimerEvent: {}
+[34.350886] (-) TimerEvent: {}
+[34.451187] (-) TimerEvent: {}
+[34.551520] (-) TimerEvent: {}
+[34.651957] (-) TimerEvent: {}
+[34.752370] (-) TimerEvent: {}
+[34.852781] (-) TimerEvent: {}
+[34.953281] (-) TimerEvent: {}
+[35.053753] (-) TimerEvent: {}
+[35.154174] (-) TimerEvent: {}
+[35.254570] (-) TimerEvent: {}
+[35.355015] (-) TimerEvent: {}
+[35.455443] (-) TimerEvent: {}
+[35.555913] (-) TimerEvent: {}
+[35.656397] (-) TimerEvent: {}
+[35.756869] (-) TimerEvent: {}
+[35.857327] (-) TimerEvent: {}
+[35.957807] (-) TimerEvent: {}
+[36.058228] (-) TimerEvent: {}
+[36.158729] (-) TimerEvent: {}
+[36.259250] (-) TimerEvent: {}
+[36.359602] (-) TimerEvent: {}
+[36.460063] (-) TimerEvent: {}
+[36.560513] (-) TimerEvent: {}
+[36.660934] (-) TimerEvent: {}
+[36.761425] (-) TimerEvent: {}
+[36.861910] (-) TimerEvent: {}
+[36.962357] (-) TimerEvent: {}
+[37.062800] (-) TimerEvent: {}
+[37.163246] (-) TimerEvent: {}
+[37.263675] (-) TimerEvent: {}
+[37.364080] (-) TimerEvent: {}
+[37.464432] (-) TimerEvent: {}
+[37.564805] (-) TimerEvent: {}
+[37.665184] (-) TimerEvent: {}
+[37.765662] (-) TimerEvent: {}
+[37.866059] (-) TimerEvent: {}
+[37.966480] (-) TimerEvent: {}
+[38.066900] (-) TimerEvent: {}
+[38.167306] (-) TimerEvent: {}
+[38.267722] (-) TimerEvent: {}
+[38.368107] (-) TimerEvent: {}
+[38.468490] (-) TimerEvent: {}
+[38.568982] (-) TimerEvent: {}
+[38.669349] (-) TimerEvent: {}
+[38.769727] (-) TimerEvent: {}
+[38.870140] (-) TimerEvent: {}
+[38.970574] (-) TimerEvent: {}
+[39.071041] (-) TimerEvent: {}
+[39.171434] (-) TimerEvent: {}
+[39.271988] (-) TimerEvent: {}
+[39.372372] (-) TimerEvent: {}
+[39.472746] (-) TimerEvent: {}
+[39.573133] (-) TimerEvent: {}
+[39.673503] (-) TimerEvent: {}
+[39.773889] (-) TimerEvent: {}
+[39.874230] (-) TimerEvent: {}
+[39.974579] (-) TimerEvent: {}
+[40.074972] (-) TimerEvent: {}
+[40.175369] (-) TimerEvent: {}
+[40.275737] (-) TimerEvent: {}
+[40.376131] (-) TimerEvent: {}
+[40.476536] (-) TimerEvent: {}
+[40.577020] (-) TimerEvent: {}
+[40.677709] (-) TimerEvent: {}
+[40.778211] (-) TimerEvent: {}
+[40.878683] (-) TimerEvent: {}
+[40.979119] (-) TimerEvent: {}
+[41.079551] (-) TimerEvent: {}
+[41.179935] (-) TimerEvent: {}
+[41.280279] (-) TimerEvent: {}
+[41.380592] (-) TimerEvent: {}
+[41.480977] (-) TimerEvent: {}
+[41.581379] (-) TimerEvent: {}
+[41.681718] (-) TimerEvent: {}
+[41.781999] (-) TimerEvent: {}
+[41.882325] (-) TimerEvent: {}
+[41.982736] (-) TimerEvent: {}
+[42.083117] (-) TimerEvent: {}
+[42.183475] (-) TimerEvent: {}
+[42.283775] (-) TimerEvent: {}
+[42.384106] (-) TimerEvent: {}
+[42.484448] (-) TimerEvent: {}
+[42.584801] (-) TimerEvent: {}
+[42.685305] (-) TimerEvent: {}
+[42.785803] (-) TimerEvent: {}
+[42.886219] (-) TimerEvent: {}
+[42.986612] (-) TimerEvent: {}
+[43.087065] (-) TimerEvent: {}
+[43.187454] (-) TimerEvent: {}
+[43.287850] (-) TimerEvent: {}
+[43.388183] (-) TimerEvent: {}
+[43.488473] (-) TimerEvent: {}
+[43.588911] (-) TimerEvent: {}
+[43.689273] (-) TimerEvent: {}
+[43.789652] (-) TimerEvent: {}
+[43.889948] (-) TimerEvent: {}
+[43.990290] (-) TimerEvent: {}
+[44.090704] (-) TimerEvent: {}
+[44.191038] (-) TimerEvent: {}
+[44.291374] (-) TimerEvent: {}
+[44.391707] (-) TimerEvent: {}
+[44.492069] (-) TimerEvent: {}
+[44.592370] (-) TimerEvent: {}
+[44.692722] (-) TimerEvent: {}
+[44.793182] (-) TimerEvent: {}
+[44.893798] (-) TimerEvent: {}
+[44.994384] (-) TimerEvent: {}
+[45.094877] (-) TimerEvent: {}
+[45.195312] (-) TimerEvent: {}
+[45.295786] (-) TimerEvent: {}
+[45.396240] (-) TimerEvent: {}
+[45.496692] (-) TimerEvent: {}
+[45.597098] (-) TimerEvent: {}
+[45.697429] (-) TimerEvent: {}
+[45.797768] (-) TimerEvent: {}
+[45.898144] (-) TimerEvent: {}
+[45.998464] (-) TimerEvent: {}
+[46.098761] (-) TimerEvent: {}
+[46.199104] (-) TimerEvent: {}
+[46.299403] (-) TimerEvent: {}
+[46.399698] (-) TimerEvent: {}
+[46.499987] (-) TimerEvent: {}
+[46.600291] (-) TimerEvent: {}
+[46.700631] (-) TimerEvent: {}
+[46.801039] (-) TimerEvent: {}
+[46.901468] (-) TimerEvent: {}
+[47.002040] (-) TimerEvent: {}
+[47.102562] (-) TimerEvent: {}
+[47.203094] (-) TimerEvent: {}
+[47.303565] (-) TimerEvent: {}
+[47.403997] (-) TimerEvent: {}
+[47.504468] (-) TimerEvent: {}
+[47.604977] (-) TimerEvent: {}
+[47.705455] (-) TimerEvent: {}
+[47.805959] (-) TimerEvent: {}
+[47.906373] (-) TimerEvent: {}
+[48.006665] (-) TimerEvent: {}
+[48.106890] (-) TimerEvent: {}
+[48.207209] (-) TimerEvent: {}
+[48.307463] (-) TimerEvent: {}
+[48.407718] (-) TimerEvent: {}
+[48.507952] (-) TimerEvent: {}
+[48.608172] (-) TimerEvent: {}
+[48.708410] (-) TimerEvent: {}
+[48.808664] (-) TimerEvent: {}
+[48.908878] (-) TimerEvent: {}
+[49.009125] (-) TimerEvent: {}
+[49.109514] (-) TimerEvent: {}
+[49.209931] (-) TimerEvent: {}
+[49.310309] (-) TimerEvent: {}
+[49.410644] (-) TimerEvent: {}
+[49.510911] (-) TimerEvent: {}
+[49.611145] (-) TimerEvent: {}
+[49.711418] (-) TimerEvent: {}
+[49.746391] (uav_bridge) StdoutLine: {'line': b'[ 96%] Linking CXX executable uav_control_node\n'}
+[49.811595] (-) TimerEvent: {}
+[49.912011] (-) TimerEvent: {}
+[50.012297] (-) TimerEvent: {}
+[50.112550] (-) TimerEvent: {}
+[50.212872] (-) TimerEvent: {}
+[50.313179] (-) TimerEvent: {}
+[50.413437] (-) TimerEvent: {}
+[50.513686] (-) TimerEvent: {}
+[50.613923] (-) TimerEvent: {}
+[50.714172] (-) TimerEvent: {}
+[50.814414] (-) TimerEvent: {}
+[50.914643] (-) TimerEvent: {}
+[50.950948] (uav_bridge) StdoutLine: {'line': b'[100%] Built target uav_control_node\n'}
+[50.967622] (uav_bridge) CommandEnded: {'returncode': 0}
+[50.969136] (uav_bridge) JobProgress: {'identifier': 'uav_bridge', 'progress': 'install'}
+[50.982513] (uav_bridge) Command: {'cmd': ['/usr/bin/cmake', '--install', '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_bridge'], 'cwd': '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_bridge', 'env': OrderedDict([('GJS_DEBUG_TOPICS', 'JS ERROR;JS LOG'), ('LESSOPEN', '| /usr/bin/lesspipe %s'), ('VSCODE_CWD', '/home/th1rt3en'), ('VSCODE_ESM_ENTRYPOINT', 'vs/workbench/api/node/extensionHostProcess'), ('HTTPS_PROXY', 'http://127.0.0.1:7897'), ('CODEX_CI', '1'), ('LANGUAGE', 'en_US:en'), ('USER', 'th1rt3en'), ('LC_TIME', 'zh_CN.UTF-8'), ('CODEX_INTERNAL_ORIGINATOR_OVERRIDE', 'codex_vscode'), ('VSCODE_NLS_CONFIG', '{"userLocale":"zh-cn","osLocale":"en-us","resolvedLanguage":"zh-cn","defaultMessagesFile":"/usr/share/code/resources/app/out/nls.messages.json","languagePack":{"translationsConfigFile":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/tcf.json","messagesFile":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/61b3d0ab13be7dda2389f1d3e60a119c7f660cc3/nls.messages.json","corruptMarkerFile":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/corrupted.info"},"locale":"zh-cn","availableLanguages":{"*":"zh-cn"},"_languagePackId":"8cf2986bc5520a04dfa330f7d54677ff.zh-cn","_languagePackSupport":true,"_translationsConfigFile":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/tcf.json","_cacheRoot":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn","_resolvedLanguagePackCoreLocation":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/61b3d0ab13be7dda2389f1d3e60a119c7f660cc3","_corruptedFile":"/home/th1rt3en/.config/Code/clp/8cf2986bc5520a04dfa330f7d54677ff.zh-cn/corrupted.info"}'), ('VSCODE_HANDLES_UNCAUGHT_ERRORS', 'true'), ('XDG_SESSION_TYPE', 'x11'), ('DEBUG', 'release'), ('SHLVL', '0'), ('LD_LIBRARY_PATH', '/home/th1rt3en/doco/sim_full/install/ugv_teleop/lib:/home/th1rt3en/doco/sim_full/install/uav_mode_supervisor/lib:/home/th1rt3en/doco/sim_full/install/uav_visual_landing/lib:/home/th1rt3en/doco/sim_full/install/relative_position_fusion/lib:/home/th1rt3en/doco/sim_full/install/quadrotor_msgs/lib:/home/th1rt3en/doco/sim_full/install/px4_msgs/lib:/home/th1rt3en/doco/sim_full/install/px4/lib:/home/th1rt3en/doco/sim_full/install/orbbec_camera/lib:/home/th1rt3en/doco/sim_full/install/orbbec_camera_msgs/lib:/home/th1rt3en/doco/sim_full/install/lslidar_msgs/lib:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('HOME', '/home/th1rt3en'), ('CHROME_DESKTOP', 'code.desktop'), ('OLDPWD', '/home/th1rt3en/doco'), ('DESKTOP_SESSION', 'ubuntu-xorg'), ('VSCODE_IPC_HOOK', '/run/user/1000/vscode-a48a504d-1.11-main.sock'), ('GIO_LAUNCHED_DESKTOP_FILE', '/usr/share/applications/code.desktop'), ('ROS_PYTHON_VERSION', '3'), ('GNOME_SHELL_SESSION_MODE', 'ubuntu'), ('GTK_MODULES', 'gail:atk-bridge'), ('SDL_IM_MODULE', 'fcitx'), ('PAGER', 'cat'), ('LC_MONETARY', 'zh_CN.UTF-8'), ('MANAGERPID', '1400'), ('LC_CTYPE', 'C.UTF-8'), ('SYSTEMD_EXEC_PID', '3006'), ('NO_COLOR', '1'), ('DBUS_SESSION_BUS_ADDRESS', 'unix:path=/run/user/1000/bus'), ('COLORTERM', ''), ('GIO_LAUNCHED_DESKTOP_FILE_PID', '8718'), ('VSCODE_CRASH_REPORTER_PROCESS_TYPE', 'extensionHost'), ('MANDATORY_PATH', '/usr/share/gconf/ubuntu-xorg.mandatory.path'), ('COLCON_PREFIX_PATH', '/home/th1rt3en/doco/sim_full/install'), ('ROS_DISTRO', 'humble'), ('GTK_IM_MODULE', 'fcitx'), ('LOGNAME', 'th1rt3en'), ('JOURNAL_STREAM', '8:20051'), ('_', '/home/th1rt3en/.local/bin/colcon'), ('ROS_VERSION', '2'), ('XDG_SESSION_CLASS', 'user'), ('DEFAULTS_PATH', '/usr/share/gconf/ubuntu-xorg.default.path'), ('RUST_LOG', 'warn'), ('USERNAME', 'th1rt3en'), ('TERM', 'dumb'), ('GNOME_DESKTOP_SESSION_ID', 'this-is-deprecated'), ('FC_FONTATIONS', '1'), ('ROS_LOCALHOST_ONLY', '0'), ('WINDOWPATH', '2'), ('PATH', '/opt/gcc-arm-none-eabi-9-2020-q2-update/bin:/home/th1rt3en/.local/bin:/home/th1rt3en/.codex/tmp/arg0/codex-arg0J4muaF:/opt/gcc-arm-none-eabi-9-2020-q2-update/bin:/home/th1rt3en/.local/bin:/opt/ros/humble/bin:/opt/gcc-arm-none-eabi-9-2020-q2-update/bin:/home/th1rt3en/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/opt/xtensa-esp-elf/bin/:/home/th1rt3en/.vscode/extensions/openai.chatgpt-26.304.20706-linux-x64/bin/linux-x86_64'), ('SESSION_MANAGER', 'local/TH1RT3EN-LAB:@/tmp/.ICE-unix/2981,unix/TH1RT3EN-LAB:/tmp/.ICE-unix/2981'), ('INVOCATION_ID', '5ddc5091c5ef4af49c7d7cb928cafb62'), ('PAPERSIZE', 'a4'), ('XDG_MENU_PREFIX', 'gnome-'), ('LC_ADDRESS', 'zh_CN.UTF-8'), ('XDG_RUNTIME_DIR', '/run/user/1000'), ('GDK_BACKEND', 'x11'), ('DISPLAY', ':1'), ('LANG', 'en_US.UTF-8'), ('XDG_CURRENT_DESKTOP', 'ubuntu:GNOME'), ('LC_TELEPHONE', 'zh_CN.UTF-8'), ('XMODIFIERS', '@im=fcitx'), ('GH_PAGER', 'cat'), ('XDG_SESSION_DESKTOP', 'ubuntu-xorg'), ('XAUTHORITY', '/run/user/1000/gdm/Xauthority'), ('SSH_AGENT_LAUNCHER', 'gnome-keyring'), ('SSH_AUTH_SOCK', '/run/user/1000/keyring/ssh'), ('ROS_DOMAIN_ID', '13'), ('AMENT_PREFIX_PATH', '/home/th1rt3en/doco/sim_full/install/duojin01_bringup:/home/th1rt3en/doco/sim_full/install/ugv_sim_bringup:/home/th1rt3en/doco/sim_full/install/ugv_bringup:/home/th1rt3en/doco/sim_full/install/ugv_teleop:/home/th1rt3en/doco/sim_full/install/ugv_slam_tools:/home/th1rt3en/doco/sim_full/install/uav_sim_bringup:/home/th1rt3en/doco/sim_full/install/sim_worlds:/home/th1rt3en/doco/sim_full/install/ugv_sim_tools:/home/th1rt3en/doco/sim_full/install/ugv_safety_watchdog:/home/th1rt3en/doco/sim_full/install/ugv_description:/home/th1rt3en/doco/sim_full/install/ugv_controller_emulator:/home/th1rt3en/doco/sim_full/install/ugv_base_driver:/home/th1rt3en/doco/sim_full/install/uav_mode_supervisor:/home/th1rt3en/doco/sim_full/install/uav_bringup:/home/th1rt3en/doco/sim_full/install/uav_visual_landing:/home/th1rt3en/doco/sim_full/install/uav_gz_bridge:/home/th1rt3en/doco/sim_full/install/uav_description:/home/th1rt3en/doco/sim_full/install/uav_bridge:/home/th1rt3en/doco/sim_full/install/relative_position_fusion:/home/th1rt3en/doco/sim_full/install/quadrotor_msgs:/home/th1rt3en/doco/sim_full/install/px4_msgs:/home/th1rt3en/doco/sim_full/install/px4:/home/th1rt3en/doco/sim_full/install/orbbec_description:/home/th1rt3en/doco/sim_full/install/orbbec_camera:/home/th1rt3en/doco/sim_full/install/orbbec_camera_msgs:/home/th1rt3en/doco/sim_full/install/lslidar_driver:/home/th1rt3en/doco/sim_full/install/lslidar_msgs:/opt/ros/humble'), ('SHELL', '/bin/bash'), ('LC_NAME', 'zh_CN.UTF-8'), ('QT_ACCESSIBILITY', '1'), ('ELECTRON_RUN_AS_NODE', '1'), ('GDMSESSION', 'ubuntu-xorg'), ('LESSCLOSE', '/usr/bin/lesspipe %s %s'), ('CODEX_THREAD_ID', '019d1fa7-71cb-71e2-ae99-79f6fcfacc4d'), ('LC_MEASUREMENT', 'zh_CN.UTF-8'), ('GPG_AGENT_INFO', '/run/user/1000/gnupg/S.gpg-agent:0:1'), ('GJS_DEBUG_OUTPUT', 'stderr'), ('LC_IDENTIFICATION', 'zh_CN.UTF-8'), ('GIT_PAGER', 'cat'), ('QT_IM_MODULE', 'fcitx'), ('PWD', '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_bridge'), ('LC_ALL', 'en_US.UTF-8'), ('XDG_CONFIG_DIRS', '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg'), ('VSCODE_CODE_CACHE_PATH', '/home/th1rt3en/.config/Code/CachedData/61b3d0ab13be7dda2389f1d3e60a119c7f660cc3'), ('XDG_DATA_DIRS', '/usr/share/ubuntu-xorg:/usr/share/gnome:/home/th1rt3en/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop'), ('PYTHONPATH', '/home/th1rt3en/doco/sim_full/install/duojin01_bringup/lib/python3.10/site-packages:/home/th1rt3en/doco/sim_full/install/ugv_bringup/lib/python3.10/site-packages:/home/th1rt3en/doco/sim_full/install/sim_worlds/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/ugv_description/lib/python3.10/site-packages:/home/th1rt3en/doco/sim_full/install/uav_mode_supervisor/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/uav_bringup/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/uav_visual_landing/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/relative_position_fusion/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/quadrotor_msgs/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/px4_msgs/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/orbbec_camera_msgs/local/lib/python3.10/dist-packages:/home/th1rt3en/doco/sim_full/install/lslidar_msgs/local/lib/python3.10/dist-packages:/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('HTTP_PROXY', 'http://127.0.0.1:7897'), ('LC_NUMERIC', 'zh_CN.UTF-8'), ('LC_PAPER', 'zh_CN.UTF-8'), ('COLCON', '1'), ('CMAKE_PREFIX_PATH', '/home/th1rt3en/doco/sim_full/install/ugv_sim_bringup:/home/th1rt3en/doco/sim_full/install/ugv_teleop:/home/th1rt3en/doco/sim_full/install/ugv_slam_tools:/home/th1rt3en/doco/sim_full/install/uav_sim_bringup:/home/th1rt3en/doco/sim_full/install/sim_worlds:/home/th1rt3en/doco/sim_full/install/ugv_sim_tools:/home/th1rt3en/doco/sim_full/install/ugv_safety_watchdog:/home/th1rt3en/doco/sim_full/install/ugv_controller_emulator:/home/th1rt3en/doco/sim_full/install/ugv_base_driver:/home/th1rt3en/doco/sim_full/install/uav_mode_supervisor:/home/th1rt3en/doco/sim_full/install/uav_bringup:/home/th1rt3en/doco/sim_full/install/uav_visual_landing:/home/th1rt3en/doco/sim_full/install/uav_gz_bridge:/home/th1rt3en/doco/sim_full/install/uav_description:/home/th1rt3en/doco/sim_full/install/uav_bridge:/home/th1rt3en/doco/sim_full/install/relative_position_fusion:/home/th1rt3en/doco/sim_full/install/quadrotor_msgs:/home/th1rt3en/doco/sim_full/install/px4_msgs:/home/th1rt3en/doco/sim_full/install/px4:/home/th1rt3en/doco/sim_full/install/orbbec_description:/home/th1rt3en/doco/sim_full/install/orbbec_camera:/home/th1rt3en/doco/sim_full/install/orbbec_camera_msgs:/home/th1rt3en/doco/sim_full/install/lslidar_driver:/home/th1rt3en/doco/sim_full/install/lslidar_msgs:/home/th1rt3en/doco/sim_full/install/duojin01_bringup:/home/th1rt3en/doco/sim_full/install/ugv_bringup:/home/th1rt3en/doco/sim_full/install/ugv_description:/opt/ros/humble'), ('VSCODE_PID', '8718')]), 'shell': False}
+[50.996017] (uav_bridge) StdoutLine: {'line': b'-- Install configuration: ""\n'}
+[50.996535] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/lib/uav_bridge/libuav_bridge_px4_odom_adapter_logic.a\n'}
+[50.996623] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/lib/uav_bridge/mono_camera_source_node\n'}
+[50.996701] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/lib/uav_bridge/mono_video_recorder_node\n'}
+[50.996770] (uav_bridge) StdoutLine: {'line': b'-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/lib/uav_bridge/px4_planar_state_reader_node\n'}
+[51.003120] (uav_bridge) StdoutLine: {'line': b'-- Set runtime path of "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/lib/uav_bridge/px4_planar_state_reader_node" to ""\n'}
+[51.003451] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/lib/uav_bridge/px4_odom_adapter_node\n'}
+[51.003563] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/lib/uav_bridge/uav_state_bridge_node\n'}
+[51.003731] (uav_bridge) StdoutLine: {'line': b'-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/lib/uav_bridge/uav_control_node\n'}
+[51.014727] (-) TimerEvent: {}
+[51.019699] (uav_bridge) StdoutLine: {'line': b'-- Set runtime path of "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/lib/uav_bridge/uav_control_node" to ""\n'}
+[51.019972] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/lib/uav_bridge/fmu_topic_namespace_bridge_node\n'}
+[51.020105] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/lib/uav_bridge/openvins_px4_vision_bridge_node\n'}
+[51.021925] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/include\n'}
+[51.022142] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/include/uav_bridge\n'}
+[51.022214] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/include/uav_bridge/math_utils.hpp\n'}
+[51.022305] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/include/uav_bridge/uav_control_logic.hpp\n'}
+[51.022388] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/include/uav_bridge/uav_state_bridge_logic.hpp\n'}
+[51.022450] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/include/uav_bridge/gz_topic_utils.hpp\n'}
+[51.022505] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/include/uav_bridge/frame_aligner.hpp\n'}
+[51.022557] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/include/uav_bridge/px4_odom_adapter_logic.hpp\n'}
+[51.022605] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/include/uav_bridge/px4_commander.hpp\n'}
+[51.022664] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/include/uav_bridge/flight_mode_manager.hpp\n'}
+[51.022714] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/ament_index/resource_index/package_run_dependencies/uav_bridge\n'}
+[51.022762] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/ament_index/resource_index/parent_prefix_path/uav_bridge\n'}
+[51.022811] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/uav_bridge/environment/ament_prefix_path.sh\n'}
+[51.022858] (uav_bridge) StdoutLine: {'line': b'-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/uav_bridge/environment/ament_prefix_path.dsv\n'}
+[51.022905] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/uav_bridge/environment/path.sh\n'}
+[51.022957] (uav_bridge) StdoutLine: {'line': b'-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/uav_bridge/environment/path.dsv\n'}
+[51.023004] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/uav_bridge/local_setup.bash\n'}
+[51.023064] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/uav_bridge/local_setup.sh\n'}
+[51.023109] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/uav_bridge/local_setup.zsh\n'}
+[51.023152] (uav_bridge) StdoutLine: {'line': b'-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/uav_bridge/local_setup.dsv\n'}
+[51.023194] (uav_bridge) StdoutLine: {'line': b'-- Installing: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/uav_bridge/package.dsv\n'}
+[51.023237] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/ament_index/resource_index/packages/uav_bridge\n'}
+[51.023286] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/uav_bridge/cmake/ament_cmake_export_include_directories-extras.cmake\n'}
+[51.023336] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/uav_bridge/cmake/uav_bridgeConfig.cmake\n'}
+[51.023380] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/uav_bridge/cmake/uav_bridgeConfig-version.cmake\n'}
+[51.023423] (uav_bridge) StdoutLine: {'line': b'-- Up-to-date: /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge/share/uav_bridge/package.xml\n'}
+[51.024600] (uav_bridge) CommandEnded: {'returncode': 0}
+[51.048116] (uav_bridge) JobEnded: {'identifier': 'uav_bridge', 'rc': 0}
+[51.048645] (-) EventReactorShutdown: {}

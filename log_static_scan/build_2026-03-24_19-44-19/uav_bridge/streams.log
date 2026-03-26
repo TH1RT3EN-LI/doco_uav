@@ -1,0 +1,55 @@
+[0.008s] Invoking command in '/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_bridge': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/src/uav_bridge -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_INSTALL_PREFIX=/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/install_static_scan/uav_bridge
+[0.050s] -- The C compiler identification is GNU 11.4.0
+[0.104s] -- The CXX compiler identification is GNU 11.4.0
+[0.112s] -- Detecting C compiler ABI info
+[0.187s] -- Detecting C compiler ABI info - done
+[0.192s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.193s] -- Detecting C compile features
+[0.193s] -- Detecting C compile features - done
+[0.196s] -- Detecting CXX compiler ABI info
+[0.286s] -- Detecting CXX compiler ABI info - done
+[0.292s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.293s] -- Detecting CXX compile features
+[0.293s] -- Detecting CXX compile features - done
+[0.296s] -- Found ament_cmake: 1.3.13 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.484s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[0.566s] -- Found rclcpp: 16.0.18 (/opt/ros/humble/share/rclcpp/cmake)
+[0.600s] -- Found rosidl_generator_c: 3.1.8 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.604s] -- Found rosidl_adapter: 3.1.8 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.611s] -- Found rosidl_generator_cpp: 3.1.8 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.621s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.633s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.668s] -- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[0.670s] -- Found rmw_fastrtps_cpp: 6.2.10 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[0.764s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.2")  
+[0.806s] -- Found FastRTPS: /opt/ros/humble/include  
+[0.858s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[0.865s] -- Looking for pthread.h
+[0.935s] -- Looking for pthread.h - found
+[0.935s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[1.002s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+[1.003s] -- Found Threads: TRUE  
+[1.043s] -- Found sensor_msgs: 4.9.1 (/opt/ros/humble/share/sensor_msgs/cmake)
+[1.069s] -- Found nav_msgs: 4.9.1 (/opt/ros/humble/share/nav_msgs/cmake)
+[1.085s] -- Found std_srvs: 4.9.1 (/opt/ros/humble/share/std_srvs/cmake)
+[1.095s] -- Found tf2: 0.25.19 (/opt/ros/humble/share/tf2/cmake)
+[1.107s] -- Found tf2_ros: 0.25.19 (/opt/ros/humble/share/tf2_ros/cmake)
+[1.208s] CMake Error at CMakeLists.txt:18 (find_package):
+[1.208s]   By not providing "Findquadrotor_msgs.cmake" in CMAKE_MODULE_PATH this
+[1.208s]   project has asked CMake to find a package configuration file provided by
+[1.208s]   "quadrotor_msgs", but CMake did not find one.
+[1.208s] 
+[1.208s]   Could not find a package configuration file provided by "quadrotor_msgs"
+[1.209s]   with any of the following names:
+[1.209s] 
+[1.209s]     quadrotor_msgsConfig.cmake
+[1.209s]     quadrotor_msgs-config.cmake
+[1.209s] 
+[1.209s]   Add the installation prefix of "quadrotor_msgs" to CMAKE_PREFIX_PATH or set
+[1.209s]   "quadrotor_msgs_DIR" to a directory containing one of the above files.  If
+[1.209s]   "quadrotor_msgs" provides a separate development package or SDK, be sure it
+[1.209s]   has been installed.
+[1.209s] 
+[1.209s] 
+[1.209s] -- Configuring incomplete, errors occurred!
+[1.209s] See also "/home/th1rt3en/doco/uav_hw/src/workspace/doco_uav/build_static_scan/uav_bridge/CMakeFiles/CMakeOutput.log".
