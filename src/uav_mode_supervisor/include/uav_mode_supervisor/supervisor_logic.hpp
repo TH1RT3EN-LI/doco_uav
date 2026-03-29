@@ -40,6 +40,7 @@ public:
   struct FusionStatus
   {
     bool diagnostics_seen{false};
+    bool fresh{false};
     bool initialized{false};
     bool relocalize_requested{true};
     std::string reason{"diagnostics_missing"};
@@ -48,9 +49,16 @@ public:
   struct VisualLandingStatus
   {
     bool state_seen{false};
+    bool fresh{false};
     bool active{false};
     bool target_detected{false};
     std::string phase{"READY"};
+  };
+
+  struct VisualRecoveryContext
+  {
+    bool allowed{false};
+    float tracking_height_m{0.0f};
   };
 
   struct ActionPlan
@@ -105,6 +113,7 @@ private:
   Owner owner_{Owner::Idle};
   FusionStatus fusion_status_{};
   VisualLandingStatus visual_status_{};
+  VisualRecoveryContext visual_recovery_context_{};
   float active_tracking_height_m_{1.5f};
   bool visual_capture_observed_{false};
   std::string last_command_{"idle"};

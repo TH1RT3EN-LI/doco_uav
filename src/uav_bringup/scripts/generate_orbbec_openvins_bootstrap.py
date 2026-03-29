@@ -25,7 +25,11 @@ Transform = Tuple[List[List[float]], List[float]]
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate OpenVINS bootstrap configs from live Orbbec topics.")
     parser.add_argument("--camera-name", default="uav_depth_camera")
-    parser.add_argument("--output-dir", default="")
+    parser.add_argument(
+        "--output-dir",
+        default="",
+        help="Optional output directory. Leave empty or pass the project bootstrap workspace path exactly.",
+    )
     parser.add_argument("--timeout-sec", type=float, default=10.0)
     parser.add_argument("--camera-rate-hz", type=float, default=30.0)
     parser.add_argument("--imu-rate-hz", type=float, default=200.0)
@@ -525,7 +529,7 @@ def resolve_output_dir(argument_value: str) -> Path:
     resolved = Path(argument_value).expanduser().resolve()
     if resolved != bootstrap_dir:
         raise BootstrapError(
-            "bootstrap generation only writes to the project bootstrap workspace: "
+            "--output-dir must resolve to the project bootstrap workspace: "
             f"{bootstrap_dir}"
         )
     return resolved

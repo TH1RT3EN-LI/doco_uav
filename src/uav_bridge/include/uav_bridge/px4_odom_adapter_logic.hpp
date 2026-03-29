@@ -22,10 +22,10 @@ struct Px4OdomResolvedState
   bool used_heading_fallback{false};
 
   std::array<double, 3> position_enu_m{};
-  std::array<double, 3> linear_velocity_enu_mps{};
+  std::array<double, 3> linear_velocity_body_flu_mps{};
   std::array<double, 3> position_variance_enu_m2{};
   std::array<double, 3> orientation_variance_rad2{};
-  std::array<double, 3> velocity_variance_enu_m2ps2{};
+  std::array<double, 3> velocity_variance_body_flu_m2ps2{};
   tf2::Quaternion orientation_enu_flu{0.0, 0.0, 0.0, 1.0};
 };
 

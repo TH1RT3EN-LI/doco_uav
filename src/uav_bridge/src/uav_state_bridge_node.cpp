@@ -71,12 +71,12 @@ public:
     if (publish_odometry_) {
       odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>(output_odometry_topic_, 10);
     }
+    if (publish_map_to_odom_tf_) {
+      static_tf_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
+      publishStaticMapToOdomTf();
+    }
     if (publish_tf_) {
       tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
-      if (publish_map_to_odom_tf_) {
-        static_tf_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
-        publishStaticMapToOdomTf();
-      }
     }
 
     const auto period = std::chrono::duration_cast<std::chrono::nanoseconds>(

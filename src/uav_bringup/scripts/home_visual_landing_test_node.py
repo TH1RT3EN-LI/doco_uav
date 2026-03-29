@@ -66,6 +66,8 @@ class HomeVisualLandingTestNode(Node):
         self.declare_parameter("home_visual_land_service", "/uav/test/home_visual_land")
         self.declare_parameter("arrival_xy_tolerance_m", 0.15)
         self.declare_parameter("state_timeout_s", 0.20)
+        self.declare_parameter("home_takeoff_commit_rise_m", 0.10)
+        self.declare_parameter("home_takeoff_commit_timeout_s", 10.0)
 
         self._state_topic = self.get_parameter("state_topic").value
         self._position_topic = self.get_parameter("position_topic").value
@@ -83,6 +85,12 @@ class HomeVisualLandingTestNode(Node):
             self.get_parameter("arrival_xy_tolerance_m").value
         )
         self._state_timeout_s = float(self.get_parameter("state_timeout_s").value)
+        self._home_takeoff_commit_rise_m = max(
+            0.0, float(self.get_parameter("home_takeoff_commit_rise_m").value)
+        )
+        self._home_takeoff_commit_timeout_s = max(
+            0.0, float(self.get_parameter("home_takeoff_commit_timeout_s").value)
+        )
 
         controller_state_qos = QoSProfile(depth=1)
         controller_state_qos.reliability = ReliabilityPolicy.RELIABLE
@@ -119,6 +127,7 @@ class HomeVisualLandingTestNode(Node):
         self._visual_landing_active = False
         self._home_pose: HomePose | None = None
         self._pending_home_pose: HomePose | None = None
+        self._pending_home_pose_takeoff_accepted_at: Time | None = None
 
         self._takeoff_future = None
         self._visual_landing_start_future = None
@@ -176,7 +185,7 @@ class HomeVisualLandingTestNode(Node):
         self, request: Trigger.Request, response: Trigger.Response
     ) -> Trigger.Response:
         del request
-        if self._takeoff_future is not None:
+        if self._takeoff_future is not None or self._pending_home_pose is not None:
             response.success = False
             response.message = "home takeoff is already pending"
             return response
@@ -201,7 +210,7 @@ class HomeVisualLandingTestNode(Node):
         )
         self._takeoff_future = self._takeoff_client.call_async(Trigger.Request())
         response.success = True
-        response.message = "home takeoff queued; home will commit after takeoff acceptance"
+        response.message = "home takeoff queued; home will commit after observed liftoff"
         self.get_logger().info(
             f"queued home takeoff from [{state.x:.3f}, {state.y:.3f}, {state.z:.3f}] "
             f"yaw={state.yaw:.3f}"
@@ -281,6 +290,10 @@ class HomeVisualLandingTestNode(Node):
         self._visual_landing_start_future = None
         self._request_hold(reason)
 
+    def _clear_pending_home_pose(self) -> None:
+        self._pending_home_pose = None
+        self._pending_home_pose_takeoff_accepted_at = None
+
     def _process_takeoff_future(self) -> None:
         if self._takeoff_future is None or not self._takeoff_future.done():
             return
@@ -292,17 +305,64 @@ class HomeVisualLandingTestNode(Node):
             result = None
 
         if result is not None and result.success and self._pending_home_pose is not None:
-            self._home_pose = self._pending_home_pose
+            self._pending_home_pose_takeoff_accepted_at = self.get_clock().now()
             self.get_logger().info(
-                f"committed home pose at [{self._home_pose.x:.3f}, {self._home_pose.y:.3f}, "
-                f"{self._home_pose.z:.3f}] yaw={self._home_pose.yaw:.3f}"
+                "takeoff request accepted; waiting for observed liftoff before committing "
+                f"home pose at [{self._pending_home_pose.x:.3f}, {self._pending_home_pose.y:.3f}, "
+                f"{self._pending_home_pose.z:.3f}] yaw={self._pending_home_pose.yaw:.3f}"
             )
         else:
             message = result.message if result is not None else "exception before response"
             self.get_logger().warn(f"takeoff was not accepted; home pose not updated: {message}")
+            self._clear_pending_home_pose()
 
-        self._pending_home_pose = None
         self._takeoff_future = None
+
+    def _process_pending_home_pose_commit(self) -> None:
+        if (
+            self._pending_home_pose is None
+            or self._pending_home_pose_takeoff_accepted_at is None
+        ):
+            return
+
+        now = self.get_clock().now()
+        waited_s = (
+            now - self._pending_home_pose_takeoff_accepted_at
+        ).nanoseconds / 1.0e9
+        if not math.isfinite(waited_s) or waited_s < 0.0:
+            return
+
+        state, error = self._current_state_or_error()
+        rise_m = None
+        if error is None and state is not None:
+            rise_m = state.z - self._pending_home_pose.z
+            if rise_m >= self._home_takeoff_commit_rise_m:
+                self._home_pose = self._pending_home_pose
+                self.get_logger().info(
+                    "committed home pose after observed liftoff "
+                    f"(rise={rise_m:.3f} m) at [{self._home_pose.x:.3f}, "
+                    f"{self._home_pose.y:.3f}, {self._home_pose.z:.3f}] "
+                    f"yaw={self._home_pose.yaw:.3f}"
+                )
+                self._clear_pending_home_pose()
+                return
+
+        if waited_s < self._home_takeoff_commit_timeout_s:
+            return
+
+        if error is None and rise_m is not None:
+            detail = (
+                f"observed rise {rise_m:.3f} m did not reach "
+                f"{self._home_takeoff_commit_rise_m:.3f} m"
+            )
+        else:
+            detail = error or "state odometry is unavailable"
+        self.get_logger().warn(
+            "discarding pending home pose after %.2f s waiting for observed liftoff: %s",
+            waited_s,
+            detail,
+        )
+        self._clear_pending_home_pose()
 
     def _process_hold_future(self) -> None:
         if self._hold_future is None or not self._hold_future.done():
@@ -372,6 +432,7 @@ class HomeVisualLandingTestNode(Node):
 
     def _timer_callback(self) -> None:
         self._process_takeoff_future()
+        self._process_pending_home_pose_commit()
         self._process_hold_future()
         self._process_home_visual_land()
 

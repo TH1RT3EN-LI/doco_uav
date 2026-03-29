@@ -34,7 +34,7 @@ void SupervisorLogic::UpdateVisualLandingStatus(const VisualLandingStatus & stat
 {
   visual_status_ = status;
   if (
-    visual_status_.active && visual_status_.state_seen &&
+    visual_status_.fresh && visual_status_.active && visual_status_.state_seen &&
     visual_status_.phase != "READY" && visual_status_.phase != "HOLD_WAIT")
   {
     visual_capture_observed_ = true;
@@ -47,13 +47,15 @@ void SupervisorLogic::UpdateVisualLandingStatus(const VisualLandingStatus & stat
 
 bool SupervisorLogic::FusionReady() const
 {
-  return fusion_status_.diagnostics_seen && fusion_status_.initialized &&
+  return fusion_status_.fresh && fusion_status_.diagnostics_seen &&
+         fusion_status_.initialized &&
          !fusion_status_.relocalize_requested;
 }
 
 bool SupervisorLogic::VisualCommitted() const
 {
-  return visual_status_.active && PhaseInSet(visual_status_.phase, config_.visual_commit_phases);
+  return visual_status_.fresh && visual_status_.active &&
+         PhaseInSet(visual_status_.phase, config_.visual_commit_phases);
 }
 
 SupervisorLogic::ActionPlan SupervisorLogic::BuildCommandPlan(
@@ -94,6 +96,12 @@ SupervisorLogic::ActionPlan SupervisorLogic::BuildCommandPlan(
         }
         return plan;
       case Owner::VisualLanding:
+        if (!visual_status_.fresh) {
+          plan.accepted = false;
+          plan.start_tracking = false;
+          plan.message = "visual landing state is stale and cannot be preempted safely";
+          return plan;
+        }
         if (VisualCommitted()) {
           plan.accepted = false;
           plan.start_tracking = false;
@@ -106,7 +114,7 @@ SupervisorLogic::ActionPlan SupervisorLogic::BuildCommandPlan(
           plan.message = "tracking preemption of visual landing is disabled";
           return plan;
         }
-        plan.stop_visual_landing = visual_status_.active;
+        plan.stop_visual_landing = true;
         plan.message = "preempting visual landing with relative tracking";
         return plan;
     }
@@ -147,7 +155,7 @@ SupervisorLogic::ActionPlan SupervisorLogic::BuildCommandPlan(
     plan.accepted = true;
     plan.kind = PlanKind::ManualCommand;
     plan.stop_tracking = owner_ == Owner::RelativeTracking;
-    plan.stop_visual_landing = owner_ == Owner::VisualLanding && visual_status_.active;
+    plan.stop_visual_landing = owner_ == Owner::VisualLanding;
     plan.request_hold = true;
     plan.owner_after = Owner::Hold;
     plan.message = "hold requested";
@@ -173,13 +181,19 @@ SupervisorLogic::ActionPlan SupervisorLogic::BuildCommandPlan(
         plan.message = "preempting relative tracking with px4 position mode";
         return plan;
       case Owner::VisualLanding:
+        if (!visual_status_.fresh) {
+          plan.accepted = false;
+          plan.request_position_mode = false;
+          plan.message = "visual landing state is stale and cannot be preempted safely";
+          return plan;
+        }
         if (VisualCommitted()) {
           plan.accepted = false;
           plan.request_position_mode = false;
           plan.message = "visual landing is in commit phase and cannot be preempted";
           return plan;
         }
-        plan.stop_visual_landing = visual_status_.active;
+        plan.stop_visual_landing = true;
         plan.message = "preempting visual landing with px4 position mode";
         return plan;
     }
@@ -189,7 +203,7 @@ SupervisorLogic::ActionPlan SupervisorLogic::BuildCommandPlan(
     plan.accepted = true;
     plan.kind = PlanKind::ManualCommand;
     plan.stop_tracking = owner_ == Owner::RelativeTracking;
-    plan.stop_visual_landing = owner_ == Owner::VisualLanding && visual_status_.active;
+    plan.stop_visual_landing = owner_ == Owner::VisualLanding;
     plan.request_hold = true;
     plan.owner_after = Owner::Idle;
     plan.message = "stop requested";
@@ -211,7 +225,7 @@ std::optional<SupervisorLogic::ActionPlan> SupervisorLogic::BuildAutomaticPlan()
     plan.kind = PlanKind::AutomaticSafety;
     plan.command_name = "auto_hold_fusion_degraded";
     plan.stop_tracking = owner_ == Owner::RelativeTracking;
-    plan.stop_visual_landing = owner_ == Owner::VisualLanding && visual_status_.active;
+    plan.stop_visual_landing = owner_ == Owner::VisualLanding;
     plan.request_hold = true;
     plan.owner_after = Owner::Hold;
     plan.message = "fusion degraded, falling back to hold";
@@ -220,7 +234,9 @@ std::optional<SupervisorLogic::ActionPlan> SupervisorLogic::BuildAutomaticPlan()
 
   if (
     owner_ == Owner::VisualLanding && config_.auto_recover_tracking_on_visual_loss &&
-    FusionReady() && visual_capture_observed_ && !VisualCommitted() && visual_status_.active &&
+    visual_recovery_context_.allowed && FusionReady() &&
+    visual_status_.fresh && visual_capture_observed_ && !VisualCommitted() &&
+    visual_status_.active &&
     PhaseInSet(visual_status_.phase, config_.visual_recover_on_phases))
   {
     ActionPlan plan;
@@ -229,14 +245,15 @@ std::optional<SupervisorLogic::ActionPlan> SupervisorLogic::BuildAutomaticPlan()
     plan.command_name = "auto_recover_tracking";
     plan.stop_visual_landing = true;
     plan.start_tracking = true;
-    plan.tracking_height_m = active_tracking_height_m_;
+    plan.tracking_height_m = visual_recovery_context_.tracking_height_m;
     plan.owner_after = Owner::RelativeTracking;
     plan.message = "visual landing lost target before commit, returning to tracking";
     return plan;
   }
 
   if (
-    owner_ == Owner::VisualLanding && visual_status_.state_seen && !visual_status_.active &&
+    owner_ == Owner::VisualLanding && visual_status_.fresh &&
+    visual_status_.state_seen && !visual_status_.active &&
     visual_status_.phase == "READY")
   {
     ActionPlan plan;
@@ -253,9 +270,20 @@ std::optional<SupervisorLogic::ActionPlan> SupervisorLogic::BuildAutomaticPlan()
 
 void SupervisorLogic::ApplySuccessfulPlan(const ActionPlan & plan)
 {
+  const Owner previous_owner = owner_;
   owner_ = plan.owner_after;
   if (plan.start_tracking) {
     active_tracking_height_m_ = ResolveTrackingHeight(plan.tracking_height_m);
+  }
+  if (plan.start_visual_landing) {
+    if (previous_owner == Owner::RelativeTracking) {
+      visual_recovery_context_.allowed = true;
+      visual_recovery_context_.tracking_height_m = active_tracking_height_m_;
+    } else {
+      visual_recovery_context_ = VisualRecoveryContext{};
+    }
+  } else if (previous_owner == Owner::VisualLanding && owner_ != Owner::VisualLanding) {
+    visual_recovery_context_ = VisualRecoveryContext{};
   }
   if (plan.start_visual_landing) {
     visual_capture_observed_ = false;

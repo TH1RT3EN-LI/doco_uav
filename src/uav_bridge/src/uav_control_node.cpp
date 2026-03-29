@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -32,17 +33,25 @@ class UavControlNode : public rclcpp::Node
 {
   using Trigger = std_srvs::srv::Trigger;
 
-  enum class Px4TimestampSource : uint8_t
-  {
-    System = 0,
-    GazeboSim = 1,
-  };
-
   enum class PreTakeoffResetState : uint8_t
   {
     Idle = 0,
     RequestInFlight = 1,
     WaitingForRecovery = 2,
+  };
+
+  enum class MotionGuardViolation : uint8_t
+  {
+    None = 0,
+    Soft = 1,
+    Hard = 2,
+  };
+
+  enum class MotionGuardAction : uint8_t
+  {
+    Accept = 0,
+    Reject = 1,
+    Trip = 2,
   };
 
 public:
@@ -64,6 +73,7 @@ public:
     this->declare_parameter<std::string>("abort_service", "/uav/control/command/abort");
     this->declare_parameter<std::string>("disarm_service", "/uav/control/command/disarm");
     this->declare_parameter<std::string>("pre_takeoff_reset_service", "");
+    this->declare_parameter<double>("pre_takeoff_reset_timeout_s", 10.0);
     this->declare_parameter<double>("publish_rate_hz", 50.0);
     this->declare_parameter<int>("warmup_cycles", 20);
     this->declare_parameter<int>("target_system", 1);
@@ -80,6 +90,23 @@ public:
     this->declare_parameter<double>("velocity_mode_max_acc_z_mps2", 0.6);
     this->declare_parameter<double>("velocity_mode_max_acc_yaw_radps2", 1.5);
     this->declare_parameter<double>("state_timeout_s", 0.20);
+    this->declare_parameter<bool>("motion_guard_enabled", true);
+    this->declare_parameter<double>("motion_guard_soft_dwell_s", 2.0);
+    this->declare_parameter<double>("motion_guard_pose_gap_reset_s", 0.40);
+    this->declare_parameter<double>("motion_guard_soft_xy_mps", 0.40);
+    this->declare_parameter<double>("motion_guard_soft_z_mps", 0.25);
+    this->declare_parameter<double>("motion_guard_soft_yaw_radps", 0.60);
+    this->declare_parameter<double>("motion_guard_hard_xy_mps", 0.55);
+    this->declare_parameter<double>("motion_guard_hard_z_mps", 0.35);
+    this->declare_parameter<double>("motion_guard_hard_yaw_radps", 0.90);
+    this->declare_parameter<double>("motion_guard_feedback_hard_xy_mps", 0.65);
+    this->declare_parameter<double>("motion_guard_feedback_hard_z_mps", 0.45);
+    this->declare_parameter<double>("motion_guard_pose_soft_xy_step_m", 0.25);
+    this->declare_parameter<double>("motion_guard_pose_soft_z_step_m", 0.12);
+    this->declare_parameter<double>("motion_guard_pose_soft_yaw_step_rad", 0.35);
+    this->declare_parameter<double>("motion_guard_pose_hard_xy_step_m", 0.50);
+    this->declare_parameter<double>("motion_guard_pose_hard_z_step_m", 0.25);
+    this->declare_parameter<double>("motion_guard_pose_hard_yaw_step_rad", 0.70);
     this->declare_parameter<std::string>("base_frame_id", "uav_base_link");
     this->declare_parameter<std::string>("position_command_frame_id", "");
     this->declare_parameter<std::string>("px4_timestamp_source", "system");
@@ -101,6 +128,8 @@ public:
     abort_service_ = this->get_parameter("abort_service").as_string();
     disarm_service_ = this->get_parameter("disarm_service").as_string();
     pre_takeoff_reset_service_ = this->get_parameter("pre_takeoff_reset_service").as_string();
+    pre_takeoff_reset_timeout_s_ =
+      std::max(0.0, this->get_parameter("pre_takeoff_reset_timeout_s").as_double());
     publish_rate_hz_ = std::max(1.0, this->get_parameter("publish_rate_hz").as_double());
     warmup_cycles_ = this->get_parameter("warmup_cycles").as_int();
     target_system_ = static_cast<uint8_t>(this->get_parameter("target_system").as_int());
@@ -117,13 +146,29 @@ public:
     velocity_mode_max_acc_z_mps2_ = static_cast<float>(this->get_parameter("velocity_mode_max_acc_z_mps2").as_double());
     velocity_mode_max_acc_yaw_radps2_ = static_cast<float>(this->get_parameter("velocity_mode_max_acc_yaw_radps2").as_double());
     state_timeout_s_ = this->get_parameter("state_timeout_s").as_double();
+    motion_guard_enabled_ = this->get_parameter("motion_guard_enabled").as_bool();
+    motion_guard_soft_dwell_s_ = this->get_parameter("motion_guard_soft_dwell_s").as_double();
+    motion_guard_pose_gap_reset_s_ = this->get_parameter("motion_guard_pose_gap_reset_s").as_double();
+    motion_guard_soft_xy_mps_ = static_cast<float>(this->get_parameter("motion_guard_soft_xy_mps").as_double());
+    motion_guard_soft_z_mps_ = static_cast<float>(this->get_parameter("motion_guard_soft_z_mps").as_double());
+    motion_guard_soft_yaw_radps_ = static_cast<float>(this->get_parameter("motion_guard_soft_yaw_radps").as_double());
+    motion_guard_hard_xy_mps_ = static_cast<float>(this->get_parameter("motion_guard_hard_xy_mps").as_double());
+    motion_guard_hard_z_mps_ = static_cast<float>(this->get_parameter("motion_guard_hard_z_mps").as_double());
+    motion_guard_hard_yaw_radps_ = static_cast<float>(this->get_parameter("motion_guard_hard_yaw_radps").as_double());
+    motion_guard_feedback_hard_xy_mps_ = static_cast<float>(this->get_parameter("motion_guard_feedback_hard_xy_mps").as_double());
+    motion_guard_feedback_hard_z_mps_ = static_cast<float>(this->get_parameter("motion_guard_feedback_hard_z_mps").as_double());
+    motion_guard_pose_soft_xy_step_m_ = static_cast<float>(this->get_parameter("motion_guard_pose_soft_xy_step_m").as_double());
+    motion_guard_pose_soft_z_step_m_ = static_cast<float>(this->get_parameter("motion_guard_pose_soft_z_step_m").as_double());
+    motion_guard_pose_soft_yaw_step_rad_ = static_cast<float>(this->get_parameter("motion_guard_pose_soft_yaw_step_rad").as_double());
+    motion_guard_pose_hard_xy_step_m_ = static_cast<float>(this->get_parameter("motion_guard_pose_hard_xy_step_m").as_double());
+    motion_guard_pose_hard_z_step_m_ = static_cast<float>(this->get_parameter("motion_guard_pose_hard_z_step_m").as_double());
+    motion_guard_pose_hard_yaw_step_rad_ = static_cast<float>(this->get_parameter("motion_guard_pose_hard_yaw_step_rad").as_double());
     base_frame_id_ = this->get_parameter("base_frame_id").as_string();
     position_command_frame_id_ = this->get_parameter("position_command_frame_id").as_string();
-    gz_world_name_ = this->get_parameter("gz_world_name").as_string();
     gz_clock_topic_ = this->get_parameter("gz_clock_topic").as_string();
 
     const std::string timestamp_source = this->get_parameter("px4_timestamp_source").as_string();
-    px4_timestamp_source_ = timestamp_source == "gz_sim" ? Px4TimestampSource::GazeboSim : Px4TimestampSource::System;
+    px4_timestamp_source_ = parsePx4TimestampSource(timestamp_source);
 
     if (px4_timestamp_source_ == Px4TimestampSource::GazeboSim) {
       if (gz_clock_topic_.empty()) {
@@ -177,7 +222,6 @@ public:
           msg->pose.pose.orientation.z,
           msg->pose.pose.orientation.w);
         current_orientation_enu_flu_.normalize();
-        current_state_frame_id_ = msg->header.frame_id;
         last_state_time_ = has_stamp ? rclcpp::Time(msg->header.stamp) : this->now();
         last_state_receive_time_ = received_at;
         has_state_ = true;
@@ -188,6 +232,7 @@ public:
       [this](const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg)
       {
         last_px4_local_position_receive_time_ = this->now();
+        current_local_velocity_ned_ = {msg->vx, msg->vy, msg->vz};
         has_local_position_ = msg->xy_valid && msg->z_valid;
         has_local_velocity_ = hasValidVelocityEstimate(
           msg->v_xy_valid, msg->v_z_valid,
@@ -198,14 +243,12 @@ public:
       vehicle_status_topic_, rclcpp::SensorDataQoS(),
       [this](const px4_msgs::msg::VehicleStatus::SharedPtr msg)
       {
+        const bool was_armed = is_armed_;
         is_armed_ = msg->arming_state == px4_msgs::msg::VehicleStatus::ARMING_STATE_ARMED;
         current_nav_state_ = msg->nav_state;
         is_offboard_mode_ = msg->nav_state == px4_msgs::msg::VehicleStatus::NAVIGATION_STATE_OFFBOARD;
-        if (!is_armed_ && mode_tracker_.mode() == UavControlMode::Landing) {
-          clearPostLandingCommands();
-          mode_tracker_.onLandingComplete();
-          resetWarmup();
-          RCLCPP_INFO(this->get_logger(), "landing complete, control mode -> HOLD (targets cleared)");
+        if (was_armed && !is_armed_) {
+          enterExternalDisarmSafeState();
         }
       });
 
@@ -295,6 +338,7 @@ private:
   {
     pre_takeoff_reset_state_ = PreTakeoffResetState::Idle;
     active_pre_takeoff_reset_request_id_ = 0;
+    pre_takeoff_reset_state_started_at_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
     reset_completed_at_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
   }
 
@@ -315,19 +359,29 @@ private:
     return pre_takeoff_reset_state_ != PreTakeoffResetState::Idle;
   }
 
+  static const char * preTakeoffResetStateName(PreTakeoffResetState state)
+  {
+    switch (state) {
+      case PreTakeoffResetState::Idle:
+        return "idle";
+      case PreTakeoffResetState::RequestInFlight:
+        return "request";
+      case PreTakeoffResetState::WaitingForRecovery:
+        return "recovery";
+    }
+    return "unknown";
+  }
+
   void clearManualCommands()
   {
     has_velocity_body_cmd_ = false;
+    last_velocity_body_time_us_ = 0;
     velocity_mode_rate_limit_initialized_ = false;
     last_velocity_mode_ned_ = {0.0f, 0.0f, 0.0f};
     last_velocity_mode_yawspeed_ned_ = 0.0f;
     hold_target_valid_ = false;
     position_target_valid_ = false;
-  }
-
-  void clearPostLandingCommands()
-  {
-    clearManualCommands();
+    clearMotionGuardSoftViolation();
   }
 
   void logModeChange(UavControlMode previous, const char * reason)
@@ -343,9 +397,20 @@ private:
     }
   }
 
+  static uint64_t timeToMicros(const rclcpp::Time & time)
+  {
+    const int64_t nanoseconds = time.nanoseconds();
+    if (nanoseconds <= 0) {
+      return 0;
+    }
+    return static_cast<uint64_t>(nanoseconds / 1000);
+  }
+
   uint64_t nowMicros()
   {
-    return static_cast<uint64_t>(this->get_clock()->now().nanoseconds() / 1000);
+    const uint64_t ros_time_us = timeToMicros(this->get_clock()->now());
+    const uint64_t system_time_us = timeToMicros(px4_timestamp_system_clock_.now());
+    return selectPx4TimestampMicros(px4_timestamp_source_, ros_time_us, system_time_us);
   }
 
   bool ensureTimestampReady(const char * context, uint64_t stamp)
@@ -359,7 +424,7 @@ private:
 
   bool isPx4ExecutionReady() const
   {
-    return has_local_position_ && has_state_ && stateFresh();
+    return has_local_position_ && localPositionFresh() && has_state_ && stateFresh();
   }
 
   bool isPx4VelocityExecutionReady() const
@@ -384,6 +449,29 @@ private:
     return isPx4ExecutionReady();
   }
 
+  void maybeExpirePreTakeoffReset()
+  {
+    if (pre_takeoff_reset_state_ == PreTakeoffResetState::Idle) {
+      return;
+    }
+    if (pre_takeoff_reset_state_started_at_.nanoseconds() == 0) {
+      return;
+    }
+
+    const double elapsed_s =
+      (this->now() - pre_takeoff_reset_state_started_at_).seconds();
+    if (!std::isfinite(elapsed_s) || elapsed_s < pre_takeoff_reset_timeout_s_) {
+      return;
+    }
+
+    RCLCPP_ERROR(
+      this->get_logger(),
+      "pre-takeoff OpenVINS reset %s timed out after %.2f s; canceling pending takeoff",
+      preTakeoffResetStateName(pre_takeoff_reset_state_),
+      elapsed_s);
+    clearPendingPreTakeoffResetState();
+  }
+
   bool stateFresh() const
   {
     if (!has_state_ || last_state_time_.nanoseconds() == 0) {
@@ -392,6 +480,238 @@ private:
 
     const double age_s = (this->now() - last_state_time_).seconds();
     return std::isfinite(age_s) && age_s >= 0.0 && age_s <= state_timeout_s_;
+  }
+
+  bool localPositionFresh() const
+  {
+    if (last_px4_local_position_receive_time_.nanoseconds() == 0) {
+      return false;
+    }
+
+    const double age_s = (this->now() - last_px4_local_position_receive_time_).seconds();
+    return std::isfinite(age_s) && age_s >= 0.0 && age_s <= state_timeout_s_;
+  }
+
+  static bool exceedsPositiveLimit(float value, float limit)
+  {
+    return std::isfinite(value) && limit > 0.0f && value > limit;
+  }
+
+  static void updateMotionGuardViolation(
+    MotionGuardViolation candidate,
+    const char * candidate_reason,
+    MotionGuardViolation & current,
+    const char * & current_reason)
+  {
+    if (static_cast<uint8_t>(candidate) > static_cast<uint8_t>(current)) {
+      current = candidate;
+      current_reason = candidate_reason;
+    }
+  }
+
+  void clearMotionGuardSoftViolation()
+  {
+    soft_violation_since_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+  }
+
+  bool motionGuardActive() const
+  {
+    return motion_guard_enabled_ && is_armed_;
+  }
+
+  void resetMotionGuardState()
+  {
+    motion_guard_tripped_ = false;
+    motion_guard_trip_reason_.clear();
+    has_last_accepted_pose_target_ = false;
+    last_accepted_pose_target_time_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+    clearMotionGuardSoftViolation();
+  }
+
+  bool rejectIfMotionGuardTripped(const char * action, std::string & message) const
+  {
+    if (!motion_guard_tripped_) {
+      return false;
+    }
+
+    message = "motion guard latched";
+    if (!motion_guard_trip_reason_.empty()) {
+      message += " (";
+      message += motion_guard_trip_reason_;
+      message += ")";
+    }
+    message += "; disarm before ";
+    message += action;
+    return true;
+  }
+
+  bool rejectIfLandingLocked(const char * action, std::string & message) const
+  {
+    if (mode_tracker_.mode() != UavControlMode::Landing) {
+      return false;
+    }
+
+    message = "landing in progress; cannot ";
+    message += action;
+    message += " until abort, position_mode, disarm, or landing completes";
+    return true;
+  }
+
+  void triggerMotionGuardLanding(const char * reason)
+  {
+    if (!motionGuardActive() || motion_guard_tripped_) {
+      return;
+    }
+
+    motion_guard_tripped_ = true;
+    motion_guard_trip_reason_ = reason != nullptr ? reason : "motion guard violated";
+    clearManualCommands();
+    enterLandingMode("land");
+    RCLCPP_ERROR(
+      this->get_logger(),
+      "motion guard tripped: %s",
+      motion_guard_trip_reason_.c_str());
+  }
+
+  MotionGuardAction motionGuardActionForViolation(
+    MotionGuardViolation violation,
+    const char * reason,
+    const rclcpp::Time & now)
+  {
+    if (!motion_guard_enabled_) {
+      return MotionGuardAction::Accept;
+    }
+    if (motion_guard_tripped_) {
+      return MotionGuardAction::Reject;
+    }
+
+    if (violation == MotionGuardViolation::None) {
+      clearMotionGuardSoftViolation();
+      return MotionGuardAction::Accept;
+    }
+
+    if (!motionGuardActive()) {
+      clearMotionGuardSoftViolation();
+      return MotionGuardAction::Reject;
+    }
+
+    if (violation == MotionGuardViolation::Hard || motion_guard_soft_dwell_s_ <= 0.0) {
+      triggerMotionGuardLanding(reason);
+      return MotionGuardAction::Trip;
+    }
+
+    if (soft_violation_since_.nanoseconds() == 0) {
+      soft_violation_since_ = now;
+      return MotionGuardAction::Accept;
+    }
+
+    if ((now - soft_violation_since_).seconds() >= motion_guard_soft_dwell_s_) {
+      triggerMotionGuardLanding(reason);
+      return MotionGuardAction::Trip;
+    }
+    return MotionGuardAction::Accept;
+  }
+
+  MotionGuardViolation classifyVelocityEnvelope(
+    float xy_mps,
+    float abs_z_mps,
+    float abs_yaw_radps,
+    const char * & reason) const
+  {
+    if (exceedsPositiveLimit(xy_mps, motion_guard_hard_xy_mps_)) {
+      reason = "velocity_body xy exceeded hard limit";
+      return MotionGuardViolation::Hard;
+    }
+    if (exceedsPositiveLimit(abs_z_mps, motion_guard_hard_z_mps_)) {
+      reason = "velocity_body z exceeded hard limit";
+      return MotionGuardViolation::Hard;
+    }
+    if (exceedsPositiveLimit(abs_yaw_radps, motion_guard_hard_yaw_radps_)) {
+      reason = "velocity_body yaw rate exceeded hard limit";
+      return MotionGuardViolation::Hard;
+    }
+    if (exceedsPositiveLimit(xy_mps, motion_guard_soft_xy_mps_)) {
+      reason = "velocity_body xy exceeded soft limit";
+      return MotionGuardViolation::Soft;
+    }
+    if (exceedsPositiveLimit(abs_z_mps, motion_guard_soft_z_mps_)) {
+      reason = "velocity_body z exceeded soft limit";
+      return MotionGuardViolation::Soft;
+    }
+    if (exceedsPositiveLimit(abs_yaw_radps, motion_guard_soft_yaw_radps_)) {
+      reason = "velocity_body yaw rate exceeded soft limit";
+      return MotionGuardViolation::Soft;
+    }
+
+    reason = nullptr;
+    return MotionGuardViolation::None;
+  }
+
+  MotionGuardViolation classifyPoseStepEnvelope(
+    float xy_step_m,
+    float abs_z_step_m,
+    float abs_yaw_step_rad,
+    const char * & reason) const
+  {
+    if (exceedsPositiveLimit(xy_step_m, motion_guard_pose_hard_xy_step_m_)) {
+      reason = "position target xy step exceeded hard limit";
+      return MotionGuardViolation::Hard;
+    }
+    if (exceedsPositiveLimit(abs_z_step_m, motion_guard_pose_hard_z_step_m_)) {
+      reason = "position target z step exceeded hard limit";
+      return MotionGuardViolation::Hard;
+    }
+    if (exceedsPositiveLimit(abs_yaw_step_rad, motion_guard_pose_hard_yaw_step_rad_)) {
+      reason = "position target yaw step exceeded hard limit";
+      return MotionGuardViolation::Hard;
+    }
+    if (exceedsPositiveLimit(xy_step_m, motion_guard_pose_soft_xy_step_m_)) {
+      reason = "position target xy step exceeded soft limit";
+      return MotionGuardViolation::Soft;
+    }
+    if (exceedsPositiveLimit(abs_z_step_m, motion_guard_pose_soft_z_step_m_)) {
+      reason = "position target z step exceeded soft limit";
+      return MotionGuardViolation::Soft;
+    }
+    if (exceedsPositiveLimit(abs_yaw_step_rad, motion_guard_pose_soft_yaw_step_rad_)) {
+      reason = "position target yaw step exceeded soft limit";
+      return MotionGuardViolation::Soft;
+    }
+
+    reason = nullptr;
+    return MotionGuardViolation::None;
+  }
+
+  bool enforceFeedbackMotionGuard()
+  {
+    if (!motionGuardActive() || motion_guard_tripped_ || !localPositionFresh() || !has_local_velocity_) {
+      return false;
+    }
+
+    switch (mode_tracker_.mode()) {
+      case UavControlMode::Hold:
+      case UavControlMode::Takeoff:
+      case UavControlMode::Position:
+      case UavControlMode::VelocityBody:
+        break;
+      case UavControlMode::Px4PositionHold:
+      case UavControlMode::Landing:
+        return false;
+    }
+
+    const float xy_mps = std::hypot(current_local_velocity_ned_[0], current_local_velocity_ned_[1]);
+    const float abs_z_mps = std::abs(current_local_velocity_ned_[2]);
+
+    if (exceedsPositiveLimit(xy_mps, motion_guard_feedback_hard_xy_mps_)) {
+      triggerMotionGuardLanding("px4 local velocity xy exceeded hard limit");
+      return true;
+    }
+    if (exceedsPositiveLimit(abs_z_mps, motion_guard_feedback_hard_z_mps_)) {
+      triggerMotionGuardLanding("px4 local velocity z exceeded hard limit");
+      return true;
+    }
+
+    return false;
   }
 
   void publishVehicleCommand(
@@ -430,6 +750,18 @@ private:
     logModeChange(previous, reason);
   }
 
+  void forcePx4PositionMode(const char * reason)
+  {
+    cancelPendingPreTakeoffReset(reason);
+    const auto previous = mode_tracker_.mode();
+    mode_tracker_.forcePx4PositionHold();
+    position_mode_retry_counter_ = 0;
+    land_command_sent_ = false;
+    landing_retry_counter_ = 0;
+    clearManualCommands();
+    logModeChange(previous, reason);
+  }
+
   void handlePreTakeoffResetResponse(
     uint64_t request_id,
     rclcpp::Client<Trigger>::SharedFuture future)
@@ -458,6 +790,7 @@ private:
     }
 
     pre_takeoff_reset_state_ = PreTakeoffResetState::WaitingForRecovery;
+    pre_takeoff_reset_state_started_at_ = this->now();
     reset_completed_at_ = this->now();
     resetWarmup();
     RCLCPP_INFO(
@@ -470,6 +803,7 @@ private:
     if (!captureCurrentPose(message)) {
       return false;
     }
+    clearMotionGuardSoftViolation();
     hold_target_position_enu_[2] += takeoff_height_m_;
     takeoff_reached_since_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
     const auto previous = mode_tracker_.mode();
@@ -477,6 +811,23 @@ private:
     logModeChange(previous, reason);
     message = "takeoff started";
     return true;
+  }
+
+  void enterLandingMode(const char * reason)
+  {
+    const auto previous = mode_tracker_.mode();
+    mode_tracker_.requestLanding();
+    land_command_sent_ = false;
+    landing_retry_counter_ = 0;
+    logModeChange(previous, reason);
+  }
+
+  void enterExternalDisarmSafeState()
+  {
+    resetMotionGuardState();
+    takeoff_reached_since_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+    forcePx4PositionMode("external disarm");
+    resetWarmup();
   }
 
   void maybeStartTakeoffAfterPreReset()
@@ -683,30 +1034,135 @@ private:
       return;
     }
 
-    cancelPendingPreTakeoffReset("position target");
-    position_target_position_enu_ = {
+    if (motion_guard_tripped_) {
+      RCLCPP_WARN_THROTTLE(
+        this->get_logger(), *this->get_clock(), 1000,
+        "ignoring position target while motion guard is latched");
+      return;
+    }
+
+    const std::array<float, 3> target_position_enu = {
       static_cast<float>(msg.pose.position.x),
       static_cast<float>(msg.pose.position.y),
       static_cast<float>(msg.pose.position.z)};
-    if (!isFiniteVector(position_target_position_enu_)) {
+    if (!isFiniteVector(target_position_enu)) {
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 1000,
         "ignoring non-finite position target");
       return;
     }
 
+    float target_yaw_enu = position_target_yaw_enu_;
     const double quat_norm =
       (msg.pose.orientation.x * msg.pose.orientation.x) +
       (msg.pose.orientation.y * msg.pose.orientation.y) +
       (msg.pose.orientation.z * msg.pose.orientation.z) +
       (msg.pose.orientation.w * msg.pose.orientation.w);
     if (quat_norm > 1.0e-6) {
-      position_target_yaw_enu_ = quaternionToYaw(msg.pose.orientation);
+      target_yaw_enu = quaternionToYaw(msg.pose.orientation);
     } else if (has_state_) {
-      position_target_yaw_enu_ = current_yaw_enu_;
+      target_yaw_enu = current_yaw_enu_;
+    } else if (has_last_accepted_pose_target_) {
+      target_yaw_enu = last_accepted_pose_target_yaw_enu_;
     }
 
+    const auto now = this->now();
+    if (motion_guard_enabled_) {
+      MotionGuardViolation combined_violation = MotionGuardViolation::None;
+      const char * combined_reason = nullptr;
+
+      const bool allow_pose_history_reference = motionGuardActive();
+      bool has_recent_pose_reference =
+        allow_pose_history_reference &&
+        has_last_accepted_pose_target_ &&
+        last_accepted_pose_target_time_.nanoseconds() != 0;
+      double pose_dt_s = 0.0;
+      if (has_recent_pose_reference) {
+        pose_dt_s = (now - last_accepted_pose_target_time_).seconds();
+        has_recent_pose_reference =
+          std::isfinite(pose_dt_s) &&
+          pose_dt_s >= 0.0 &&
+          pose_dt_s <= motion_guard_pose_gap_reset_s_;
+      }
+
+      if (has_last_accepted_pose_target_ && !has_recent_pose_reference) {
+        clearMotionGuardSoftViolation();
+      }
+
+      if (has_recent_pose_reference && pose_dt_s > 1.0e-6) {
+        const float dx = target_position_enu[0] - last_accepted_pose_target_position_enu_[0];
+        const float dy = target_position_enu[1] - last_accepted_pose_target_position_enu_[1];
+        const float dz = target_position_enu[2] - last_accepted_pose_target_position_enu_[2];
+        const float xy_speed_mps = std::hypot(dx, dy) / static_cast<float>(pose_dt_s);
+        const float abs_z_speed_mps = std::abs(dz) / static_cast<float>(pose_dt_s);
+        const float abs_yaw_rate_radps = std::abs(
+          normalizeAngle(target_yaw_enu - last_accepted_pose_target_yaw_enu_)) /
+          static_cast<float>(pose_dt_s);
+        const char * velocity_reason = nullptr;
+        updateMotionGuardViolation(
+          classifyVelocityEnvelope(xy_speed_mps, abs_z_speed_mps, abs_yaw_rate_radps, velocity_reason),
+          velocity_reason, combined_violation, combined_reason);
+      }
+
+      std::array<float, 3> pose_reference_position_enu{};
+      float pose_reference_yaw_enu = 0.0f;
+      bool has_pose_step_reference = false;
+      if (has_recent_pose_reference) {
+        pose_reference_position_enu = last_accepted_pose_target_position_enu_;
+        pose_reference_yaw_enu = last_accepted_pose_target_yaw_enu_;
+        has_pose_step_reference = true;
+      } else if (has_state_ && stateFresh() && isFiniteVector(current_position_enu_)) {
+        pose_reference_position_enu = current_position_enu_;
+        pose_reference_yaw_enu = current_yaw_enu_;
+        has_pose_step_reference = true;
+      }
+
+      if (!has_pose_step_reference) {
+        RCLCPP_WARN_THROTTLE(
+          this->get_logger(), *this->get_clock(), 1000,
+          "ignoring position target without a fresh pose reference for motion guard");
+        return;
+      }
+
+      const float dx = target_position_enu[0] - pose_reference_position_enu[0];
+      const float dy = target_position_enu[1] - pose_reference_position_enu[1];
+      const float dz = target_position_enu[2] - pose_reference_position_enu[2];
+      const float xy_step_m = std::hypot(dx, dy);
+      const float abs_z_step_m = std::abs(dz);
+      const float abs_yaw_step_rad = std::abs(
+        normalizeAngle(target_yaw_enu - pose_reference_yaw_enu));
+      const char * step_reason = nullptr;
+      updateMotionGuardViolation(
+        classifyPoseStepEnvelope(xy_step_m, abs_z_step_m, abs_yaw_step_rad, step_reason),
+        step_reason, combined_violation, combined_reason);
+
+      const MotionGuardAction guard_action = motionGuardActionForViolation(
+        combined_violation, combined_reason, now);
+      if (guard_action == MotionGuardAction::Reject) {
+        RCLCPP_WARN_THROTTLE(
+          this->get_logger(), *this->get_clock(), 1000,
+          "rejecting position target before motion guard activation: %s",
+          combined_reason != nullptr ? combined_reason : "motion guard violation");
+        return;
+      }
+      if (guard_action == MotionGuardAction::Trip) {
+        return;
+      }
+    }
+
+    cancelPendingPreTakeoffReset("position target");
+    position_target_position_enu_ = target_position_enu;
+    position_target_yaw_enu_ = target_yaw_enu;
     position_target_valid_ = true;
+    if (motionGuardActive()) {
+      last_accepted_pose_target_position_enu_ = target_position_enu;
+      last_accepted_pose_target_yaw_enu_ = target_yaw_enu;
+      last_accepted_pose_target_time_ = now;
+      has_last_accepted_pose_target_ = true;
+    } else {
+      has_last_accepted_pose_target_ = false;
+      last_accepted_pose_target_time_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+    }
     const auto previous = mode_tracker_.mode();
     mode_tracker_.requestPosition();
     logModeChange(previous, "position target");
@@ -719,6 +1175,13 @@ private:
         this->get_logger(), *this->get_clock(), 1000,
         "ignoring velocity_body frame '%s', expected '%s'",
         msg.header.frame_id.c_str(), base_frame_id_.c_str());
+      return;
+    }
+
+    if (motion_guard_tripped_) {
+      RCLCPP_WARN_THROTTLE(
+        this->get_logger(), *this->get_clock(), 1000,
+        "ignoring velocity_body command while motion guard is latched");
       return;
     }
 
@@ -741,6 +1204,30 @@ private:
       return;
     }
 
+    if (motion_guard_enabled_) {
+      const float xy_mps = std::hypot(
+        static_cast<float>(msg.twist.linear.x),
+        static_cast<float>(msg.twist.linear.y));
+      const float abs_z_mps = std::abs(static_cast<float>(msg.twist.linear.z));
+      const float abs_yaw_radps = std::abs(static_cast<float>(msg.twist.angular.z));
+      const auto now = this->now();
+      const char * reason = nullptr;
+      const MotionGuardViolation violation = classifyVelocityEnvelope(
+        xy_mps, abs_z_mps, abs_yaw_radps, reason);
+      const MotionGuardAction guard_action = motionGuardActionForViolation(
+        violation, reason, now);
+      if (guard_action == MotionGuardAction::Reject) {
+        RCLCPP_WARN_THROTTLE(
+          this->get_logger(), *this->get_clock(), 1000,
+          "rejecting velocity_body command before motion guard activation: %s",
+          reason != nullptr ? reason : "motion guard violation");
+        return;
+      }
+      if (guard_action == MotionGuardAction::Trip) {
+        return;
+      }
+    }
+
     cancelPendingPreTakeoffReset("velocity body command");
     last_velocity_body_cmd_ = msg;
     last_velocity_body_time_us_ = nowMicros();
@@ -752,6 +1239,13 @@ private:
 
   bool handleTakeoffRequest(std::string & message)
   {
+    if (rejectIfMotionGuardTripped("takeoff", message)) {
+      return false;
+    }
+    if (rejectIfLandingLocked("takeoff", message)) {
+      return false;
+    }
+
     if (pre_takeoff_reset_service_.empty()) {
       return startTakeoff("takeoff", message);
     }
@@ -773,6 +1267,8 @@ private:
       const uint64_t request_id = ++pre_takeoff_reset_request_sequence_;
       active_pre_takeoff_reset_request_id_ = request_id;
       pre_takeoff_reset_state_ = PreTakeoffResetState::RequestInFlight;
+      pre_takeoff_reset_state_started_at_ = this->now();
+      reset_completed_at_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
       auto request = std::make_shared<Trigger::Request>();
       pre_takeoff_reset_client_->async_send_request(
         request,
@@ -792,10 +1288,17 @@ private:
 
   bool handleHoldRequest(std::string & message)
   {
+    if (rejectIfMotionGuardTripped("hold", message)) {
+      return false;
+    }
+    if (rejectIfLandingLocked("hold", message)) {
+      return false;
+    }
     cancelPendingPreTakeoffReset("hold request");
     if (!captureCurrentPose(message)) {
       return false;
     }
+    clearMotionGuardSoftViolation();
     const auto previous = mode_tracker_.mode();
     mode_tracker_.requestHold();
     logModeChange(previous, "hold");
@@ -805,18 +1308,27 @@ private:
 
   bool handleLandRequest(std::string & message)
   {
+    if (mode_tracker_.mode() == UavControlMode::Landing) {
+      message = "landing already in progress";
+      return true;
+    }
     cancelPendingPreTakeoffReset("land request");
-    const auto previous = mode_tracker_.mode();
-    mode_tracker_.requestLanding();
-    land_command_sent_ = false;
-    landing_retry_counter_ = 0;
-    logModeChange(previous, "land");
+    clearMotionGuardSoftViolation();
+    enterLandingMode("land");
     message = "landing requested";
     return true;
   }
 
   bool handlePositionModeRequest(std::string & message)
   {
+    if (rejectIfMotionGuardTripped("position_mode", message)) {
+      return false;
+    }
+    if (mode_tracker_.mode() == UavControlMode::Landing) {
+      forcePx4PositionMode("px4 position mode");
+      message = "landing interrupted, switching to px4 position mode";
+      return true;
+    }
     requestPx4PositionMode("px4 position mode");
     message = "px4 position mode requested";
     return true;
@@ -824,6 +1336,11 @@ private:
 
   bool handleAbortRequest(std::string & message)
   {
+    if (mode_tracker_.mode() == UavControlMode::Landing) {
+      forcePx4PositionMode("abort");
+      message = "landing interrupted, switching to px4 position mode";
+      return true;
+    }
     requestPx4PositionMode("abort");
     message = "abort requested, switching to px4 position mode";
     return true;
@@ -899,9 +1416,11 @@ private:
     if (!ensureTimestampReady("velocity command", now_us)) {
       return;
     }
-    const double elapsed_ms = static_cast<double>(now_us - last_velocity_body_time_us_) / 1000.0;
-    if (elapsed_ms > velocity_body_timeout_ms_) {
+    last_velocity_body_time_us_ = initializeVelocityBodyCommandTimestamp(
+      now_us, last_velocity_body_time_us_);
+    if (isVelocityBodyCommandTimedOut(now_us, last_velocity_body_time_us_, velocity_body_timeout_ms_)) {
       has_velocity_body_cmd_ = false;
+      last_velocity_body_time_us_ = 0;
       mode_tracker_.onVelocityCommandTimeout();
       std::string ignored;
       handleHoldRequest(ignored);
@@ -947,7 +1466,9 @@ private:
 
   void timerCallback()
   {
+    maybeExpirePreTakeoffReset();
     maybeStartTakeoffAfterPreReset();
+    enforceFeedbackMotionGuard();
 
     switch (mode_tracker_.mode()) {
       case UavControlMode::Hold:
@@ -988,7 +1509,6 @@ private:
   std::string pre_takeoff_reset_service_;
   std::string base_frame_id_;
   std::string position_command_frame_id_;
-  std::string gz_world_name_;
   std::string gz_clock_topic_;
   double publish_rate_hz_{50.0};
   int warmup_cycles_{20};
@@ -1005,8 +1525,27 @@ private:
   float velocity_mode_max_acc_xy_mps2_{1.0f};
   float velocity_mode_max_acc_z_mps2_{0.6f};
   float velocity_mode_max_acc_yaw_radps2_{1.5f};
+  double pre_takeoff_reset_timeout_s_{10.0};
   double state_timeout_s_{0.20};
+  bool motion_guard_enabled_{true};
+  double motion_guard_soft_dwell_s_{2.0};
+  double motion_guard_pose_gap_reset_s_{0.40};
+  float motion_guard_soft_xy_mps_{0.40f};
+  float motion_guard_soft_z_mps_{0.25f};
+  float motion_guard_soft_yaw_radps_{0.60f};
+  float motion_guard_hard_xy_mps_{0.55f};
+  float motion_guard_hard_z_mps_{0.35f};
+  float motion_guard_hard_yaw_radps_{0.90f};
+  float motion_guard_feedback_hard_xy_mps_{0.65f};
+  float motion_guard_feedback_hard_z_mps_{0.45f};
+  float motion_guard_pose_soft_xy_step_m_{0.25f};
+  float motion_guard_pose_soft_z_step_m_{0.12f};
+  float motion_guard_pose_soft_yaw_step_rad_{0.35f};
+  float motion_guard_pose_hard_xy_step_m_{0.50f};
+  float motion_guard_pose_hard_z_step_m_{0.25f};
+  float motion_guard_pose_hard_yaw_step_rad_{0.70f};
   Px4TimestampSource px4_timestamp_source_{Px4TimestampSource::System};
+  rclcpp::Clock px4_timestamp_system_clock_{RCL_SYSTEM_TIME};
   UavControlModeTracker mode_tracker_{};
   geometry_msgs::msg::TwistStamped last_velocity_body_cmd_{};
   bool has_velocity_body_cmd_{false};
@@ -1017,13 +1556,15 @@ private:
   std::array<float, 3> current_position_enu_{0.0f, 0.0f, 0.0f};
   tf2::Quaternion current_orientation_enu_flu_{0.0, 0.0, 0.0, 1.0};
   float current_yaw_enu_{0.0f};
-  std::string current_state_frame_id_;
   bool has_state_{false};
   bool has_local_position_{false};
   bool has_local_velocity_{false};
+  bool motion_guard_tripped_{false};
   bool is_armed_{false};
   bool is_offboard_mode_{false};
   uint8_t current_nav_state_{px4_msgs::msg::VehicleStatus::NAVIGATION_STATE_MANUAL};
+  std::string motion_guard_trip_reason_;
+  std::array<float, 3> current_local_velocity_ned_{0.0f, 0.0f, 0.0f};
   std::array<float, 3> hold_target_position_enu_{0.0f, 0.0f, 0.0f};
   float hold_target_yaw_enu_{0.0f};
   bool hold_target_valid_{false};
@@ -1033,10 +1574,16 @@ private:
   rclcpp::Time last_state_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_state_receive_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_px4_local_position_receive_time_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time soft_violation_since_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time last_accepted_pose_target_time_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time pre_takeoff_reset_state_started_at_{0, 0, RCL_ROS_TIME};
   rclcpp::Time reset_completed_at_{0, 0, RCL_ROS_TIME};
   rclcpp::Time takeoff_reached_since_{0, 0, RCL_ROS_TIME};
   int setpoint_counter_{0};
   int position_mode_retry_counter_{0};
+  std::array<float, 3> last_accepted_pose_target_position_enu_{0.0f, 0.0f, 0.0f};
+  float last_accepted_pose_target_yaw_enu_{0.0f};
+  bool has_last_accepted_pose_target_{false};
   PreTakeoffResetState pre_takeoff_reset_state_{PreTakeoffResetState::Idle};
   uint64_t pre_takeoff_reset_request_sequence_{0};
   uint64_t active_pre_takeoff_reset_request_id_{0};

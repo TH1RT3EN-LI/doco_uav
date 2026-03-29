@@ -29,6 +29,19 @@
 
 namespace uav_bridge
 {
+  namespace
+  {
+    std::array<float, 3> rotateNedXY(const std::array<float, 3> & value, float yaw_ned)
+    {
+      const float c = std::cos(yaw_ned);
+      const float s = std::sin(yaw_ned);
+      return {
+        (c * value[0]) - (s * value[1]),
+        (s * value[0]) + (c * value[1]),
+        value[2]};
+    }
+  }  // namespace
+
   class OffboardBridgeNode : public rclcpp::Node
   {
     using Empty = std_msgs::msg::Empty;
@@ -385,15 +398,11 @@ namespace uav_bridge
       {
         manual_target_yaw_enu_ = planner_yaw_enu_;
       }
-      else if (manual_target_valid_)
-      {
-        manual_target_yaw_enu_ = manual_target_yaw_enu_;
-      }
       else if (has_auto_cmd_)
       {
         manual_target_yaw_enu_ = static_cast<float>(last_auto_cmd_.yaw);
       }
-      else
+      else if (!manual_target_valid_)
       {
         manual_target_yaw_enu_ = 0.0f;
       }
@@ -613,14 +622,7 @@ namespace uav_bridge
 
       px4_msgs::msg::TrajectorySetpoint setpoint{};
       setpoint.timestamp = stamp;
-      setpoint.position = {pos_ned_raw[0], pos_ned_raw[1], pos_ned_raw[2]};
-      if (enable_frame_alignment_ && frame_aligner_.isAligned())
-      {
-        const auto offset = frame_aligner_.getOffsetNed();
-        setpoint.position[0] += offset[0];
-        setpoint.position[1] += offset[1];
-        setpoint.position[2] += offset[2];
-      }
+      std::array<float, 3> position_ned = {pos_ned_raw[0], pos_ned_raw[1], pos_ned_raw[2]};
       std::array<float, 3> velocity_ned = {
           static_cast<float>(cmd.velocity.y),
           static_cast<float>(cmd.velocity.x),
@@ -629,6 +631,20 @@ namespace uav_bridge
           static_cast<float>(cmd.acceleration.y),
           static_cast<float>(cmd.acceleration.x),
           static_cast<float>(-cmd.acceleration.z)};
+      float yaw_ned = enuYawToNed(static_cast<float>(cmd.yaw));
+
+      if (enable_frame_alignment_ && frame_aligner_.isAligned())
+      {
+        const auto offset = frame_aligner_.getOffsetNed();
+        const float yaw_offset_ned = frame_aligner_.getYawOffsetNed();
+        position_ned = rotateNedXY(position_ned, yaw_offset_ned);
+        velocity_ned = rotateNedXY(velocity_ned, yaw_offset_ned);
+        acceleration_ned = rotateNedXY(acceleration_ned, yaw_offset_ned);
+        position_ned[0] += offset[0];
+        position_ned[1] += offset[1];
+        position_ned[2] += offset[2];
+        yaw_ned = normalizeAngle(yaw_ned + yaw_offset_ned);
+      }
 
       const float velocity_norm_before = vectorNorm(velocity_ned);
       const float acceleration_norm_before = vectorNorm(acceleration_ned);
@@ -648,10 +664,11 @@ namespace uav_bridge
             vectorNorm(acceleration_ned));
       }
 
+      setpoint.position = {position_ned[0], position_ned[1], position_ned[2]};
       setpoint.velocity = {velocity_ned[0], velocity_ned[1], velocity_ned[2]};
       setpoint.acceleration = {acceleration_ned[0], acceleration_ned[1], acceleration_ned[2]};
       setpoint.jerk = {0.0f, 0.0f, 0.0f};
-      setpoint.yaw = enuYawToNed(static_cast<float>(cmd.yaw));
+      setpoint.yaw = yaw_ned;
       setpoint.yawspeed = static_cast<float>(-cmd.yaw_dot);
       trajectory_setpoint_pub_->publish(setpoint);
 

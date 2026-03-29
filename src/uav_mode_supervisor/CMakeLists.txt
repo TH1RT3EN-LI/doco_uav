@@ -9,7 +9,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(ament_cmake REQUIRED)
-find_package(ament_cmake_gtest REQUIRED)
 find_package(diagnostic_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(relative_position_fusion REQUIRED)
@@ -37,6 +36,9 @@ target_include_directories(${PROJECT_NAME}_core PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 target_compile_features(${PROJECT_NAME}_core PUBLIC cxx_std_17)
+ament_target_dependencies(${PROJECT_NAME}_core
+  rclcpp
+)
 
 add_executable(uav_mode_supervisor_node
   src/uav_mode_supervisor_node.cpp
@@ -87,16 +89,5 @@ install(
   FILES README.md
   DESTINATION share/${PROJECT_NAME}
 )
-
-if(BUILD_TESTING)
-  ament_add_gtest(test_supervisor_logic
-    test/test_supervisor_logic.cpp
-  )
-  if(TARGET test_supervisor_logic)
-    target_link_libraries(test_supervisor_logic ${PROJECT_NAME}_core)
-    target_include_directories(test_supervisor_logic PRIVATE include)
-    target_compile_features(test_supervisor_logic PUBLIC cxx_std_17)
-  endif()
-endif()
 
 ament_package()

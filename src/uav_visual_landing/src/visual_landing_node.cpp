@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cctype>
+#include <cstdint>
 #include <cmath>
 #include <functional>
 #include <stdexcept>
@@ -11,6 +12,7 @@
 #include <px4_msgs/msg/distance_sensor.hpp>
 #include <px4_msgs/msg/vehicle_local_position.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/range.hpp>
 #include <std_srvs/srv/trigger.hpp>
 
 #include <uav_visual_landing/msg/landing_controller_state.hpp>
@@ -40,8 +42,10 @@ public:
       "/uav/visual_landing/controller_state");
     this->declare_parameter<std::string>("hold_service", "/uav/control/command/hold");
     this->declare_parameter<std::string>("land_service", "/uav/control/command/land");
-    this->declare_parameter<std::string>("height_measurement_mode", "distance_sensor");
-    this->declare_parameter<std::string>("range_topic", "/uav/fmu/in/distance_sensor");
+    this->declare_parameter<std::string>("height_measurement_transport", "");
+    this->declare_parameter<std::string>("height_measurement_topic", "/uav/sensors/downward_range");
+    this->declare_parameter<std::string>("height_measurement_mode", "");
+    this->declare_parameter<std::string>("range_topic", "/uav/fmu/out/distance_sensor");
     this->declare_parameter<std::string>(
       "vehicle_local_position_topic", "/uav/fmu/out/vehicle_local_position");
     this->declare_parameter<std::string>("start_service", "/uav/visual_landing/command/start");
@@ -97,11 +101,38 @@ public:
     controller_state_topic_ = this->get_parameter("controller_state_topic").as_string();
     hold_service_ = this->get_parameter("hold_service").as_string();
     land_service_ = this->get_parameter("land_service").as_string();
-    height_measurement_mode_ = normalizeHeightMeasurementMode(
-      this->get_parameter("height_measurement_mode").as_string());
-    if (height_measurement_mode_.empty()) {
-      throw std::runtime_error("invalid height_measurement_mode parameter");
+    const std::string requested_height_measurement_transport =
+      this->get_parameter("height_measurement_transport").as_string();
+    const std::string legacy_height_measurement_mode =
+      this->get_parameter("height_measurement_mode").as_string();
+    const std::string normalized_height_measurement_transport =
+      normalizeHeightMeasurementTransport(requested_height_measurement_transport);
+    const std::string normalized_legacy_height_measurement_transport =
+      normalizeLegacyHeightMeasurementMode(legacy_height_measurement_mode);
+    if (!requested_height_measurement_transport.empty() &&
+      normalized_height_measurement_transport.empty())
+    {
+      throw std::runtime_error("invalid height_measurement_transport parameter");
     }
+    if (!legacy_height_measurement_mode.empty() &&
+      normalized_legacy_height_measurement_transport.empty())
+    {
+      throw std::runtime_error("invalid legacy height_measurement_mode parameter");
+    }
+    if (!normalized_height_measurement_transport.empty()) {
+      height_measurement_transport_ = heightMeasurementTransportFromName(
+        normalized_height_measurement_transport);
+    } else if (!normalized_legacy_height_measurement_transport.empty()) {
+      height_measurement_transport_ = heightMeasurementTransportFromName(
+        normalized_legacy_height_measurement_transport);
+      RCLCPP_WARN(
+        this->get_logger(),
+        "height_measurement_mode is deprecated; use height_measurement_transport instead");
+    } else {
+      height_measurement_transport_ = HeightMeasurementTransport::StampedRange;
+    }
+    height_measurement_time_basis_ = heightMeasurementTimeBasisName(height_measurement_transport_);
+    height_measurement_topic_ = this->get_parameter("height_measurement_topic").as_string();
     range_topic_ = this->get_parameter("range_topic").as_string();
     vehicle_local_position_topic_ =
       this->get_parameter("vehicle_local_position_topic").as_string();
@@ -192,19 +223,42 @@ public:
       state_topic_, rclcpp::SensorDataQoS(),
       [this](const nav_msgs::msg::Odometry::SharedPtr msg)
       {
+        const float odom_height_m = static_cast<float>(msg->pose.pose.position.z);
+        const float body_vx = static_cast<float>(msg->twist.twist.linear.x);
+        const float body_vy = static_cast<float>(msg->twist.twist.linear.y);
+        const float body_vz = static_cast<float>(msg->twist.twist.linear.z);
+        const float yaw_rate = static_cast<float>(msg->twist.twist.angular.z);
+        if (
+          !std::isfinite(odom_height_m) || !std::isfinite(body_vx) || !std::isfinite(body_vy) ||
+          !std::isfinite(body_vz) || !std::isfinite(yaw_rate))
+        {
+          RCLCPP_WARN_THROTTLE(
+            this->get_logger(), *this->get_clock(), 2000,
+            "discarding odometry with non-finite z/velocity/yaw-rate");
+          return;
+        }
         const bool has_stamp =
         (msg->header.stamp.sec != 0) || (msg->header.stamp.nanosec != 0);
-        odom_height_m_ = static_cast<float>(msg->pose.pose.position.z);
-        current_body_vx_ = static_cast<float>(msg->twist.twist.linear.x);
-        current_body_vy_ = static_cast<float>(msg->twist.twist.linear.y);
-        current_body_vz_ = static_cast<float>(msg->twist.twist.linear.z);
-        current_yaw_rate_ = static_cast<float>(msg->twist.twist.angular.z);
+        odom_height_m_ = odom_height_m;
+        current_body_vx_ = body_vx;
+        current_body_vy_ = body_vy;
+        current_body_vz_ = body_vz;
+        current_yaw_rate_ = yaw_rate;
         last_state_time_ = has_stamp ? rclcpp::Time(msg->header.stamp) : this->now();
         has_state_ = true;
       });
 
-    if (height_measurement_mode_ == "distance_sensor") {
-      height_measurement_sub_ = this->create_subscription<px4_msgs::msg::DistanceSensor>(
+    if (height_measurement_transport_ == HeightMeasurementTransport::StampedRange) {
+      stamped_height_measurement_sub_ = this->create_subscription<sensor_msgs::msg::Range>(
+        height_measurement_topic_, rclcpp::SensorDataQoS(),
+        [this](const sensor_msgs::msg::Range::SharedPtr msg)
+        {
+          onStampedHeightMeasurement(*msg);
+        });
+    } else if (height_measurement_transport_ ==
+      HeightMeasurementTransport::LegacyPx4DistanceSensor)
+    {
+      legacy_distance_sensor_height_sub_ = this->create_subscription<px4_msgs::msg::DistanceSensor>(
         range_topic_, rclcpp::SensorDataQoS(),
         [this](const px4_msgs::msg::DistanceSensor::SharedPtr msg)
         {
@@ -246,15 +300,45 @@ public:
     RCLCPP_INFO(
       this->get_logger(),
       "visual_landing_node: observation=%s state=%s velocity_body=%s hold=%s land=%s "
-      "height_mode=%s range_topic=%s vehicle_local_position_topic=%s start=%s stop=%s",
+      "height_transport=%s height_topic=%s range_topic=%s vehicle_local_position_topic=%s "
+      "start=%s stop=%s",
       target_observation_topic_.c_str(), state_topic_.c_str(), velocity_body_topic_.c_str(),
-      hold_service_.c_str(), land_service_.c_str(), height_measurement_mode_.c_str(),
-      range_topic_.c_str(), vehicle_local_position_topic_.c_str(),
+      hold_service_.c_str(), land_service_.c_str(),
+      heightMeasurementTransportName(height_measurement_transport_),
+      height_measurement_topic_.c_str(), range_topic_.c_str(),
+      vehicle_local_position_topic_.c_str(),
       start_service_name_.c_str(), stop_service_name_.c_str());
   }
 
 private:
-  static std::string normalizeHeightMeasurementMode(std::string mode)
+  static std::string normalizeHeightMeasurementTransport(std::string transport)
+  {
+    std::transform(
+      transport.begin(), transport.end(), transport.begin(),
+      [](unsigned char c) {return static_cast<char>(std::tolower(c));});
+    if (transport.empty()) {
+      return "";
+    }
+    if (transport == "stamped_range" || transport == "range" || transport == "ros_range") {
+      return "stamped_range";
+    }
+    if (
+      transport == "legacy_px4_distance_sensor" || transport == "px4_distance_sensor" ||
+      transport == "distance_sensor")
+    {
+      return "legacy_px4_distance_sensor";
+    }
+    if (
+      transport == "legacy_vehicle_local_position" || transport == "vehicle_local_position" ||
+      transport == "px4_vehicle_local_position" || transport == "px4_dist_bottom" ||
+      transport == "dist_bottom")
+    {
+      return "legacy_vehicle_local_position";
+    }
+    return "";
+  }
+
+  static std::string normalizeLegacyHeightMeasurementMode(std::string mode)
   {
     std::transform(
       mode.begin(), mode.end(), mode.begin(),
@@ -263,15 +347,31 @@ private:
       mode == "distance_sensor" || mode == "distance" || mode == "range" ||
       mode == "range_sensor")
     {
-      return "distance_sensor";
+      return "legacy_px4_distance_sensor";
     }
     if (
       mode == "vehicle_local_position" || mode == "px4_vehicle_local_position" ||
       mode == "px4_dist_bottom" || mode == "dist_bottom")
     {
-      return "vehicle_local_position";
+      return "legacy_vehicle_local_position";
     }
     return "";
+  }
+
+  static HeightMeasurementTransport heightMeasurementTransportFromName(const std::string & name)
+  {
+    if (name == "stamped_range") {
+      return HeightMeasurementTransport::StampedRange;
+    }
+    if (name == "legacy_px4_distance_sensor") {
+      return HeightMeasurementTransport::LegacyPx4DistanceSensor;
+    }
+    return HeightMeasurementTransport::LegacyVehicleLocalPosition;
+  }
+
+  static const char * heightMeasurementTimeBasisName(HeightMeasurementTransport transport)
+  {
+    return usesSampleTimeForHeightMeasurement(transport) ? "SAMPLE_TIME" : "LEGACY_RECEIVE_TIME";
   }
 
   static std::string describeDistBottomSource(uint8_t sensor_bitfield)
@@ -295,7 +395,7 @@ private:
   bool start(std::string & message)
   {
     active_ = true;
-    land_requested_ = false;
+    resetLandRequestState();
     initial_search_completed_ = false;
     clearObservationTrackingState();
     clearVisionTrackingState();
@@ -308,7 +408,7 @@ private:
   bool stop(std::string & message)
   {
     active_ = false;
-    land_requested_ = false;
+    resetLandRequestState();
     initial_search_completed_ = false;
     clearObservationTrackingState();
     clearVisionTrackingState();
@@ -350,15 +450,47 @@ private:
     target_memory_updated_time_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
   }
 
+  void setHeightMeasurement(
+    float height_m,
+    const std::string & source,
+    const rclcpp::Time & receive_stamp,
+    const rclcpp::Time * sample_stamp = nullptr)
+  {
+    height_measurement_m_ = height_m;
+    height_measurement_source_ = source;
+    height_measurement_receive_stamp_ = receive_stamp;
+    if (sample_stamp != nullptr && sample_stamp->nanoseconds() != 0) {
+      height_measurement_sample_stamp_ = *sample_stamp;
+      height_measurement_has_sample_stamp_ = true;
+    } else {
+      height_measurement_sample_stamp_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+      height_measurement_has_sample_stamp_ = false;
+    }
+    has_height_measurement_ = true;
+  }
+
+  void onStampedHeightMeasurement(const sensor_msgs::msg::Range & msg)
+  {
+    if (!std::isfinite(msg.range)) {
+      return;
+    }
+    const bool has_sample_stamp = (msg.header.stamp.sec != 0) || (msg.header.stamp.nanosec != 0);
+    if (!has_sample_stamp) {
+      RCLCPP_WARN_THROTTLE(
+        this->get_logger(), *this->get_clock(), 2000,
+        "ignoring stamped height measurement without header stamp");
+      return;
+    }
+    const rclcpp::Time sample_stamp(msg.header.stamp);
+    setHeightMeasurement(msg.range, "STAMPED_RANGE", this->now(), &sample_stamp);
+  }
+
   void onDistanceSensorHeightMeasurement(const px4_msgs::msg::DistanceSensor & msg)
   {
     if (!std::isfinite(msg.current_distance)) {
       return;
     }
-    height_measurement_m_ = msg.current_distance;
-    height_measurement_stamp_ = this->now();
-    has_height_measurement_ = true;
-    height_measurement_source_ = "DISTANCE_SENSOR_RAW";
+    setHeightMeasurement(msg.current_distance, "DISTANCE_SENSOR_RAW", this->now());
   }
 
   void onVehicleLocalPositionHeightMeasurement(const px4_msgs::msg::VehicleLocalPosition & msg)
@@ -366,10 +498,10 @@ private:
     if (!msg.dist_bottom_valid || !std::isfinite(msg.dist_bottom)) {
       return;
     }
-    height_measurement_m_ = msg.dist_bottom;
-    height_measurement_stamp_ = this->now();
-    has_height_measurement_ = true;
-    height_measurement_source_ = describeDistBottomSource(msg.dist_bottom_sensor_bitfield);
+    setHeightMeasurement(
+      msg.dist_bottom,
+      describeDistBottomSource(msg.dist_bottom_sensor_bitfield),
+      this->now());
   }
 
   void onObservation(const uav_visual_landing::msg::TargetObservation & msg)
@@ -443,30 +575,87 @@ private:
     hold_client_->async_send_request(req);
   }
 
+  void resetLandRequestState()
+  {
+    land_request_in_flight_ = false;
+    land_request_accepted_ = false;
+    land_request_failed_ = false;
+    active_land_request_id_ = 0;
+    last_land_request_attempt_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+  }
+
+  void handleLandResponse(uint64_t request_id, rclcpp::Client<Trigger>::SharedFuture future)
+  {
+    if (request_id != active_land_request_id_ || phase_ != ControllerPhase::Land) {
+      return;
+    }
+
+    land_request_in_flight_ = false;
+    active_land_request_id_ = 0;
+    try {
+      const auto response = future.get();
+      if (!response->success) {
+        land_request_failed_ = true;
+        RCLCPP_WARN(
+          this->get_logger(),
+          "land request rejected: %s",
+          response->message.c_str());
+        return;
+      }
+      land_request_accepted_ = true;
+      RCLCPP_INFO(this->get_logger(), "land request accepted");
+      finishAfterLandRequest();
+    } catch (const std::exception & error) {
+      land_request_failed_ = true;
+      RCLCPP_WARN(this->get_logger(), "land request failed: %s", error.what());
+    }
+  }
+
   void requestLand()
   {
-    if (land_requested_) {
+    if (land_request_in_flight_ || land_request_accepted_) {
       return;
     }
+
+    last_land_request_attempt_ = this->now();
+    land_request_failed_ = false;
     if (!land_client_->service_is_ready()) {
       RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000, "land service not ready");
+      land_request_failed_ = true;
       return;
     }
-    land_requested_ = true;
+
+    const uint64_t request_id = ++land_request_sequence_;
+    active_land_request_id_ = request_id;
+    land_request_in_flight_ = true;
     auto req = std::make_shared<Trigger::Request>();
-    land_client_->async_send_request(req);
+    try {
+      land_client_->async_send_request(
+        req,
+        [this, request_id](rclcpp::Client<Trigger>::SharedFuture future)
+        {
+          handleLandResponse(request_id, future);
+        });
+    } catch (const std::exception & error) {
+      land_request_in_flight_ = false;
+      active_land_request_id_ = 0;
+      land_request_failed_ = true;
+      RCLCPP_WARN(this->get_logger(), "failed to queue land request: %s", error.what());
+    }
   }
 
   void finishAfterLandRequest()
   {
     active_ = false;
+    resetLandRequestState();
     clearObservationTrackingState();
     clearVisionTrackingState();
     clearTargetMemory();
     align_hold_started_ = false;
     terminal_entry_consecutive_count_ = 0;
     terminal_trigger_source_ = "NONE";
-    height_measurement_fresh_ = false;
+    height_measurement_sample_fresh_ = false;
+    height_measurement_receive_fresh_ = false;
     xy_control_mode_ = "idle";
     phase_ = ControllerPhase::Ready;
   }
@@ -483,6 +672,9 @@ private:
     if (phase == ControllerPhase::Terminal) {
       z_target_initialized_ = false;
     }
+    if (phase == ControllerPhase::Land) {
+      resetLandRequestState();
+    }
     if (phase == ControllerPhase::DescendTrack || phase == ControllerPhase::Terminal ||
       phase == ControllerPhase::Land)
     {
@@ -491,22 +683,12 @@ private:
     if (phase == ControllerPhase::Ready || phase == ControllerPhase::HoldWait) {
       clearVisionTrackingState();
     }
-    if (invoke_hold &&
-      (phase == ControllerPhase::Ready || phase == ControllerPhase::HoldWait ||
-      phase == ControllerPhase::HoldVerify))
-    {
+    if (invoke_hold && (phase == ControllerPhase::Ready || phase == ControllerPhase::HoldWait)) {
       requestHold();
     }
-    if (phase == ControllerPhase::Land) {
-      requestLand();
-      finishAfterLandRequest();
-      RCLCPP_INFO(
-        this->get_logger(),
-        "[visual_landing] phase -> %s -> %s",
-        phaseName(previous_phase), phaseName(phase_));
-      return;
-    }
-    RCLCPP_INFO(this->get_logger(), "[visual_landing] phase -> %s", phaseName(phase));
+    RCLCPP_INFO(
+      this->get_logger(), "[visual_landing] phase -> %s -> %s",
+      phaseName(previous_phase), phaseName(phase_));
   }
 
   bool observationFresh() const
@@ -578,10 +760,21 @@ private:
     target_memory_updated_time_ = now;
   }
 
+  double heightMeasurementAgeS(const rclcpp::Time & stamp) const
+  {
+    if (stamp.nanoseconds() == 0) {
+      return -1.0;
+    }
+    return (this->now() - stamp).seconds();
+  }
+
   HeightDecision heightDecision() const
   {
-    const double age_s =
-      has_height_measurement_ ? (this->now() - height_measurement_stamp_).seconds() : -1.0;
+    const rclcpp::Time active_stamp =
+      usesSampleTimeForHeightMeasurement(height_measurement_transport_) ?
+      height_measurement_sample_stamp_ :
+      height_measurement_receive_stamp_;
+    const double age_s = has_height_measurement_ ? heightMeasurementAgeS(active_stamp) : -1.0;
     return evaluateHeightDecision(
       odom_height_m_, has_height_measurement_, height_measurement_m_,
       age_s, height_config_);
@@ -598,13 +791,13 @@ private:
       alignment_config_);
   }
 
-  bool heightMeasurementFresh(float & height_m) const
+  bool heightMeasurementFreshAtStamp(const rclcpp::Time & stamp, float & height_m) const
   {
     if (!has_height_measurement_ || !std::isfinite(height_measurement_m_)) {
       return false;
     }
 
-    const double age_s = (this->now() - height_measurement_stamp_).seconds();
+    const double age_s = heightMeasurementAgeS(stamp);
     if (age_s < 0.0 || age_s > height_config_.timeout_s) {
       return false;
     }
@@ -616,6 +809,19 @@ private:
 
     height_m = height_measurement_m_;
     return true;
+  }
+
+  bool heightMeasurementSampleFresh(float & height_m) const
+  {
+    if (!height_measurement_has_sample_stamp_) {
+      return false;
+    }
+    return heightMeasurementFreshAtStamp(height_measurement_sample_stamp_, height_m);
+  }
+
+  bool heightMeasurementReceiveFresh(float & height_m) const
+  {
+    return heightMeasurementFreshAtStamp(height_measurement_receive_stamp_, height_m);
   }
 
   bool nearSearchHeight(float control_height_m) const
@@ -634,10 +840,6 @@ private:
     msg.twist.linear.z = vz;
     msg.twist.angular.z = yaw_rate;
     velocity_pub_->publish(msg);
-    last_cmd_vx_ = vx;
-    last_cmd_vy_ = vy;
-    last_cmd_vz_ = vz;
-    last_cmd_yaw_rate_ = yaw_rate;
   }
 
   void publishControllerState(
@@ -671,8 +873,10 @@ private:
     msg.odom_height_m = odom_height_m_;
     msg.height_valid = height_decision.height_valid;
     msg.height_measurement_source = has_height_measurement_ ? height_measurement_source_ : "NONE";
-    msg.height_measurement_fresh = height_measurement_fresh_;
-    msg.raw_flow_fresh = height_measurement_fresh_;
+    msg.height_measurement_time_basis =
+      has_height_measurement_ ? height_measurement_time_basis_ : "NONE";
+    msg.height_measurement_sample_fresh = height_measurement_sample_fresh_;
+    msg.height_measurement_receive_fresh = height_measurement_receive_fresh_;
     msg.height_measurement_m = has_height_measurement_ ? height_measurement_m_ : 0.0f;
     msg.control_height_m = control_height_m;
     msg.tag_depth_valid = has_observation_ && last_observation_.tag_depth_valid;
@@ -761,8 +965,15 @@ private:
     const HeightDecision height_decision = heightDecision();
     const float control_height_m = height_decision.height_m;
     const bool state_fresh = stateFresh();
-    float raw_height_measurement_m = 0.0f;
-    height_measurement_fresh_ = heightMeasurementFresh(raw_height_measurement_m);
+    float sample_height_measurement_m = 0.0f;
+    float receive_height_measurement_m = 0.0f;
+    height_measurement_sample_fresh_ = heightMeasurementSampleFresh(sample_height_measurement_m);
+    height_measurement_receive_fresh_ = heightMeasurementReceiveFresh(receive_height_measurement_m);
+    const bool terminal_height_measurement_fresh =
+      supportsTerminalHeightTrigger(height_measurement_transport_) &&
+      height_measurement_sample_fresh_;
+    const float terminal_height_measurement_m =
+      terminal_height_measurement_fresh ? sample_height_measurement_m : 0.0f;
     const bool fresh_observation = observationFresh();
     const MetricLateralError lateral_error = (fresh_observation && filter_initialized_) ?
       computeMetricLateralError(err_u_f_, err_v_f_, derr_u_f_, derr_v_f_, control_height_m) :
@@ -783,7 +994,8 @@ private:
     if (phase_ == ControllerPhase::DescendTrack) {
       terminal_entry_consecutive_count_ = updateConsecutiveConditionCount(
         terminal_entry_consecutive_count_,
-        height_measurement_fresh_ && raw_height_measurement_m < terminal_entry_height_m_);
+        terminal_height_measurement_fresh &&
+        terminal_height_measurement_m < terminal_entry_height_m_);
       terminal_trigger_source_ = meetsConsecutiveConditionCount(
         terminal_entry_consecutive_count_, terminal_entry_consecutive_samples_) ?
         "RANGE_MEASUREMENT" : "NONE";
@@ -900,7 +1112,6 @@ private:
           align_hold_since_ = this->now();
         } else if ((this->now() - align_hold_since_).seconds() >= hold_verify_s_) {
           initial_search_completed_ = true;
-          clearTargetMemory();
           transitionTo(ControllerPhase::DescendTrack, false);
         }
         break;
@@ -916,7 +1127,7 @@ private:
           transitionTo(ControllerPhase::Terminal, false);
           break;
         }
-        if (control_height_m <= terminal_entry_height_m_ && !height_measurement_fresh_) {
+        if (control_height_m <= terminal_entry_height_m_ && !terminal_height_measurement_fresh) {
           terminal_entry_consecutive_count_ = 0;
           terminal_trigger_source_ = "NONE";
           transitionTo(ControllerPhase::HoldWait, true);
@@ -966,6 +1177,17 @@ private:
         }
         break;
       case ControllerPhase::Land:
+        xy_control_mode_ = land_request_in_flight_ ? "land_request_in_flight" :
+          (land_request_failed_ ? "land_request_retry_wait" : "land_request_pending");
+        publishVelocityBody(0.0f, 0.0f, 0.0f, 0.0f);
+        if (!land_request_accepted_ && !land_request_in_flight_) {
+          const bool retry_due =
+            last_land_request_attempt_.nanoseconds() == 0 ||
+            (this->now() - last_land_request_attempt_).seconds() >= land_request_retry_delay_s_;
+          if (retry_due) {
+            requestLand();
+          }
+        }
         break;
     }
 
@@ -980,7 +1202,8 @@ private:
   std::string controller_state_topic_;
   std::string hold_service_;
   std::string land_service_;
-  std::string height_measurement_mode_;
+  HeightMeasurementTransport height_measurement_transport_{HeightMeasurementTransport::StampedRange};
+  std::string height_measurement_topic_;
   std::string range_topic_;
   std::string vehicle_local_position_topic_;
   std::string start_service_name_;
@@ -1020,15 +1243,19 @@ private:
   ControllerPhase phase_{ControllerPhase::Ready};
   bool align_in_window_{false};
   bool align_hold_started_{false};
-  bool land_requested_{false};
+  bool land_request_in_flight_{false};
+  bool land_request_accepted_{false};
+  bool land_request_failed_{false};
   bool initial_search_completed_{false};
   bool current_observation_detected_{false};
   bool new_valid_observation_{false};
   bool has_observation_{false};
   bool has_state_{false};
   bool has_height_measurement_{false};
+  bool height_measurement_has_sample_stamp_{false};
   bool filter_initialized_{false};
-  bool height_measurement_fresh_{false};
+  bool height_measurement_sample_fresh_{false};
+  bool height_measurement_receive_fresh_{false};
   float odom_height_m_{0.0f};
   float current_body_vx_{0.0f};
   float current_body_vy_{0.0f};
@@ -1036,30 +1263,32 @@ private:
   float current_yaw_rate_{0.0f};
   float height_measurement_m_{0.0f};
   std::string height_measurement_source_{"NONE"};
+  std::string height_measurement_time_basis_{"NONE"};
   float err_u_f_{0.0f};
   float err_v_f_{0.0f};
   float derr_u_f_{0.0f};
   float derr_v_f_{0.0f};
   float prev_err_u_raw_{0.0f};
   float prev_err_v_raw_{0.0f};
-  float last_cmd_vx_{0.0f};
-  float last_cmd_vy_{0.0f};
-  float last_cmd_vz_{0.0f};
-  float last_cmd_yaw_rate_{0.0f};
   float z_target_height_m_{0.0f};
   bool z_target_initialized_{false};
   float control_dt_s_{1.0f / 30.0f};
+  double land_request_retry_delay_s_{0.5};
   double status_period_s_{0.2};
   bool status_initialized_{false};
   int consecutive_observation_miss_count_{0};
   int terminal_entry_consecutive_count_{0};
+  uint64_t land_request_sequence_{0};
+  uint64_t active_land_request_id_{0};
   std::string xy_control_mode_{"idle"};
   std::string terminal_trigger_source_{"NONE"};
   rclcpp::Time last_status_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_observation_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time prev_observation_stamp_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_state_time_{0, 0, RCL_ROS_TIME};
-  rclcpp::Time height_measurement_stamp_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time last_land_request_attempt_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time height_measurement_receive_stamp_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time height_measurement_sample_stamp_{0, 0, RCL_ROS_TIME};
   rclcpp::Time align_hold_since_{0, 0, RCL_ROS_TIME};
   rclcpp::Time target_memory_observed_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time target_memory_updated_time_{0, 0, RCL_ROS_TIME};
@@ -1070,7 +1299,9 @@ private:
     controller_state_pub_;
   rclcpp::Subscription<uav_visual_landing::msg::TargetObservation>::SharedPtr observation_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_sub_;
-  rclcpp::Subscription<px4_msgs::msg::DistanceSensor>::SharedPtr height_measurement_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::Range>::SharedPtr stamped_height_measurement_sub_;
+  rclcpp::Subscription<px4_msgs::msg::DistanceSensor>::SharedPtr
+    legacy_distance_sensor_height_sub_;
   rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr
     vehicle_local_position_height_sub_;
   rclcpp::Client<Trigger>::SharedPtr hold_client_;

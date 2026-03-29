@@ -8,6 +8,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
+from uav_bringup.launch_utils import namespaced_path, normalized_namespace
 from uav_bringup.profile_defaults import (
     DEFAULT_ORBBEC_IR_EXPOSURE,
     DEFAULT_ORBBEC_IR_STREAM,
@@ -83,6 +84,7 @@ def generate_launch_description():
     sensor_roll_in_body_rad = LaunchConfiguration("sensor_roll_in_body_rad")
     sensor_pitch_in_body_rad = LaunchConfiguration("sensor_pitch_in_body_rad")
     sensor_yaw_in_body_rad = LaunchConfiguration("sensor_yaw_in_body_rad")
+    normalized_openvins_namespace = normalized_namespace(openvins_namespace)
 
     orbbec_camera_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(bringup_share, "launch", "orbbec_depth_camera.launch.py")),
@@ -136,11 +138,11 @@ def generate_launch_description():
         package="uav_bringup",
         executable="openvins_supervisor.py",
         condition=IfCondition(start_openvins),
-        namespace=openvins_namespace,
+        namespace=normalized_openvins_namespace,
         name="openvins_supervisor",
         output="screen",
         parameters=[
-            {"child_namespace": openvins_namespace},
+            {"child_namespace": normalized_openvins_namespace},
             {"verbosity": openvins_verbosity},
             {"save_total_state": openvins_save_total_state},
             {"publish_calibration_tf": openvins_publish_calibration_tf},
@@ -158,12 +160,16 @@ def generate_launch_description():
         name="openvins_px4_vision_bridge",
         output="screen",
         parameters=[
-            {"odometry_topic": ["/", openvins_namespace, "/odomimu"]},
+            {"odometry_topic": namespaced_path(openvins_namespace, "/odomimu")},
             {"visual_odometry_topic": [fmu_namespace, "/in/vehicle_visual_odometry"]},
             {"sensor_roll_in_body_rad": sensor_roll_in_body_rad},
             {"sensor_pitch_in_body_rad": sensor_pitch_in_body_rad},
             {"sensor_yaw_in_body_rad": sensor_yaw_in_body_rad},
-            {"reset_counter_bump_topic": ["/", openvins_namespace, "/reset_counter_bump"]},
+            {
+                "reset_counter_bump_topic": namespaced_path(
+                    openvins_namespace, "/reset_counter_bump"
+                )
+            },
         ],
     )
 

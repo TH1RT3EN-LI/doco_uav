@@ -293,6 +293,13 @@ def build_output_yaml(
     return "%YAML:1.0\n\n" + "\n".join(out_blocks) + "\n"
 
 
+def ensure_minimum_camera_count(cameras_out: List[Dict[str, List[float]]]) -> None:
+    if len(cameras_out) < len(CAMERA_KEYS):
+        raise RuntimeError(
+            f"state estimate must contain at least two cameras, got {len(cameras_out)}"
+        )
+
+
 def collect_stability_issues(
     cameras_in: Dict[str, Dict[str, Any]],
     cameras_out: List[Dict[str, List[float]]],
@@ -308,6 +315,10 @@ def collect_stability_issues(
             f"({final_speed:.3f} m/s > {MAX_FINAL_SPEED_MPS:.3f} m/s); stop and hold still before saving calibration"
         )
 
+    if len(cameras_out) < len(CAMERA_KEYS):
+        return issues, metrics
+    if any(camera_key not in cameras_in for camera_key in CAMERA_KEYS):
+        return issues, metrics
     if "T_cn_cnm1" not in cameras_in["cam1"] or not cameras_in["cam1"]["T_cn_cnm1"]:
         return issues, metrics
 
@@ -353,55 +364,62 @@ def collect_stability_issues(
 
 
 def main() -> int:
-    args = parse_args()
-    input_path = Path(args.input_imucam_yaml).expanduser().resolve()
-    output_path = (
-        Path(args.output_imucam_yaml).expanduser().resolve()
-        if args.output_imucam_yaml
-        else input_path
-    )
-    state_path = Path(args.state_estimate_path).expanduser().resolve()
-
-    cameras_in = parse_imucam_yaml(input_path)
-    time_offset, final_position, final_velocity, cameras_out = parse_last_state_line(state_path)
-    final_speed = vector_norm(final_velocity)
-    final_pos_norm = vector_norm(final_position)
-    issues, metrics = collect_stability_issues(cameras_in, cameras_out, final_velocity)
-
-    print(f"applied camera-imu time offset: {time_offset:.7f}")
-    print(f"last-state position norm: {final_pos_norm:.3f} m")
-    print(f"last-state speed norm: {final_speed:.3f} m/s")
-
-    if "baseline_delta" in metrics and "rotation_delta" in metrics:
-        print(
-            "stereo baseline: "
-            f"input={metrics['input_baseline']:.4f} m output={metrics['estimated_baseline']:.4f} m "
-            f"delta={metrics['baseline_delta']:+.4f} m"
+    try:
+        args = parse_args()
+        input_path = Path(args.input_imucam_yaml).expanduser().resolve()
+        output_path = (
+            Path(args.output_imucam_yaml).expanduser().resolve()
+            if args.output_imucam_yaml
+            else input_path
         )
-        print(
-            "stereo relative rotation: "
-            f"input={metrics['input_angle']:.3f} deg output={metrics['estimated_angle']:.3f} deg "
-            f"delta={metrics['rotation_delta']:+.3f} deg"
-        )
+        state_path = Path(args.state_estimate_path).expanduser().resolve()
 
-    if issues and not args.force:
-        for issue in issues:
-            print(f"error: {issue}", file=sys.stderr)
-        print(
-            "error: refusing to write updated calibration; rerun after a steadier round or pass --force to override",
-            file=sys.stderr,
+        cameras_in = parse_imucam_yaml(input_path)
+        time_offset, final_position, final_velocity, cameras_out = parse_last_state_line(
+            state_path
         )
+        ensure_minimum_camera_count(cameras_out)
+        final_speed = vector_norm(final_velocity)
+        final_pos_norm = vector_norm(final_position)
+        issues, metrics = collect_stability_issues(cameras_in, cameras_out, final_velocity)
+
+        print(f"applied camera-imu time offset: {time_offset:.7f}")
+        print(f"last-state position norm: {final_pos_norm:.3f} m")
+        print(f"last-state speed norm: {final_speed:.3f} m/s")
+
+        if "baseline_delta" in metrics and "rotation_delta" in metrics:
+            print(
+                "stereo baseline: "
+                f"input={metrics['input_baseline']:.4f} m output={metrics['estimated_baseline']:.4f} m "
+                f"delta={metrics['baseline_delta']:+.4f} m"
+            )
+            print(
+                "stereo relative rotation: "
+                f"input={metrics['input_angle']:.3f} deg output={metrics['estimated_angle']:.3f} deg "
+                f"delta={metrics['rotation_delta']:+.3f} deg"
+            )
+
+        if issues and not args.force:
+            for issue in issues:
+                print(f"error: {issue}", file=sys.stderr)
+            print(
+                "error: refusing to write updated calibration; rerun after a steadier round or pass --force to override",
+                file=sys.stderr,
+            )
+            return 1
+
+        content = build_output_yaml(cameras_in, cameras_out, time_offset)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(content, encoding="utf-8")
+        print(f"wrote {output_path}")
+
+        if issues:
+            for issue in issues:
+                print(f"warning: {issue}", file=sys.stderr)
+            print("warning: wrote calibration because --force was set", file=sys.stderr)
+    except RuntimeError as error:
+        print(f"error: {error}", file=sys.stderr)
         return 1
-
-    content = build_output_yaml(cameras_in, cameras_out, time_offset)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(content, encoding="utf-8")
-    print(f"wrote {output_path}")
-
-    if issues:
-        for issue in issues:
-            print(f"warning: {issue}", file=sys.stderr)
-        print("warning: wrote calibration because --force was set", file=sys.stderr)
 
     return 0
 

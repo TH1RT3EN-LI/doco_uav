@@ -1,4 +1,5 @@
 #include "uav_mode_supervisor/supervisor_logic.hpp"
+#include "uav_mode_supervisor/supervisor_status_utils.hpp"
 
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -83,6 +84,8 @@ public:
     service_wait_timeout_s_ = this->get_parameter("service_wait_timeout_s").as_double();
     automatic_action_retry_s_ = this->get_parameter("automatic_action_retry_s").as_double();
     tick_rate_hz_ = std::max(1.0, this->get_parameter("tick_rate_hz").as_double());
+    fusion_status_timeout_s_ = this->get_parameter("fusion_status_timeout_s").as_double();
+    visual_state_timeout_s_ = this->get_parameter("visual_state_timeout_s").as_double();
 
     state_pub_ = this->create_publisher<SupervisorState>(
       state_topic_, rclcpp::QoS(1).reliable().transient_local());
@@ -203,6 +206,8 @@ private:
     this->declare_parameter<double>("service_wait_timeout_s", 1.0);
     this->declare_parameter<double>("automatic_action_retry_s", 1.0);
     this->declare_parameter<double>("tick_rate_hz", 10.0);
+    this->declare_parameter<double>("fusion_status_timeout_s", 0.5);
+    this->declare_parameter<double>("visual_state_timeout_s", 0.75);
     this->declare_parameter<double>("default_tracking_height_m", 1.5);
     this->declare_parameter<bool>("allow_visual_preempt_tracking", true);
     this->declare_parameter<bool>("allow_tracking_preempt_visual_precommit", true);
@@ -233,10 +238,13 @@ private:
 
   void OnDiagnostics(const diagnostic_msgs::msg::DiagnosticArray::SharedPtr msg)
   {
-    SupervisorLogic::FusionStatus status = logic_->fusion_status();
+    const rclcpp::Time receive_stamp = this->now();
+    const rclcpp::Time source_stamp = ResolveStatusSourceStamp(
+      rclcpp::Time(msg->header.stamp, receive_stamp.get_clock_type()), receive_stamp);
+
+    SupervisorLogic::FusionStatus status = fusion_status_cache_.status;
     status.diagnostics_seen = !msg->status.empty();
     status.initialized = false;
-    status.relocalize_requested = fallback_relocalize_requested_.value_or(true);
     status.reason = msg->status.empty() ? "diagnostics_missing" : msg->status.front().message;
 
     if (const auto initialized = FindDiagnosticValue(*msg, "initialized")) {
@@ -249,28 +257,27 @@ private:
       status.reason = *reason;
     }
 
-    logic_->UpdateFusionStatus(status);
+    CacheStatusUpdate(fusion_status_cache_, status, source_stamp, receive_stamp);
   }
 
   void OnRelocalizeRequested(const std_msgs::msg::Bool::SharedPtr msg)
   {
     fallback_relocalize_requested_ = msg->data;
-    if (!logic_->fusion_status().diagnostics_seen) {
-      auto status = logic_->fusion_status();
-      status.relocalize_requested = msg->data;
-      logic_->UpdateFusionStatus(status);
-    }
   }
 
   void OnVisualLandingState(
     const uav_visual_landing::msg::LandingControllerState::SharedPtr msg)
   {
+    const rclcpp::Time receive_stamp = this->now();
+    const rclcpp::Time source_stamp = ResolveStatusSourceStamp(
+      rclcpp::Time(msg->header.stamp, receive_stamp.get_clock_type()), receive_stamp);
+
     SupervisorLogic::VisualLandingStatus status;
     status.state_seen = true;
     status.active = msg->active;
     status.target_detected = msg->target_detected;
     status.phase = msg->phase;
-    logic_->UpdateVisualLandingStatus(status);
+    CacheStatusUpdate(visual_status_cache_, status, source_stamp, receive_stamp);
   }
 
   void OnCommand(
@@ -291,6 +298,7 @@ private:
       return false;
     }
 
+    RefreshInputStatus();
     const auto plan = logic_->BuildCommandPlan(command, tracking_target_height_m);
     if (!plan.accepted) {
       response_message = plan.message;
@@ -315,6 +323,7 @@ private:
 
   void MaybeQueueAutomaticPlan()
   {
+    RefreshInputStatus();
     const auto automatic_plan = logic_->BuildAutomaticPlan();
     if (!automatic_plan.has_value()) {
       last_automatic_action_key_.clear();
@@ -463,6 +472,10 @@ private:
       return;
     }
 
+    if (success) {
+      MaybeApplySyntheticVisualState(step);
+    }
+
     if (!success) {
       RCLCPP_WARN(
         this->get_logger(), "%s failed but continuing: %s",
@@ -521,6 +534,7 @@ private:
 
   void PublishState()
   {
+    RefreshInputStatus();
     SupervisorState msg;
     msg.header.stamp = this->now();
     msg.owner = SupervisorLogic::OwnerName(logic_->owner());
@@ -530,11 +544,13 @@ private:
     msg.command_in_progress = pending_plan_.has_value();
     msg.last_message = logic_->last_message();
     msg.fusion_diagnostics_seen = logic_->fusion_status().diagnostics_seen;
+    msg.fusion_status_fresh = logic_->fusion_status().fresh;
     msg.fusion_initialized = logic_->fusion_status().initialized;
     msg.fusion_relocalize_requested = logic_->fusion_status().relocalize_requested;
     msg.fusion_ready = logic_->FusionReady();
     msg.fusion_reason = logic_->fusion_status().reason;
     msg.visual_state_seen = logic_->visual_status().state_seen;
+    msg.visual_state_fresh = logic_->visual_status().fresh;
     msg.visual_active = logic_->visual_status().active;
     msg.visual_target_detected = logic_->visual_status().target_detected;
     msg.visual_phase = logic_->visual_status().phase;
@@ -570,6 +586,42 @@ private:
       return false;
     }
     return default_value;
+  }
+
+  void RefreshInputStatus()
+  {
+    const rclcpp::Time now = this->now();
+    logic_->UpdateFusionStatus(
+      BuildEffectiveFusionStatus(
+        fusion_status_cache_.status, fallback_relocalize_requested_,
+        TimedStatusFresh(fusion_status_cache_.source_stamp, fusion_status_timeout_s_, now)));
+    logic_->UpdateVisualLandingStatus(
+      BuildEffectiveVisualLandingStatus(
+        visual_status_cache_.status,
+        TimedStatusFresh(visual_status_cache_.source_stamp, visual_state_timeout_s_, now)));
+  }
+
+  void CacheVisualLandingState(const SupervisorLogic::VisualLandingStatus & status)
+  {
+    const rclcpp::Time now = this->now();
+    OverwriteStatusCache(visual_status_cache_, status, now, now);
+  }
+
+  void MaybeApplySyntheticVisualState(const ActionStep & step)
+  {
+    switch (step.type) {
+      case ActionType::StopVisualLanding:
+        CacheVisualLandingState(MakeSyntheticVisualLandingStatus(false));
+        return;
+      case ActionType::StartVisualLanding:
+        CacheVisualLandingState(MakeSyntheticVisualLandingStatus(true));
+        return;
+      case ActionType::StopTracking:
+      case ActionType::StartTracking:
+      case ActionType::PositionMode:
+      case ActionType::Hold:
+        return;
+    }
   }
 
   static std::string ActionTypeName(ActionType type)
@@ -612,7 +664,11 @@ private:
   double service_wait_timeout_s_{1.0};
   double automatic_action_retry_s_{1.0};
   double tick_rate_hz_{10.0};
+  double fusion_status_timeout_s_{0.5};
+  double visual_state_timeout_s_{0.75};
 
+  TimestampedStatusCache<SupervisorLogic::FusionStatus> fusion_status_cache_{};
+  TimestampedStatusCache<SupervisorLogic::VisualLandingStatus> visual_status_cache_{};
   std::optional<bool> fallback_relocalize_requested_{};
   std::optional<PendingPlan> pending_plan_{};
   std::string last_automatic_action_key_;

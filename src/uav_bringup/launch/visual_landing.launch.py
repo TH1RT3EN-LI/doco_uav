@@ -36,7 +36,29 @@ def generate_launch_description():
     camera_hfov_rad = LaunchConfiguration("camera_hfov_rad")
     camera_info_url = LaunchConfiguration("camera_info_url")
     fmu_namespace = LaunchConfiguration("fmu_namespace")
+    use_sim_time = LaunchConfiguration("use_sim_time")
+    height_measurement_transport = LaunchConfiguration("height_measurement_transport")
+    height_measurement_topic = LaunchConfiguration("height_measurement_topic")
     height_measurement_mode = LaunchConfiguration("height_measurement_mode")
+    height_measurement_frame_id = LaunchConfiguration("height_measurement_frame_id")
+    motion_guard_enabled = LaunchConfiguration("motion_guard_enabled")
+    motion_guard_soft_dwell_s = LaunchConfiguration("motion_guard_soft_dwell_s")
+    motion_guard_pose_gap_reset_s = LaunchConfiguration("motion_guard_pose_gap_reset_s")
+    motion_guard_soft_xy_mps = LaunchConfiguration("motion_guard_soft_xy_mps")
+    motion_guard_soft_z_mps = LaunchConfiguration("motion_guard_soft_z_mps")
+    motion_guard_soft_yaw_radps = LaunchConfiguration("motion_guard_soft_yaw_radps")
+    motion_guard_hard_xy_mps = LaunchConfiguration("motion_guard_hard_xy_mps")
+    motion_guard_hard_z_mps = LaunchConfiguration("motion_guard_hard_z_mps")
+    motion_guard_hard_yaw_radps = LaunchConfiguration("motion_guard_hard_yaw_radps")
+    motion_guard_feedback_hard_xy_mps = LaunchConfiguration("motion_guard_feedback_hard_xy_mps")
+    motion_guard_feedback_hard_z_mps = LaunchConfiguration("motion_guard_feedback_hard_z_mps")
+    motion_guard_pose_soft_xy_step_m = LaunchConfiguration("motion_guard_pose_soft_xy_step_m")
+    motion_guard_pose_soft_z_step_m = LaunchConfiguration("motion_guard_pose_soft_z_step_m")
+    motion_guard_pose_soft_yaw_step_rad = LaunchConfiguration("motion_guard_pose_soft_yaw_step_rad")
+    motion_guard_pose_hard_xy_step_m = LaunchConfiguration("motion_guard_pose_hard_xy_step_m")
+    motion_guard_pose_hard_z_step_m = LaunchConfiguration("motion_guard_pose_hard_z_step_m")
+    motion_guard_pose_hard_yaw_step_rad = LaunchConfiguration("motion_guard_pose_hard_yaw_step_rad")
+    tag_size_m = LaunchConfiguration("tag_size_m")
 
     visual_landing_config = os.path.join(visual_landing_share, "config", "visual_landing_stable.yaml")
     mono_camera_launch = IncludeLaunchDescription(
@@ -83,6 +105,7 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {"namespaced_fmu_prefix": fmu_namespace},
+            {"use_sim_time": use_sim_time},
         ],
     )
 
@@ -94,6 +117,8 @@ def generate_launch_description():
         parameters=[
             {"vehicle_local_position_topic": vehicle_local_position_topic},
             {"vehicle_odometry_topic": vehicle_odometry_topic},
+            {"base_frame_id": base_frame_id},
+            {"use_sim_time": use_sim_time},
         ],
     )
 
@@ -108,6 +133,38 @@ def generate_launch_description():
             {"vehicle_command_topic": vehicle_command_topic},
             {"px4_local_position_topic": vehicle_local_position_topic},
             {"vehicle_status_topic": vehicle_status_topic},
+            {"base_frame_id": base_frame_id},
+            {"use_sim_time": use_sim_time},
+            {"motion_guard_enabled": motion_guard_enabled},
+            {"motion_guard_soft_dwell_s": motion_guard_soft_dwell_s},
+            {"motion_guard_pose_gap_reset_s": motion_guard_pose_gap_reset_s},
+            {"motion_guard_soft_xy_mps": motion_guard_soft_xy_mps},
+            {"motion_guard_soft_z_mps": motion_guard_soft_z_mps},
+            {"motion_guard_soft_yaw_radps": motion_guard_soft_yaw_radps},
+            {"motion_guard_hard_xy_mps": motion_guard_hard_xy_mps},
+            {"motion_guard_hard_z_mps": motion_guard_hard_z_mps},
+            {"motion_guard_hard_yaw_radps": motion_guard_hard_yaw_radps},
+            {"motion_guard_feedback_hard_xy_mps": motion_guard_feedback_hard_xy_mps},
+            {"motion_guard_feedback_hard_z_mps": motion_guard_feedback_hard_z_mps},
+            {"motion_guard_pose_soft_xy_step_m": motion_guard_pose_soft_xy_step_m},
+            {"motion_guard_pose_soft_z_step_m": motion_guard_pose_soft_z_step_m},
+            {"motion_guard_pose_soft_yaw_step_rad": motion_guard_pose_soft_yaw_step_rad},
+            {"motion_guard_pose_hard_xy_step_m": motion_guard_pose_hard_xy_step_m},
+            {"motion_guard_pose_hard_z_step_m": motion_guard_pose_hard_z_step_m},
+            {"motion_guard_pose_hard_yaw_step_rad": motion_guard_pose_hard_yaw_step_rad},
+        ],
+    )
+
+    height_measurement_bridge = Node(
+        package="uav_bridge",
+        executable="height_measurement_bridge_node",
+        name="height_measurement_bridge_node",
+        output="screen",
+        parameters=[
+            {"distance_sensor_topic": distance_sensor_topic},
+            {"height_measurement_topic": height_measurement_topic},
+            {"frame_id": height_measurement_frame_id},
+            {"use_sim_time": use_sim_time},
         ],
     )
 
@@ -117,8 +174,10 @@ def generate_launch_description():
         name="aruco_detector_node",
         output="screen",
         parameters=[
+            {"use_sim_time": use_sim_time},
             {"image_topic": image_topic},
             {"camera_info_topic": camera_info_topic},
+            {"tag_size_m": tag_size_m},
         ],
     )
 
@@ -129,6 +188,9 @@ def generate_launch_description():
         output="screen",
         parameters=[
             visual_landing_config,
+            {"use_sim_time": use_sim_time},
+            {"height_measurement_transport": height_measurement_transport},
+            {"height_measurement_topic": height_measurement_topic},
             {"height_measurement_mode": height_measurement_mode},
             {"range_topic": distance_sensor_topic},
             {"vehicle_local_position_topic": vehicle_local_position_topic},
@@ -159,12 +221,37 @@ def generate_launch_description():
         DeclareLaunchArgument("cy", default_value="360.0"),
         DeclareLaunchArgument("camera_hfov_rad", default_value="1.3962634"),
         DeclareLaunchArgument("camera_info_url", default_value=""),
+        DeclareLaunchArgument("tag_size_m", default_value="0.1625"),
         DeclareLaunchArgument("fmu_namespace", default_value="/fmu"),
-        DeclareLaunchArgument("height_measurement_mode", default_value="distance_sensor"),
+        DeclareLaunchArgument("use_sim_time", default_value="false"),
+        DeclareLaunchArgument("height_measurement_transport", default_value="stamped_range"),
+        DeclareLaunchArgument("height_measurement_topic", default_value="/uav/sensors/downward_range"),
+        DeclareLaunchArgument("height_measurement_mode", default_value=""),
+        DeclareLaunchArgument(
+            "height_measurement_frame_id", default_value="uav_optical_flow_range_frame"
+        ),
+        DeclareLaunchArgument("motion_guard_enabled", default_value="true"),
+        DeclareLaunchArgument("motion_guard_soft_dwell_s", default_value="2.0"),
+        DeclareLaunchArgument("motion_guard_pose_gap_reset_s", default_value="0.40"),
+        DeclareLaunchArgument("motion_guard_soft_xy_mps", default_value="0.40"),
+        DeclareLaunchArgument("motion_guard_soft_z_mps", default_value="0.25"),
+        DeclareLaunchArgument("motion_guard_soft_yaw_radps", default_value="0.60"),
+        DeclareLaunchArgument("motion_guard_hard_xy_mps", default_value="0.55"),
+        DeclareLaunchArgument("motion_guard_hard_z_mps", default_value="0.35"),
+        DeclareLaunchArgument("motion_guard_hard_yaw_radps", default_value="0.90"),
+        DeclareLaunchArgument("motion_guard_feedback_hard_xy_mps", default_value="0.65"),
+        DeclareLaunchArgument("motion_guard_feedback_hard_z_mps", default_value="0.45"),
+        DeclareLaunchArgument("motion_guard_pose_soft_xy_step_m", default_value="0.25"),
+        DeclareLaunchArgument("motion_guard_pose_soft_z_step_m", default_value="0.12"),
+        DeclareLaunchArgument("motion_guard_pose_soft_yaw_step_rad", default_value="0.35"),
+        DeclareLaunchArgument("motion_guard_pose_hard_xy_step_m", default_value="0.50"),
+        DeclareLaunchArgument("motion_guard_pose_hard_z_step_m", default_value="0.25"),
+        DeclareLaunchArgument("motion_guard_pose_hard_yaw_step_rad", default_value="0.70"),
         mono_camera_launch,
         fmu_topic_namespace_bridge,
         uav_state_bridge,
         uav_control,
+        height_measurement_bridge,
         aruco_detector,
         visual_landing,
     ])

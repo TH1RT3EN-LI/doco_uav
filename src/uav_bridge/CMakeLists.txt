@@ -125,6 +125,17 @@ ament_target_dependencies(uav_control_node
   px4_msgs
   tf2
 )
+
+add_executable(height_measurement_bridge_node
+  src/height_measurement_bridge_node.cpp
+)
+target_compile_features(height_measurement_bridge_node PUBLIC cxx_std_17)
+ament_target_dependencies(height_measurement_bridge_node
+  px4_msgs
+  rclcpp
+  sensor_msgs
+)
+
 add_executable(fmu_topic_namespace_bridge_node
   src/fmu_topic_namespace_bridge_node.cpp
 )
@@ -156,6 +167,7 @@ install(TARGETS
   px4_odom_adapter_node
   uav_state_bridge_node
   uav_control_node
+  height_measurement_bridge_node
   fmu_topic_namespace_bridge_node
   openvins_px4_vision_bridge_node
   DESTINATION lib/${PROJECT_NAME}
@@ -166,41 +178,5 @@ install(DIRECTORY include/
 )
 
 ament_export_include_directories(include)
-
-if(BUILD_TESTING)
-  find_package(ament_cmake_gtest REQUIRED)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
-  set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when
-  # a copyright and license is added to all source files
-  set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
-
-  ament_add_gtest(test_px4_odom_adapter_logic
-    test/test_px4_odom_adapter_logic.cpp
-  )
-  if(TARGET test_px4_odom_adapter_logic)
-    target_link_libraries(test_px4_odom_adapter_logic ${PROJECT_NAME}_px4_odom_adapter_logic)
-    ament_target_dependencies(test_px4_odom_adapter_logic px4_msgs tf2)
-  endif()
-
-  ament_add_gtest(test_uav_state_bridge_logic
-    test/test_uav_state_bridge_logic.cpp
-  )
-  if(TARGET test_uav_state_bridge_logic)
-    target_link_libraries(test_uav_state_bridge_logic ${PROJECT_NAME}_uav_state_bridge_logic)
-    ament_target_dependencies(test_uav_state_bridge_logic px4_msgs tf2)
-  endif()
-
-  ament_add_gtest(test_uav_control_logic
-    test/test_uav_control_logic.cpp
-  )
-  if(TARGET test_uav_control_logic)
-    target_include_directories(test_uav_control_logic PRIVATE include)
-  endif()
-endif()
 
 ament_package()

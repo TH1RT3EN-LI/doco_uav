@@ -6,11 +6,13 @@ string pending_command
 bool command_in_progress
 string last_message
 bool fusion_diagnostics_seen
+bool fusion_status_fresh
 bool fusion_initialized
 bool fusion_relocalize_requested
 bool fusion_ready
 string fusion_reason
 bool visual_state_seen
+bool visual_state_fresh
 bool visual_active
 bool visual_target_detected
 string visual_phase

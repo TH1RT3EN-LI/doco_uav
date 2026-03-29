@@ -157,14 +157,14 @@ private:
     odom_msg.pose.covariance[35] = resolved.orientation_variance_rad2[2];
 
     if (resolved.linear_velocity_valid) {
-      odom_msg.twist.twist.linear.x = resolved.linear_velocity_enu_mps[0];
-      odom_msg.twist.twist.linear.y = resolved.linear_velocity_enu_mps[1];
-      odom_msg.twist.twist.linear.z = resolved.linear_velocity_enu_mps[2];
+      odom_msg.twist.twist.linear.x = resolved.linear_velocity_body_flu_mps[0];
+      odom_msg.twist.twist.linear.y = resolved.linear_velocity_body_flu_mps[1];
+      odom_msg.twist.twist.linear.z = resolved.linear_velocity_body_flu_mps[2];
     }
 
-    odom_msg.twist.covariance[0] = resolved.velocity_variance_enu_m2ps2[0];
-    odom_msg.twist.covariance[7] = resolved.velocity_variance_enu_m2ps2[1];
-    odom_msg.twist.covariance[14] = resolved.velocity_variance_enu_m2ps2[2];
+    odom_msg.twist.covariance[0] = resolved.velocity_variance_body_flu_m2ps2[0];
+    odom_msg.twist.covariance[7] = resolved.velocity_variance_body_flu_m2ps2[1];
+    odom_msg.twist.covariance[14] = resolved.velocity_variance_body_flu_m2ps2[2];
     odom_msg.twist.covariance[21] = kDefaultAngularVarianceRad2[0];
     odom_msg.twist.covariance[28] = kDefaultAngularVarianceRad2[1];
     odom_msg.twist.covariance[35] = kDefaultAngularVarianceRad2[2];
@@ -197,7 +197,7 @@ private:
     if (log_state_) {
       RCLCPP_INFO_THROTTLE(
         this->get_logger(), *this->get_clock(), 1000,
-        "px4 odom adapter: p=[%.3f, %.3f, %.3f] v=[%.3f, %.3f, %.3f] source(pos=%s orient=%s vel=%s)",
+        "px4 odom adapter: p=[%.3f, %.3f, %.3f] v_body=[%.3f, %.3f, %.3f] source(pos=%s orient=%s vel=%s)",
         odom_msg.pose.pose.position.x,
         odom_msg.pose.pose.position.y,
         odom_msg.pose.pose.position.z,

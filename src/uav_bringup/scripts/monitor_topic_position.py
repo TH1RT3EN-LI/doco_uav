@@ -351,7 +351,7 @@ class PositionMonitorGui:
                 self._set_position_vars(widgets, None, None)
                 continue
 
-            freshness_s = 0.0 if last_receive_wall_s is None else max(now - last_receive_wall_s, 0.0)
+            freshness_s = max(now - last_receive_wall_s, 0.0)
             widgets.status_var.set("正常接收" if freshness_s < 1.0 else "数据变慢")
             widgets.frame_var.set(latest_sample.frame_label)
             widgets.freshness_var.set(f"{freshness_s:.2f} s")
@@ -378,7 +378,7 @@ class PositionMonitorGui:
         widgets.current_y_var.set(self._format_distance(latest_sample.y))
         widgets.current_z_var.set(self._format_distance(latest_sample.z))
 
-        if not self.show_relative or first_sample is None:
+        if not self.show_relative:
             widgets.delta_x_var.set("已关闭")
             widgets.delta_y_var.set("已关闭")
             widgets.delta_z_var.set("已关闭")

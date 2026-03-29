@@ -14,7 +14,7 @@ namespace
 
 constexpr std::array<double, 3> kDefaultPositionVarianceEnuM2{0.02, 0.02, 0.02};
 constexpr std::array<double, 3> kDefaultOrientationVarianceRad2{0.05, 0.05, 0.05};
-constexpr std::array<double, 3> kDefaultVelocityVarianceEnuM2Ps2{0.10, 0.10, 0.10};
+constexpr std::array<double, 3> kDefaultVelocityVarianceBodyFluM2Ps2{0.10, 0.10, 0.10};
 
 template<typename ArrayT>
 bool isFiniteArray(const ArrayT & values)
@@ -33,7 +33,7 @@ bool isFiniteQuaternion(const std::array<float, 4> & q)
     return false;
   }
 
-  const double norm_sq =
+  const double norm_sq =SDFfasdfasdfasdf
     static_cast<double>(q[0]) * static_cast<double>(q[0]) +
     static_cast<double>(q[1]) * static_cast<double>(q[1]) +
     static_cast<double>(q[2]) * static_cast<double>(q[2]) +
@@ -52,17 +52,12 @@ tf2::Quaternion quaternionFromPx4Array(const std::array<float, 4> & q)
   return quaternion;
 }
 
-std::array<double, 3> bodyFrdVelocityToEnu(
-  const std::array<float, 3> & velocity_body_frd,
-  const std::array<float, 4> & q_ned_frd)
+std::array<double, 3> bodyFrdToFluVelocity(const std::array<float, 3> & velocity_body_frd)
 {
-  const tf2::Matrix3x3 rotation_ned_frd(quaternionFromPx4Array(q_ned_frd));
-  const tf2::Vector3 velocity_body(
+  return {
     static_cast<double>(velocity_body_frd[0]),
-    static_cast<double>(velocity_body_frd[1]),
-    static_cast<double>(velocity_body_frd[2]));
-  const tf2::Vector3 velocity_ned = rotation_ned_frd * velocity_body;
-  return nedToEnuVector(velocity_ned.x(), velocity_ned.y(), velocity_ned.z());
+    static_cast<double>(-velocity_body_frd[1]),
+    static_cast<double>(-velocity_body_frd[2])};
 }
 
 bool hasValidLocalPosition(const px4_msgs::msg::VehicleLocalPosition & msg)
@@ -102,8 +97,62 @@ bool hasValidOdometryVelocityNed(const px4_msgs::msg::VehicleOdometry & msg)
 bool hasValidOdometryVelocityBody(const px4_msgs::msg::VehicleOdometry & msg)
 {
   return msg.velocity_frame == px4_msgs::msg::VehicleOdometry::VELOCITY_FRAME_BODY_FRD &&
-         isFiniteArray(msg.velocity) &&
-         hasValidOdometryOrientation(msg);
+         isFiniteArray(msg.velocity);
+}
+SDFfasdfasdfasdf
+std::array<float, 4> yawNedQuaternionArray(float yaw_ned_rad)
+{
+  tf2::Quaternion quaternion;
+  quaternion.setRPY(0.0, 0.0, static_cast<double>(yaw_ned_rad));
+  quaternion.normalize();
+  return {
+    static_cast<float>(quaternion.w()),
+    static_cast<float>(quaternion.x()),
+    static_cast<float>(quaternion.y()),
+    static_cast<float>(quaternion.z())};
+}
+
+std::array<double, 3> velocityNedToBodyFlu(
+  const std::array<float, 3> & velocity_ned,
+  const std::array<float, 4> & q_ned_frd)
+{
+  const tf2::Matrix3x3 rotation_ned_frd(quaternionFromPx4Array(q_ned_frd));
+  const tf2::Vector3 velocity_world(
+    static_cast<double>(velocity_ned[0]),
+    static_cast<double>(velocity_ned[1]),
+    static_cast<double>(velocity_ned[2]));
+  const tf2::Vector3 velocity_body_frd = rotation_ned_frd.inverse() * velocity_world;
+  return {
+    velocity_body_frd.x(),
+    -velocity_body_frd.y(),
+    -velocity_body_frd.z()};
+}
+
+std::array<double, 3> velocityVarianceNedToBodyFlu(
+  const std::array<float, 3> & velocity_variance_ned,
+  const std::array<float, 4> & q_ned_frd)
+{
+  if (!isFiniteArray(velocity_variance_ned)) {
+    return {
+      std::numeric_limits<double>::quiet_NaN(),
+      std::numeric_limits<double>::quiet_NaN(),
+      std::numeric_limits<double>::quiet_NaN()};
+  }
+
+  const tf2::Matrix3x3 rotation_frd_ned = tf2::Matrix3x3(quaternionFromPx4Array(q_ned_frd)).inverse();
+  const double variance_north = static_cast<double>(velocity_variance_ned[0]);
+  const double variance_east = static_cast<double>(velocity_variance_ned[1]);
+  const double variance_down = static_cast<double>(velocity_variance_ned[2]);
+
+  std::array<double, 3> variance_body_frd{};
+  for (int index = 0; index < 3; ++index) {
+    const tf2::Vector3 row = rotation_frd_ned.getRow(index);
+    variance_body_frd[index] =
+      (row.x() * row.x() * variance_north) +
+      (row.y() * row.y() * variance_east) +
+      (row.z() * row.z() * variance_down);
+  }
+  return variance_body_frd;
 }
 
 template<typename ArrayT>
@@ -208,7 +257,10 @@ Px4OdomResolvedState resolvePx4OdomState(
   Px4OdomResolvedState resolved;
   resolved.position_variance_enu_m2 = kDefaultPositionVarianceEnuM2;
   resolved.orientation_variance_rad2 = kDefaultOrientationVarianceRad2;
-  resolved.velocity_variance_enu_m2ps2 = kDefaultVelocityVarianceEnuM2Ps2;
+  resolved.velocity_variance_body_flu_m2ps2 = kDefaultVelocityVarianceBodyFluM2Ps2;
+
+  std::array<float, 4> orientation_q_ned_frd{};
+  bool has_orientation_q = false;
 
   if (vehicle_odometry.has_value()) {
     if (hasValidOdometryPosition(*vehicle_odometry)) {
@@ -223,21 +275,9 @@ Px4OdomResolvedState resolvePx4OdomState(
     if (hasValidOdometryOrientation(*vehicle_odometry)) {
       resolved.orientation_valid = true;
       resolved.used_odometry_orientation = true;
+      orientation_q_ned_frd = vehicle_odometry->q;
+      has_orientation_q = true;
       resolved.orientation_enu_flu = px4QuaternionToEnuFlu(vehicle_odometry->q);
-    }
-
-    if (hasValidOdometryVelocityNed(*vehicle_odometry)) {
-      resolved.linear_velocity_valid = true;
-      resolved.used_odometry_velocity = true;
-      resolved.linear_velocity_enu_mps = nedToEnuVector(
-        static_cast<double>(vehicle_odometry->velocity[0]),
-        static_cast<double>(vehicle_odometry->velocity[1]),
-        static_cast<double>(vehicle_odometry->velocity[2]));
-      resolved.velocity_variance_enu_m2ps2 = nedToEnuVariance(vehicle_odometry->velocity_variance);
-    } else if (hasValidOdometryVelocityBody(*vehicle_odometry)) {
-      resolved.linear_velocity_valid = true;
-      resolved.used_odometry_velocity = true;
-      resolved.linear_velocity_enu_mps = bodyFrdVelocityToEnu(vehicle_odometry->velocity, vehicle_odometry->q);
     }
 
     resolved.position_variance_enu_m2 = copyFiniteWithDefaults(
@@ -259,15 +299,40 @@ Px4OdomResolvedState resolvePx4OdomState(
   if (!resolved.orientation_valid && local_position.has_value() && std::isfinite(static_cast<double>(local_position->heading))) {
     resolved.orientation_valid = true;
     resolved.used_heading_fallback = true;
+    orientation_q_ned_frd = yawNedQuaternionArray(local_position->heading);
+    has_orientation_q = true;
     resolved.orientation_enu_flu = yawNedToEnuQuaternion(static_cast<double>(local_position->heading));
   }
 
-  if (!resolved.linear_velocity_valid && local_position.has_value() && hasValidLocalVelocity(*local_position)) {
+  if (vehicle_odometry.has_value()) {
+    if (hasValidOdometryVelocityBody(*vehicle_odometry)) {
+      resolved.linear_velocity_valid = true;
+      resolved.used_odometry_velocity = true;
+      resolved.linear_velocity_body_flu_mps = bodyFrdToFluVelocity(vehicle_odometry->velocity);
+      resolved.velocity_variance_body_flu_m2ps2 = copyFiniteWithDefaults(
+        vehicle_odometry->velocity_variance,
+        kDefaultVelocityVarianceBodyFluM2Ps2);
+    } else if (hasValidOdometryVelocityNed(*vehicle_odometry) && has_orientation_q) {
+      resolved.linear_velocity_valid = true;
+      resolved.used_odometry_velocity = true;
+      resolved.linear_velocity_body_flu_mps = velocityNedToBodyFlu(
+        vehicle_odometry->velocity,
+        orientation_q_ned_frd);
+      resolved.velocity_variance_body_flu_m2ps2 = copyFiniteWithDefaults(
+        velocityVarianceNedToBodyFlu(vehicle_odometry->velocity_variance, orientation_q_ned_frd),
+        kDefaultVelocityVarianceBodyFluM2Ps2);
+    }
+  }
+
+  if (!resolved.linear_velocity_valid &&
+    local_position.has_value() &&
+    hasValidLocalVelocity(*local_position) &&
+    has_orientation_q)
+  {
     resolved.linear_velocity_valid = true;
-    resolved.linear_velocity_enu_mps = nedToEnuVector(
-      static_cast<double>(local_position->vx),
-      static_cast<double>(local_position->vy),
-      static_cast<double>(local_position->vz));
+    resolved.linear_velocity_body_flu_mps = velocityNedToBodyFlu(
+      {local_position->vx, local_position->vy, local_position->vz},
+      orientation_q_ned_frd);
   }
 
   return resolved;

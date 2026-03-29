@@ -21,6 +21,8 @@ uav_mode_supervisor:
     service_wait_timeout_s: 1.0
     automatic_action_retry_s: 1.0
     tick_rate_hz: 10.0
+    fusion_status_timeout_s: 0.5
+    visual_state_timeout_s: 0.75
 
     default_tracking_height_m: 1.5
     allow_visual_preempt_tracking: true

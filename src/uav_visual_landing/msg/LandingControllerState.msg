@@ -9,8 +9,9 @@ string terminal_trigger_source
 float32 odom_height_m
 bool height_valid
 string height_measurement_source
-bool height_measurement_fresh
-bool raw_flow_fresh
+string height_measurement_time_basis
+bool height_measurement_sample_fresh
+bool height_measurement_receive_fresh
 float32 height_measurement_m
 float32 control_height_m
 bool tag_depth_valid

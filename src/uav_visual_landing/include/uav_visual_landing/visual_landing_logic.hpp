@@ -100,11 +100,11 @@ struct RelativeTarget3D
   float yaw_err_rad{0.0f};
 };
 
-struct CommandRateLimitConfig
+enum class HeightMeasurementTransport
 {
-  float max_acc_xy_mps2{0.8f};
-  float max_acc_z_mps2{0.5f};
-  float max_acc_yaw_radps2{1.2f};
+  StampedRange,
+  LegacyPx4DistanceSensor,
+  LegacyVehicleLocalPosition,
 };
 
 inline float clamp(float value, float limit)
@@ -112,19 +112,32 @@ inline float clamp(float value, float limit)
   return std::max(-limit, std::min(value, limit));
 }
 
-inline float clampDelta(float target, float previous, float max_delta)
+inline const char * heightMeasurementTransportName(HeightMeasurementTransport transport)
 {
-  if (max_delta <= 0.0f) {
-    return target;
+  switch (transport) {
+    case HeightMeasurementTransport::StampedRange:
+      return "STAMPED_RANGE";
+    case HeightMeasurementTransport::LegacyPx4DistanceSensor:
+      return "LEGACY_PX4_DISTANCE_SENSOR";
+    case HeightMeasurementTransport::LegacyVehicleLocalPosition:
+      return "LEGACY_VEHICLE_LOCAL_POSITION";
   }
-  const float delta = target - previous;
-  if (delta > max_delta) {
-    return previous + max_delta;
-  }
-  if (delta < -max_delta) {
-    return previous - max_delta;
-  }
-  return target;
+  return "UNKNOWN";
+}
+
+inline bool usesSampleTimeForHeightMeasurement(HeightMeasurementTransport transport)
+{
+  return transport == HeightMeasurementTransport::StampedRange;
+}
+
+inline bool supportsTerminalHeightTrigger(HeightMeasurementTransport transport)
+{
+  return transport == HeightMeasurementTransport::StampedRange;
+}
+
+inline bool isPositiveFiniteDepth(float depth_m)
+{
+  return std::isfinite(depth_m) && depth_m > 0.0f;
 }
 
 inline float lerp(float a, float b, float t)
@@ -369,38 +382,6 @@ inline bool meetsConsecutiveConditionCount(int current_count, int required_count
     return current_count > 0;
   }
   return current_count >= required_count;
-}
-
-inline void applyBodyRateLimit(
-  float & vx,
-  float & vy,
-  float & vz,
-  float & yaw_rate,
-  float last_vx,
-  float last_vy,
-  float last_vz,
-  float last_yaw_rate,
-  float dt_s,
-  const CommandRateLimitConfig & config)
-{
-  const float safe_dt = std::max(dt_s, 1.0e-3f);
-  const float max_dxy = std::max(0.0f, config.max_acc_xy_mps2) * safe_dt;
-  if (max_dxy > 0.0f) {
-    const float dvx = vx - last_vx;
-    const float dvy = vy - last_vy;
-    const float dxy = std::sqrt((dvx * dvx) + (dvy * dvy));
-    if (dxy > max_dxy && dxy > 1.0e-6f) {
-      const float scale = max_dxy / dxy;
-      vx = last_vx + (dvx * scale);
-      vy = last_vy + (dvy * scale);
-    }
-  }
-
-  const float max_dz = std::max(0.0f, config.max_acc_z_mps2) * safe_dt;
-  vz = clampDelta(vz, last_vz, max_dz);
-
-  const float max_dyaw = std::max(0.0f, config.max_acc_yaw_radps2) * safe_dt;
-  yaw_rate = clampDelta(yaw_rate, last_yaw_rate, max_dyaw);
 }
 
 }  // namespace uav_visual_landing

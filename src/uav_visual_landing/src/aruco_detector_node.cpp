@@ -16,6 +16,7 @@
 
 #include <uav_visual_landing/msg/landing_controller_state.hpp>
 #include <uav_visual_landing/msg/target_observation.hpp>
+#include <uav_visual_landing/visual_landing_logic.hpp>
 
 namespace uav_visual_landing
 {
@@ -81,7 +82,9 @@ public:
         telemetry_.terminal_trigger_source = msg->terminal_trigger_source;
         telemetry_.height_valid = msg->height_valid;
         telemetry_.height_measurement_source = msg->height_measurement_source;
-        telemetry_.height_measurement_fresh = msg->height_measurement_fresh;
+        telemetry_.height_measurement_time_basis = msg->height_measurement_time_basis;
+        telemetry_.height_measurement_sample_fresh = msg->height_measurement_sample_fresh;
+        telemetry_.height_measurement_receive_fresh = msg->height_measurement_receive_fresh;
         telemetry_.height_measurement_m = msg->height_measurement_m;
         telemetry_.control_height_m = msg->control_height_m;
         telemetry_.err_u_norm_filtered = msg->err_u_norm_filtered;
@@ -136,7 +139,9 @@ private:
     std::string terminal_trigger_source{"NONE"};
     bool height_valid{false};
     std::string height_measurement_source{"NONE"};
-    bool height_measurement_fresh{false};
+    std::string height_measurement_time_basis{"NONE"};
+    bool height_measurement_sample_fresh{false};
+    bool height_measurement_receive_fresh{false};
     float height_measurement_m{0.0f};
     float control_height_m{0.0f};
     float err_u_norm_filtered{0.0f};
@@ -214,9 +219,12 @@ private:
     return (tag_size_m_ * focal_mean) / marker_span_px;
   }
 
-  static bool isPositiveFiniteDepth(float depth_m)
+  static std::string legacyTimeBasisSuffix(const std::string & time_basis)
   {
-    return std::isfinite(depth_m) && depth_m > 0.0f;
+    if (time_basis == "NONE" || time_basis == "SAMPLE_TIME") {
+      return "";
+    }
+    return " legacy_time_basis=receive_time";
   }
 
   float computeSpanConfidence(float marker_span_px) const
@@ -448,11 +456,17 @@ private:
         telemetry_.height_source.c_str()));
     drawLine(
       cv::format(
-        "RANGE=%.2f src=%s valid=%s fresh=%s",
+        "RANGE=%.2f src=%s valid=%s",
         telemetry_.height_measurement_m,
         telemetry_.height_measurement_source.c_str(),
-        telemetry_.height_valid ? "Y" : "N",
-        telemetry_.height_measurement_fresh ? "Y" : "N"));
+        telemetry_.height_valid ? "Y" : "N"));
+    drawLine(
+      cv::format(
+        "HFRESH samp=%s recv=%s basis=%s%s",
+        telemetry_.height_measurement_sample_fresh ? "Y" : "N",
+        telemetry_.height_measurement_receive_fresh ? "Y" : "N",
+        telemetry_.height_measurement_time_basis.c_str(),
+        legacyTimeBasisSuffix(telemetry_.height_measurement_time_basis).c_str()));
     drawLine("TERM: " + telemetry_.terminal_trigger_source);
     drawLine(cv::format("ERR n=(%.4f, %.4f)", observation.err_u_norm, observation.err_v_norm));
     drawLine(
@@ -544,10 +558,10 @@ private:
 
     std::vector<PoseCandidate> candidates;
     if (estimatePose(target_corners, candidates)) {
-      observation.pose_valid = true;
       observation.yaw_err_rad = candidates.front().yaw_rad;
       observation.reproj_err_px = candidates.front().reproj_err_px;
       if (isPositiveFiniteDepth(candidates.front().tag_depth_m)) {
+        observation.pose_valid = true;
         observation.tag_depth_valid = true;
         observation.tag_depth_m = candidates.front().tag_depth_m;
         observation.tag_depth_source = "PNP_Z";
@@ -556,6 +570,7 @@ private:
           observation.reproj_err_px,
           observation.marker_span_px);
       } else {
+        observation.pose_valid = false;
         observation.tag_depth_valid = false;
         observation.tag_depth_m = 0.0f;
         observation.tag_depth_source = "NONE";

@@ -11,6 +11,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 
+from uav_bringup.launch_utils import conditional_namespaced_path
 from uav_bringup.profile_defaults import (
     DEFAULT_CAMERA_INTRINSICS,
     DEFAULT_CAMERA_TO_BODY,
@@ -29,6 +30,23 @@ def generate_launch_description():
     takeoff_height_m = LaunchConfiguration("takeoff_height_m")
     max_velocity_setpoint_mps = LaunchConfiguration("max_velocity_setpoint_mps")
     max_acceleration_setpoint_mps2 = LaunchConfiguration("max_acceleration_setpoint_mps2")
+    motion_guard_enabled = LaunchConfiguration("motion_guard_enabled")
+    motion_guard_soft_dwell_s = LaunchConfiguration("motion_guard_soft_dwell_s")
+    motion_guard_pose_gap_reset_s = LaunchConfiguration("motion_guard_pose_gap_reset_s")
+    motion_guard_soft_xy_mps = LaunchConfiguration("motion_guard_soft_xy_mps")
+    motion_guard_soft_z_mps = LaunchConfiguration("motion_guard_soft_z_mps")
+    motion_guard_soft_yaw_radps = LaunchConfiguration("motion_guard_soft_yaw_radps")
+    motion_guard_hard_xy_mps = LaunchConfiguration("motion_guard_hard_xy_mps")
+    motion_guard_hard_z_mps = LaunchConfiguration("motion_guard_hard_z_mps")
+    motion_guard_hard_yaw_radps = LaunchConfiguration("motion_guard_hard_yaw_radps")
+    motion_guard_feedback_hard_xy_mps = LaunchConfiguration("motion_guard_feedback_hard_xy_mps")
+    motion_guard_feedback_hard_z_mps = LaunchConfiguration("motion_guard_feedback_hard_z_mps")
+    motion_guard_pose_soft_xy_step_m = LaunchConfiguration("motion_guard_pose_soft_xy_step_m")
+    motion_guard_pose_soft_z_step_m = LaunchConfiguration("motion_guard_pose_soft_z_step_m")
+    motion_guard_pose_soft_yaw_step_rad = LaunchConfiguration("motion_guard_pose_soft_yaw_step_rad")
+    motion_guard_pose_hard_xy_step_m = LaunchConfiguration("motion_guard_pose_hard_xy_step_m")
+    motion_guard_pose_hard_z_step_m = LaunchConfiguration("motion_guard_pose_hard_z_step_m")
+    motion_guard_pose_hard_yaw_step_rad = LaunchConfiguration("motion_guard_pose_hard_yaw_step_rad")
     start_mono_camera = LaunchConfiguration("start_mono_camera")
     camera_backend = LaunchConfiguration("camera_backend")
     camera_device = LaunchConfiguration("camera_device")
@@ -157,14 +175,8 @@ def generate_launch_description():
     start_orbbec_camera_for_openvins = PythonExpression(
         ["'false' if '", start_orbbec_depth_camera, "' == 'true' else 'true'"]
     )
-    pre_takeoff_reset_service = PythonExpression(
-        [
-            "'' if '",
-            start_openvins_orbbec,
-            "'.lower() != 'true' else '/' + '",
-            openvins_orbbec_namespace,
-            "'.lstrip('/') + '/reset'",
-        ]
+    pre_takeoff_reset_service = conditional_namespaced_path(
+        start_openvins_orbbec, openvins_orbbec_namespace, "/reset"
     )
 
     mono_camera_launch = IncludeLaunchDescription(
@@ -326,10 +338,28 @@ def generate_launch_description():
             {"vehicle_command_topic": vehicle_command_topic},
             {"px4_local_position_topic": vehicle_local_position_topic},
             {"vehicle_status_topic": vehicle_status_topic},
+            {"base_frame_id": base_frame_id},
             {"pre_takeoff_reset_service": pre_takeoff_reset_service},
             {"takeoff_height_m": takeoff_height_m},
             {"max_velocity_setpoint_mps": max_velocity_setpoint_mps},
             {"max_acceleration_setpoint_mps2": max_acceleration_setpoint_mps2},
+            {"motion_guard_enabled": motion_guard_enabled},
+            {"motion_guard_soft_dwell_s": motion_guard_soft_dwell_s},
+            {"motion_guard_pose_gap_reset_s": motion_guard_pose_gap_reset_s},
+            {"motion_guard_soft_xy_mps": motion_guard_soft_xy_mps},
+            {"motion_guard_soft_z_mps": motion_guard_soft_z_mps},
+            {"motion_guard_soft_yaw_radps": motion_guard_soft_yaw_radps},
+            {"motion_guard_hard_xy_mps": motion_guard_hard_xy_mps},
+            {"motion_guard_hard_z_mps": motion_guard_hard_z_mps},
+            {"motion_guard_hard_yaw_radps": motion_guard_hard_yaw_radps},
+            {"motion_guard_feedback_hard_xy_mps": motion_guard_feedback_hard_xy_mps},
+            {"motion_guard_feedback_hard_z_mps": motion_guard_feedback_hard_z_mps},
+            {"motion_guard_pose_soft_xy_step_m": motion_guard_pose_soft_xy_step_m},
+            {"motion_guard_pose_soft_z_step_m": motion_guard_pose_soft_z_step_m},
+            {"motion_guard_pose_soft_yaw_step_rad": motion_guard_pose_soft_yaw_step_rad},
+            {"motion_guard_pose_hard_xy_step_m": motion_guard_pose_hard_xy_step_m},
+            {"motion_guard_pose_hard_z_step_m": motion_guard_pose_hard_z_step_m},
+            {"motion_guard_pose_hard_yaw_step_rad": motion_guard_pose_hard_yaw_step_rad},
         ],
     )
 
@@ -352,6 +382,23 @@ def generate_launch_description():
         DeclareLaunchArgument("takeoff_height_m", default_value="0.25"),
         DeclareLaunchArgument("max_velocity_setpoint_mps", default_value="0.40"),
         DeclareLaunchArgument("max_acceleration_setpoint_mps2", default_value="0.60"),
+        DeclareLaunchArgument("motion_guard_enabled", default_value="true"),
+        DeclareLaunchArgument("motion_guard_soft_dwell_s", default_value="2.0"),
+        DeclareLaunchArgument("motion_guard_pose_gap_reset_s", default_value="0.40"),
+        DeclareLaunchArgument("motion_guard_soft_xy_mps", default_value="0.40"),
+        DeclareLaunchArgument("motion_guard_soft_z_mps", default_value="0.25"),
+        DeclareLaunchArgument("motion_guard_soft_yaw_radps", default_value="0.60"),
+        DeclareLaunchArgument("motion_guard_hard_xy_mps", default_value="0.55"),
+        DeclareLaunchArgument("motion_guard_hard_z_mps", default_value="0.35"),
+        DeclareLaunchArgument("motion_guard_hard_yaw_radps", default_value="0.90"),
+        DeclareLaunchArgument("motion_guard_feedback_hard_xy_mps", default_value="0.65"),
+        DeclareLaunchArgument("motion_guard_feedback_hard_z_mps", default_value="0.45"),
+        DeclareLaunchArgument("motion_guard_pose_soft_xy_step_m", default_value="0.25"),
+        DeclareLaunchArgument("motion_guard_pose_soft_z_step_m", default_value="0.12"),
+        DeclareLaunchArgument("motion_guard_pose_soft_yaw_step_rad", default_value="0.35"),
+        DeclareLaunchArgument("motion_guard_pose_hard_xy_step_m", default_value="0.50"),
+        DeclareLaunchArgument("motion_guard_pose_hard_z_step_m", default_value="0.25"),
+        DeclareLaunchArgument("motion_guard_pose_hard_yaw_step_rad", default_value="0.70"),
         DeclareLaunchArgument("start_mono_camera", default_value="true"),
         DeclareLaunchArgument("start_orbbec_depth_camera", default_value="false"),
         DeclareLaunchArgument("start_openvins_orbbec", default_value="true"),

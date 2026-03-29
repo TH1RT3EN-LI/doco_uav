@@ -252,12 +252,15 @@ private:
       odom_msg.pose.pose.position.x = snapshot.p_enu_m[0];
       odom_msg.pose.pose.position.y = snapshot.p_enu_m[1];
       odom_msg.pose.pose.position.z = 0.0;
-      odom_msg.twist.twist.linear.x = snapshot.v_enu_mps[0];
-      odom_msg.twist.twist.linear.y = snapshot.v_enu_mps[1];
-      odom_msg.twist.twist.linear.z = 0.0;
 
       std::fill(odom_msg.pose.covariance.begin(), odom_msg.pose.covariance.end(), 0.0);
       std::fill(odom_msg.twist.covariance.begin(), odom_msg.twist.covariance.end(), 0.0);
+
+      if (snapshot.velocity_valid) {
+        odom_msg.twist.twist.linear.x = snapshot.v_enu_mps[0];
+        odom_msg.twist.twist.linear.y = snapshot.v_enu_mps[1];
+        odom_msg.twist.twist.linear.z = 0.0;
+      }
 
       if (snapshot.covariance_valid) {
         odom_msg.pose.covariance[0] = snapshot.sigma_xy_enu_m2.xx;
