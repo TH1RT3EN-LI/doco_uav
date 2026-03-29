@@ -68,6 +68,8 @@ fast_threshold: 14
 grid_x: 8
 grid_y: 6
 min_px_dist: 12
+klt_pyr_levels: 5
+klt_win_size: 17
 knn_ratio: 0.70
 track_frequency: 30
 downsample_cameras: false

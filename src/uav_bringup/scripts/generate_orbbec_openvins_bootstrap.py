@@ -39,6 +39,8 @@ RUNTIME_TUNING_VARIANTS = {
             "grid_x": 8,
             "grid_y": 6,
             "min_px_dist": 12,
+            "klt_pyr_levels": 5,
+            "klt_win_size": 17,
         },
     },
     "feature_memory": {
@@ -56,6 +58,8 @@ RUNTIME_TUNING_VARIANTS = {
             "grid_x": 8,
             "grid_y": 6,
             "min_px_dist": 11,
+            "klt_pyr_levels": 6,
+            "klt_win_size": 19,
         },
     },
     "feature_dense": {
@@ -73,10 +77,31 @@ RUNTIME_TUNING_VARIANTS = {
             "grid_x": 8,
             "grid_y": 6,
             "min_px_dist": 10,
+            "klt_pyr_levels": 6,
+            "klt_win_size": 19,
             "up_msckf_sigma_px": 1.25,
             "up_msckf_chi2_multipler": 1.25,
             "up_slam_sigma_px": 1.25,
             "up_slam_chi2_multipler": 1.25,
+        },
+    },
+    "feature_motion": {
+        "filename": "estimator_config.flight.feature_motion.yaml",
+        "description": "Prioritizes stronger, better-spaced tracks and a larger KLT search window for motion retention.",
+        "overrides": {
+            "max_clones": 15,
+            "max_slam": 110,
+            "max_slam_in_update": 40,
+            "max_msckf_in_update": 64,
+            "dt_slam_delay": 2,
+            "init_max_features": 132,
+            "num_pts": 300,
+            "fast_threshold": 16,
+            "grid_x": 8,
+            "grid_y": 6,
+            "min_px_dist": 13,
+            "klt_pyr_levels": 6,
+            "klt_win_size": 21,
         },
     },
 }
@@ -295,6 +320,8 @@ def estimator_config_text(
         "grid_x": 5,
         "grid_y": 5,
         "min_px_dist": 15,
+        "klt_pyr_levels": 5,
+        "klt_win_size": 15,
         "track_frequency": int(round(camera_rate_hz)),
         "num_opencv_threads": 4,
         "up_msckf_sigma_px": 1,
@@ -382,6 +409,8 @@ fast_threshold: {fast_threshold}
 grid_x: {grid_x}
 grid_y: {grid_y}
 min_px_dist: {min_px_dist}
+klt_pyr_levels: {klt_pyr_levels}
+klt_win_size: {klt_win_size}
 knn_ratio: 0.70
 track_frequency: {track_frequency}
 downsample_cameras: false
@@ -588,6 +617,7 @@ def summary_text(
         "- `estimator_config.flight.feature_balanced.yaml`: higher feature count with moderate memory growth",
         "- `estimator_config.flight.feature_memory.yaml`: longer memory window and larger SLAM landmark pool",
         "- `estimator_config.flight.feature_dense.yaml`: most aggressive weak-texture profile",
+        "- `estimator_config.flight.feature_motion.yaml`: stronger, wider-search KLT tracking for motion retention",
         "- `kalibr_imucam_chain.yaml`: camera/IMU bootstrap chain",
         "- `kalibr_imu_chain.yaml`: IMU noise bootstrap chain",
         "- `mask0.pgm`, `mask1.pgm`: bottom rectangular masks generated from current resolution",

@@ -14,7 +14,7 @@ calib_imu_intrinsics: false
 calib_imu_g_sensitivity: false
 
 max_clones: 15
-max_slam: 100
+max_slam: 110
 max_slam_in_update: 40
 max_msckf_in_update: 64
 dt_slam_delay: 2
@@ -35,7 +35,7 @@ zupt_only_at_beginning: true
 init_window_time: 2.0
 init_imu_thresh: 1.5
 init_max_disparity: 15.0
-init_max_features: 144
+init_max_features: 132
 
 init_dyn_use: false
 init_dyn_mle_opt_calib: false
@@ -63,13 +63,13 @@ filepath_std: "/tmp/ov_estimate_std.txt"
 filepath_gt: "/tmp/ov_groundtruth.txt"
 
 use_klt: true
-num_pts: 360
-fast_threshold: 12
+num_pts: 300
+fast_threshold: 16
 grid_x: 8
 grid_y: 6
-min_px_dist: 11
+min_px_dist: 13
 klt_pyr_levels: 6
-klt_win_size: 19
+klt_win_size: 21
 knn_ratio: 0.70
 track_frequency: 30
 downsample_cameras: false
