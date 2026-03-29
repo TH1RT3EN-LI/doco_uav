@@ -33,7 +33,7 @@ bool isFiniteQuaternion(const std::array<float, 4> & q)
     return false;
   }
 
-  const double norm_sq =SDFfasdfasdfasdf
+  const double norm_sq =
     static_cast<double>(q[0]) * static_cast<double>(q[0]) +
     static_cast<double>(q[1]) * static_cast<double>(q[1]) +
     static_cast<double>(q[2]) * static_cast<double>(q[2]) +
@@ -99,7 +99,6 @@ bool hasValidOdometryVelocityBody(const px4_msgs::msg::VehicleOdometry & msg)
   return msg.velocity_frame == px4_msgs::msg::VehicleOdometry::VELOCITY_FRAME_BODY_FRD &&
          isFiniteArray(msg.velocity);
 }
-SDFfasdfasdfasdf
 std::array<float, 4> yawNedQuaternionArray(float yaw_ned_rad)
 {
   tf2::Quaternion quaternion;
