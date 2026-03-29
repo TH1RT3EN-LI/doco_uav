@@ -19,6 +19,68 @@ DEFAULT_GYRO_NOISE_DENSITY = 0.00020544166
 DEFAULT_GYRO_RANDOM_WALK = 0.00001110622
 DEFAULT_MASK_BOTTOM_HEIGHT_RATIO = 1.0 / 6.0
 
+RUNTIME_TUNING_VARIANTS = {
+    "default": {
+        "filename": "estimator_config.flight.yaml",
+        "description": "Current balanced runtime profile for 30 Hz stereo IR + 200 Hz IMU.",
+        "overrides": {},
+    },
+    "feature_balanced": {
+        "filename": "estimator_config.flight.feature_balanced.yaml",
+        "description": "Moderately increases feature count and temporal memory while keeping update cost controlled.",
+        "overrides": {
+            "max_clones": 13,
+            "max_slam": 72,
+            "max_slam_in_update": 32,
+            "max_msckf_in_update": 56,
+            "init_max_features": 120,
+            "num_pts": 320,
+            "fast_threshold": 14,
+            "grid_x": 8,
+            "grid_y": 6,
+            "min_px_dist": 12,
+        },
+    },
+    "feature_memory": {
+        "filename": "estimator_config.flight.feature_memory.yaml",
+        "description": "Pushes clone and SLAM-landmark capacity further to retain tracks across longer motion gaps.",
+        "overrides": {
+            "max_clones": 15,
+            "max_slam": 100,
+            "max_slam_in_update": 40,
+            "max_msckf_in_update": 64,
+            "dt_slam_delay": 2,
+            "init_max_features": 144,
+            "num_pts": 360,
+            "fast_threshold": 12,
+            "grid_x": 8,
+            "grid_y": 6,
+            "min_px_dist": 11,
+        },
+    },
+    "feature_dense": {
+        "filename": "estimator_config.flight.feature_dense.yaml",
+        "description": "Most aggressive profile for weak-texture scenes, with dense extraction and a larger landmark budget.",
+        "overrides": {
+            "max_clones": 15,
+            "max_slam": 140,
+            "max_slam_in_update": 56,
+            "max_msckf_in_update": 80,
+            "dt_slam_delay": 2,
+            "init_max_features": 160,
+            "num_pts": 440,
+            "fast_threshold": 10,
+            "grid_x": 8,
+            "grid_y": 6,
+            "min_px_dist": 10,
+            "up_msckf_sigma_px": 1.25,
+            "up_msckf_chi2_multipler": 1.25,
+            "up_slam_sigma_px": 1.25,
+            "up_slam_chi2_multipler": 1.25,
+        },
+    },
+}
+
 Transform = Tuple[List[List[float]], List[float]]
 
 
@@ -212,14 +274,45 @@ def format_transform(transform: Transform) -> List[str]:
     ]
 
 
-def estimator_config_text(enable_online_calibration: bool, camera_rate_hz: float) -> str:
-    extrinsics_value = "true" if enable_online_calibration else "false"
-    timeoffset_value = "true" if enable_online_calibration else "false"
-    try_zupt_value = "true"
-    zupt_only_at_beginning_value = "true"
-    fast_threshold_value = 15 if enable_online_calibration else 18
-    num_opencv_threads_value = 4
-    return f'''%YAML:1.0
+def estimator_config_text(
+    enable_online_calibration: bool,
+    camera_rate_hz: float,
+    tuning_variant: str = "default",
+) -> str:
+    settings = {
+        "extrinsics_value": "true" if enable_online_calibration else "false",
+        "timeoffset_value": "true" if enable_online_calibration else "false",
+        "try_zupt_value": "true",
+        "zupt_only_at_beginning_value": "true",
+        "max_clones": 11,
+        "max_slam": 50,
+        "max_slam_in_update": 25,
+        "max_msckf_in_update": 40,
+        "dt_slam_delay": 1,
+        "init_max_features": 80,
+        "num_pts": 220,
+        "fast_threshold": 15 if enable_online_calibration else 18,
+        "grid_x": 5,
+        "grid_y": 5,
+        "min_px_dist": 15,
+        "track_frequency": int(round(camera_rate_hz)),
+        "num_opencv_threads": 4,
+        "up_msckf_sigma_px": 1,
+        "up_msckf_chi2_multipler": 1,
+        "up_slam_sigma_px": 1,
+        "up_slam_chi2_multipler": 1,
+        "up_aruco_sigma_px": 1,
+        "up_aruco_chi2_multipler": 1,
+    }
+
+    if not enable_online_calibration:
+        if tuning_variant not in RUNTIME_TUNING_VARIANTS:
+            raise BootstrapError(
+                f"unknown runtime tuning variant `{tuning_variant}`"
+            )
+        settings.update(RUNTIME_TUNING_VARIANTS[tuning_variant]["overrides"])
+
+    return """%YAML:1.0
 
 verbosity: "INFO"
 
@@ -234,11 +327,11 @@ calib_cam_timeoffset: {timeoffset_value}
 calib_imu_intrinsics: false
 calib_imu_g_sensitivity: false
 
-max_clones: 11
-max_slam: 50
-max_slam_in_update: 25
-max_msckf_in_update: 40
-dt_slam_delay: 1
+max_clones: {max_clones}
+max_slam: {max_slam}
+max_slam_in_update: {max_slam_in_update}
+max_msckf_in_update: {max_msckf_in_update}
+dt_slam_delay: {dt_slam_delay}
 
 gravity_mag: 9.81
 
@@ -256,7 +349,7 @@ zupt_only_at_beginning: {zupt_only_at_beginning_value}
 init_window_time: 2.0
 init_imu_thresh: 1.5
 init_max_disparity: 15.0
-init_max_features: 80
+init_max_features: {init_max_features}
 
 init_dyn_use: false
 init_dyn_mle_opt_calib: false
@@ -284,27 +377,27 @@ filepath_std: "/tmp/ov_estimate_std.txt"
 filepath_gt: "/tmp/ov_groundtruth.txt"
 
 use_klt: true
-num_pts: 220
-fast_threshold: {fast_threshold_value}
-grid_x: 5
-grid_y: 5
-min_px_dist: 15
+num_pts: {num_pts}
+fast_threshold: {fast_threshold}
+grid_x: {grid_x}
+grid_y: {grid_y}
+min_px_dist: {min_px_dist}
 knn_ratio: 0.70
-track_frequency: {int(round(camera_rate_hz))}
+track_frequency: {track_frequency}
 downsample_cameras: false
-num_opencv_threads: {num_opencv_threads_value}
+num_opencv_threads: {num_opencv_threads}
 histogram_method: "CLAHE"
 
 use_aruco: false
 num_aruco: 1024
 downsize_aruco: true
 
-up_msckf_sigma_px: 1
-up_msckf_chi2_multipler: 1
-up_slam_sigma_px: 1
-up_slam_chi2_multipler: 1
-up_aruco_sigma_px: 1
-up_aruco_chi2_multipler: 1
+up_msckf_sigma_px: {up_msckf_sigma_px}
+up_msckf_chi2_multipler: {up_msckf_chi2_multipler}
+up_slam_sigma_px: {up_slam_sigma_px}
+up_slam_chi2_multipler: {up_slam_chi2_multipler}
+up_aruco_sigma_px: {up_aruco_sigma_px}
+up_aruco_chi2_multipler: {up_aruco_chi2_multipler}
 
 use_mask: true
 mask0: "mask0.pgm"
@@ -312,7 +405,7 @@ mask1: "mask1.pgm"
 
 relative_config_imu: "kalibr_imu_chain.yaml"
 relative_config_imucam: "kalibr_imucam_chain.yaml"
-'''
+""".format(**settings)
 
 
 def imucam_chain_text(
@@ -491,7 +584,10 @@ def summary_text(
         "## Files",
         "",
         "- `estimator_config.calibration.yaml`: online calibration profile",
-        "- `estimator_config.flight.yaml`: frozen flight profile",
+        "- `estimator_config.flight.yaml`: current balanced runtime profile",
+        "- `estimator_config.flight.feature_balanced.yaml`: higher feature count with moderate memory growth",
+        "- `estimator_config.flight.feature_memory.yaml`: longer memory window and larger SLAM landmark pool",
+        "- `estimator_config.flight.feature_dense.yaml`: most aggressive weak-texture profile",
         "- `kalibr_imucam_chain.yaml`: camera/IMU bootstrap chain",
         "- `kalibr_imu_chain.yaml`: IMU noise bootstrap chain",
         "- `mask0.pgm`, `mask1.pgm`: bottom rectangular masks generated from current resolution",
@@ -503,6 +599,7 @@ def summary_text(
         "- Intrinsics stay frozen during online calibration; only camera extrinsics and camera/IMU time offset are enabled.",
         "- If `gyro/imu_info` or `accel/imu_info` is missing, the script falls back to project default noise values rather than device-reported values.",
         "- Generated masks suppress the lower rectangular airframe intrusion band and should be refined later if the mounted airframe changes.",
+        "- Runtime flight variants all reuse the same camera chain and masks; rerun bootstrap at the target IR resolution before freezing them for flight.",
         "",
         "## Warnings",
         "",
@@ -612,8 +709,15 @@ def main() -> int:
         output_dir = resolve_output_dir(args.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        write_text(output_dir / "estimator_config.calibration.yaml", estimator_config_text(True, args.camera_rate_hz))
-        write_text(output_dir / "estimator_config.flight.yaml", estimator_config_text(False, args.camera_rate_hz))
+        write_text(
+            output_dir / "estimator_config.calibration.yaml",
+            estimator_config_text(True, args.camera_rate_hz),
+        )
+        for variant_name, variant in RUNTIME_TUNING_VARIANTS.items():
+            write_text(
+                output_dir / variant["filename"],
+                estimator_config_text(False, args.camera_rate_hz, variant_name),
+            )
         write_text(
             output_dir / "kalibr_imucam_chain.yaml",
             imucam_chain_text(

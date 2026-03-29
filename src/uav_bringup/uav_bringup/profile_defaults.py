@@ -26,6 +26,13 @@ DEFAULT_ORBBEC_IR_STREAM = {
     "format": "ANY",
 }
 
+DEFAULT_ORBBEC_IR_STREAM_720P = {
+    "width": "1280",
+    "height": "720",
+    "fps": "30",
+    "format": "Y8",
+}
+
 DEFAULT_ORBBEC_IR_EXPOSURE = {
     "enable_auto_exposure": "true",
     "exposure": "-1",

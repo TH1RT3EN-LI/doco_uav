@@ -7,13 +7,15 @@ from pathlib import Path
 from typing import Dict, Tuple
 
 
-REQUIRED_FILES = (
-    "estimator_config.flight.yaml",
+REQUIRED_BASE_FILES = (
     "kalibr_imucam_chain.yaml",
     "kalibr_imu_chain.yaml",
     "mask0.pgm",
     "mask1.pgm",
 )
+
+REQUIRED_RUNTIME_CONFIG = "estimator_config.flight.yaml"
+RUNTIME_CONFIG_GLOB = "estimator_config.flight*.yaml"
 
 REQUIRED_RUNTIME_BOOL_VALUES = {
     "calib_cam_extrinsics": False,
@@ -101,6 +103,12 @@ def normalize_scalar(value: str) -> str:
     return normalized
 
 
+def list_runtime_configs(config_dir: Path) -> list[str]:
+    return sorted(
+        path.name for path in config_dir.glob(RUNTIME_CONFIG_GLOB) if path.is_file()
+    )
+
+
 def validate_runtime_config(path: Path) -> Tuple[bool, list[str]]:
     values = parse_top_level_scalars(path)
     problems: list[str] = []
@@ -123,13 +131,40 @@ def validate_runtime_config(path: Path) -> Tuple[bool, list[str]]:
 
 
 def ensure_required_bootstrap_files(bootstrap_dir: Path) -> Tuple[bool, list[str]]:
-    missing = [name for name in REQUIRED_FILES if not (bootstrap_dir / name).exists()]
+    missing = [name for name in REQUIRED_BASE_FILES if not (bootstrap_dir / name).exists()]
+    if not (bootstrap_dir / REQUIRED_RUNTIME_CONFIG).exists():
+        missing.append(REQUIRED_RUNTIME_CONFIG)
     return not missing, missing
 
 
-def copy_required_files(bootstrap_dir: Path, frozen_dir: Path) -> None:
+def validate_runtime_configs(bootstrap_dir: Path) -> Tuple[bool, list[str], list[str]]:
+    runtime_configs = list_runtime_configs(bootstrap_dir)
+    problems: list[str] = []
+
+    if REQUIRED_RUNTIME_CONFIG not in runtime_configs:
+        problems.append(
+            f"required runtime config `{REQUIRED_RUNTIME_CONFIG}` is missing from bootstrap"
+        )
+        return False, runtime_configs, problems
+
+    for name in runtime_configs:
+        valid, config_problems = validate_runtime_config(bootstrap_dir / name)
+        for problem in config_problems:
+            problems.append(f"{name}: {problem}")
+
+    return not problems, runtime_configs, problems
+
+
+def copy_required_files(bootstrap_dir: Path, frozen_dir: Path, runtime_configs: list[str]) -> None:
     frozen_dir.mkdir(parents=True, exist_ok=True)
-    for name in REQUIRED_FILES:
+
+    for name in list_runtime_configs(frozen_dir):
+        if name not in runtime_configs:
+            stale_path = frozen_dir / name
+            stale_path.unlink()
+            print(f"removed stale {stale_path}")
+
+    for name in (*REQUIRED_BASE_FILES, *runtime_configs):
         src = bootstrap_dir / name
         dst = frozen_dir / name
         shutil.copy2(src, dst)
@@ -152,8 +187,7 @@ def main() -> int:
         )
         return 1
 
-    runtime_config = bootstrap_dir / "estimator_config.flight.yaml"
-    valid_runtime_config, problems = validate_runtime_config(runtime_config)
+    valid_runtime_config, runtime_configs, problems = validate_runtime_configs(bootstrap_dir)
     if problems and not args.force:
         for problem in problems:
             print(f"error: {problem}", file=sys.stderr)
@@ -168,7 +202,7 @@ def main() -> int:
     print(f"bootstrap_dir: {bootstrap_dir}")
     print(f"frozen_dir: {frozen_dir}")
 
-    copy_required_files(bootstrap_dir, frozen_dir)
+    copy_required_files(bootstrap_dir, frozen_dir, runtime_configs)
 
     if problems:
         for problem in problems:
