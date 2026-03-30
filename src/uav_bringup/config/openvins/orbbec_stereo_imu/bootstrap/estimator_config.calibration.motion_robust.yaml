@@ -7,9 +7,9 @@ integration: "rk4"
 use_stereo: true
 max_cameras: 2
 
-calib_cam_extrinsics: false
+calib_cam_extrinsics: true
 calib_cam_intrinsics: false
-calib_cam_timeoffset: false
+calib_cam_timeoffset: true
 calib_imu_intrinsics: false
 calib_imu_g_sensitivity: false
 
@@ -68,21 +68,21 @@ fast_threshold: 18
 grid_x: 5
 grid_y: 5
 min_px_dist: 15
-klt_pyr_levels: 5
-klt_win_size: 15
+klt_pyr_levels: 6
+klt_win_size: 21
 klt_enable_prediction: true
-klt_enable_pixel_velocity_prediction: false
+klt_enable_pixel_velocity_prediction: true
 klt_pixel_velocity_clamp_px: 40
 klt_fb_check: true
 klt_fb_thresh_px: 0.5
 klt_reset_consecutive_bad_frames: 3
 klt_retry_without_prediction: true
-klt_large_window_rescue: false
+klt_large_window_rescue: true
 klt_large_window_size: 31
 klt_large_window_levels: 7
 klt_rescue_min_track_age: 4
 klt_rescue_max_candidates: 60
-track_priority_mode: "fifo"
+track_priority_mode: "age"
 knn_ratio: 0.70
 track_frequency: 30
 track_frequency_slack: 0.10

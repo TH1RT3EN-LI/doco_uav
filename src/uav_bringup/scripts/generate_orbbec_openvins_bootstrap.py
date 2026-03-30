@@ -19,11 +19,99 @@ DEFAULT_GYRO_NOISE_DENSITY = 0.00020544166
 DEFAULT_GYRO_RANDOM_WALK = 0.00001110622
 DEFAULT_MASK_BOTTOM_HEIGHT_RATIO = 1.0 / 6.0
 
+CALIBRATION_TUNING_VARIANTS = {
+    "default": {
+        "filename": "estimator_config.calibration.yaml",
+        "description": "Baseline online calibration profile.",
+        "overrides": {},
+    },
+    "calibration_motion_robust": {
+        "filename": "estimator_config.calibration.motion_robust.yaml",
+        "description": "Motion-robust online calibration profile with stronger KLT retention and no backend frame skipping.",
+        "overrides": {
+            "num_pts": 220,
+            "fast_threshold": 18,
+            "grid_x": 5,
+            "grid_y": 5,
+            "min_px_dist": 15,
+            "klt_pyr_levels": 6,
+            "klt_win_size": 21,
+            "klt_enable_pixel_velocity_prediction": "true",
+            "klt_large_window_rescue": "true",
+            "track_priority_mode": "age",
+            "track_frequency_slack": 0.10,
+            "estimator_camera_update_stride": 1,
+        },
+    },
+}
+
 RUNTIME_TUNING_VARIANTS = {
     "default": {
         "filename": "estimator_config.flight.yaml",
-        "description": "Current balanced runtime profile for 30 Hz stereo IR + 200 Hz IMU.",
-        "overrides": {},
+        "description": "Baseline runtime profile kept as the A/B reference for hardware validation.",
+        "overrides": {
+            "num_pts": 220,
+            "fast_threshold": 18,
+            "grid_x": 5,
+            "grid_y": 5,
+            "min_px_dist": 15,
+            "klt_pyr_levels": 5,
+            "klt_win_size": 15,
+            "track_frequency_slack": 0.10,
+            "estimator_camera_update_stride": 1,
+        },
+    },
+    "flight_stable": {
+        "filename": "estimator_config.flight_stable.yaml",
+        "description": "Compatibility alias of the baseline runtime profile.",
+        "overrides": {
+            "num_pts": 220,
+            "fast_threshold": 18,
+            "grid_x": 5,
+            "grid_y": 5,
+            "min_px_dist": 15,
+            "klt_pyr_levels": 5,
+            "klt_win_size": 15,
+            "track_frequency_slack": 0.10,
+            "estimator_camera_update_stride": 1,
+        },
+    },
+    "motion_v2": {
+        "filename": "estimator_config.flight.motion_v2.yaml",
+        "description": "Motion-V2 runtime profile with multi-stage KLT, pixel-velocity prediction, and age-priority retention.",
+        "overrides": {
+            "num_pts": 220,
+            "fast_threshold": 18,
+            "grid_x": 5,
+            "grid_y": 5,
+            "min_px_dist": 15,
+            "klt_pyr_levels": 6,
+            "klt_win_size": 21,
+            "klt_enable_pixel_velocity_prediction": "true",
+            "klt_large_window_rescue": "true",
+            "track_priority_mode": "age",
+            "track_frequency_slack": 0.10,
+            "estimator_camera_update_stride": 2,
+        },
+    },
+    "motion_v2_adaptive": {
+        "filename": "estimator_config.flight.motion_v2_adaptive.yaml",
+        "description": "Motion-V2 runtime profile with adaptive backend stride control.",
+        "overrides": {
+            "num_pts": 220,
+            "fast_threshold": 18,
+            "grid_x": 5,
+            "grid_y": 5,
+            "min_px_dist": 15,
+            "klt_pyr_levels": 6,
+            "klt_win_size": 21,
+            "klt_enable_pixel_velocity_prediction": "true",
+            "klt_large_window_rescue": "true",
+            "track_priority_mode": "age",
+            "track_frequency_slack": 0.10,
+            "estimator_camera_update_stride": 2,
+            "estimator_adaptive_update_stride": "true",
+        },
     },
     "feature_balanced": {
         "filename": "estimator_config.flight.feature_balanced.yaml",
@@ -41,6 +129,8 @@ RUNTIME_TUNING_VARIANTS = {
             "min_px_dist": 12,
             "klt_pyr_levels": 5,
             "klt_win_size": 17,
+            "track_frequency_slack": 0.10,
+            "estimator_camera_update_stride": 2,
         },
     },
     "feature_memory": {
@@ -60,6 +150,8 @@ RUNTIME_TUNING_VARIANTS = {
             "min_px_dist": 11,
             "klt_pyr_levels": 6,
             "klt_win_size": 19,
+            "track_frequency_slack": 0.10,
+            "estimator_camera_update_stride": 2,
         },
     },
     "feature_dense": {
@@ -83,6 +175,8 @@ RUNTIME_TUNING_VARIANTS = {
             "up_msckf_chi2_multipler": 1.25,
             "up_slam_sigma_px": 1.25,
             "up_slam_chi2_multipler": 1.25,
+            "track_frequency_slack": 0.10,
+            "estimator_camera_update_stride": 2,
         },
     },
     "feature_motion": {
@@ -102,6 +196,8 @@ RUNTIME_TUNING_VARIANTS = {
             "min_px_dist": 13,
             "klt_pyr_levels": 6,
             "klt_win_size": 21,
+            "track_frequency_slack": 0.10,
+            "estimator_camera_update_stride": 2,
         },
     },
 }
@@ -322,7 +418,22 @@ def estimator_config_text(
         "min_px_dist": 15,
         "klt_pyr_levels": 5,
         "klt_win_size": 15,
+        "klt_enable_prediction": "true",
+        "klt_enable_pixel_velocity_prediction": "false",
+        "klt_fb_check": "true",
+        "klt_fb_thresh_px": 0.5,
+        "klt_reset_consecutive_bad_frames": 3,
+        "klt_retry_without_prediction": "true",
+        "klt_large_window_rescue": "false",
+        "klt_large_window_size": 31,
+        "klt_large_window_levels": 7,
+        "klt_rescue_min_track_age": 4,
+        "klt_rescue_max_candidates": 60,
+        "track_priority_mode": "fifo",
         "track_frequency": int(round(camera_rate_hz)),
+        "track_frequency_slack": 0.10,
+        "estimator_camera_update_stride": 1 if enable_online_calibration else 2,
+        "estimator_adaptive_update_stride": "false",
         "num_opencv_threads": 4,
         "up_msckf_sigma_px": 1,
         "up_msckf_chi2_multipler": 1,
@@ -332,12 +443,12 @@ def estimator_config_text(
         "up_aruco_chi2_multipler": 1,
     }
 
-    if not enable_online_calibration:
-        if tuning_variant not in RUNTIME_TUNING_VARIANTS:
-            raise BootstrapError(
-                f"unknown runtime tuning variant `{tuning_variant}`"
-            )
-        settings.update(RUNTIME_TUNING_VARIANTS[tuning_variant]["overrides"])
+    tuning_profiles = CALIBRATION_TUNING_VARIANTS if enable_online_calibration else RUNTIME_TUNING_VARIANTS
+    if tuning_variant not in tuning_profiles:
+        raise BootstrapError(
+            f"unknown {'calibration' if enable_online_calibration else 'runtime'} tuning variant `{tuning_variant}`"
+        )
+    settings.update(tuning_profiles[tuning_variant]["overrides"])
 
     return """%YAML:1.0
 
@@ -411,8 +522,24 @@ grid_y: {grid_y}
 min_px_dist: {min_px_dist}
 klt_pyr_levels: {klt_pyr_levels}
 klt_win_size: {klt_win_size}
+klt_enable_prediction: {klt_enable_prediction}
+klt_enable_pixel_velocity_prediction: {klt_enable_pixel_velocity_prediction}
+klt_pixel_velocity_clamp_px: 40
+klt_fb_check: {klt_fb_check}
+klt_fb_thresh_px: {klt_fb_thresh_px}
+klt_reset_consecutive_bad_frames: {klt_reset_consecutive_bad_frames}
+klt_retry_without_prediction: {klt_retry_without_prediction}
+klt_large_window_rescue: {klt_large_window_rescue}
+klt_large_window_size: {klt_large_window_size}
+klt_large_window_levels: {klt_large_window_levels}
+klt_rescue_min_track_age: {klt_rescue_min_track_age}
+klt_rescue_max_candidates: {klt_rescue_max_candidates}
+track_priority_mode: "{track_priority_mode}"
 knn_ratio: 0.70
 track_frequency: {track_frequency}
+track_frequency_slack: {track_frequency_slack}
+estimator_camera_update_stride: {estimator_camera_update_stride}
+estimator_adaptive_update_stride: {estimator_adaptive_update_stride}
 downsample_cameras: false
 num_opencv_threads: {num_opencv_threads}
 histogram_method: "CLAHE"
@@ -612,8 +739,12 @@ def summary_text(
         "",
         "## Files",
         "",
-        "- `estimator_config.calibration.yaml`: online calibration profile",
-        "- `estimator_config.flight.yaml`: current balanced runtime profile",
+        "- `estimator_config.calibration.yaml`: baseline online calibration profile",
+        "- `estimator_config.calibration.motion_robust.yaml`: motion-robust online calibration profile",
+        "- `estimator_config.flight.yaml`: baseline runtime profile used for A/B reference",
+        "- `estimator_config.flight_stable.yaml`: compatibility alias of the baseline runtime profile",
+        "- `estimator_config.flight.motion_v2.yaml`: Motion-V2 runtime profile with multi-stage KLT",
+        "- `estimator_config.flight.motion_v2_adaptive.yaml`: Motion-V2 runtime profile with adaptive backend stride",
         "- `estimator_config.flight.feature_balanced.yaml`: higher feature count with moderate memory growth",
         "- `estimator_config.flight.feature_memory.yaml`: longer memory window and larger SLAM landmark pool",
         "- `estimator_config.flight.feature_dense.yaml`: most aggressive weak-texture profile",
@@ -630,6 +761,7 @@ def summary_text(
         "- If `gyro/imu_info` or `accel/imu_info` is missing, the script falls back to project default noise values rather than device-reported values.",
         "- Generated masks suppress the lower rectangular airframe intrusion band and should be refined later if the mounted airframe changes.",
         "- Runtime flight variants all reuse the same camera chain and masks; rerun bootstrap at the target IR resolution before freezing them for flight.",
+        "- Motion-V2 validation should compare `estimator_config.flight.yaml` against `estimator_config.flight.motion_v2*.yaml`, not against the older `feature_*` variants.",
         "",
         "## Warnings",
         "",
@@ -739,10 +871,11 @@ def main() -> int:
         output_dir = resolve_output_dir(args.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        write_text(
-            output_dir / "estimator_config.calibration.yaml",
-            estimator_config_text(True, args.camera_rate_hz),
-        )
+        for variant_name, variant in CALIBRATION_TUNING_VARIANTS.items():
+            write_text(
+                output_dir / variant["filename"],
+                estimator_config_text(True, args.camera_rate_hz, variant_name),
+            )
         for variant_name, variant in RUNTIME_TUNING_VARIANTS.items():
             write_text(
                 output_dir / variant["filename"],

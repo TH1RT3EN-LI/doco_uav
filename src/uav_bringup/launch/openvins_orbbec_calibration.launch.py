@@ -21,6 +21,7 @@ from uav_bringup.profile_defaults import (
 
 _OPENVINS_TUNING_PRESETS = {
     "default": "estimator_config.calibration.yaml",
+    "calibration_motion_robust": "estimator_config.calibration.motion_robust.yaml",
     "slam_bias": "estimator_config.calibration.autoexposure_slam_bias.yaml",
     "slam_bias_dense": "estimator_config.calibration.autoexposure_slam_bias_dense.yaml",
     "slam_bias_window": "estimator_config.calibration.autoexposure_slam_bias_window.yaml",
@@ -149,7 +150,7 @@ def generate_launch_description():
             DeclareLaunchArgument("frame_aggregate_mode", default_value="full_frame"),
             DeclareLaunchArgument("log_level", default_value="none"),
             DeclareLaunchArgument("openvins_namespace", default_value="ov_msckf"),
-            DeclareLaunchArgument("openvins_tuning_profile", default_value="default"),
+            DeclareLaunchArgument("openvins_tuning_profile", default_value="calibration_motion_robust"),
             DeclareLaunchArgument("openvins_config_path", default_value=""),
             DeclareLaunchArgument("openvins_verbosity", default_value="INFO"),
             DeclareLaunchArgument(
