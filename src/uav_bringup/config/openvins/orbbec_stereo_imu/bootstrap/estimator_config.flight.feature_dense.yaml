@@ -70,8 +70,14 @@ grid_y: 6
 min_px_dist: 10
 klt_pyr_levels: 6
 klt_win_size: 19
+klt_enable_prediction: true
+klt_fb_check: true
+klt_fb_thresh_px: 0.5
+klt_reset_consecutive_bad_frames: 3
 knn_ratio: 0.70
 track_frequency: 30
+track_frequency_slack: 0.10
+estimator_camera_update_stride: 2
 downsample_cameras: false
 num_opencv_threads: 4
 histogram_method: "CLAHE"
