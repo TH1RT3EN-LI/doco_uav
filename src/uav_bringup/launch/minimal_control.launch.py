@@ -8,16 +8,14 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
-from uav_bringup.launch_utils import conditional_namespaced_path
 from uav_bringup.profile_defaults import (
     DEFAULT_CAMERA_INTRINSICS,
     DEFAULT_CAMERA_TO_BODY,
     DEFAULT_ORBBEC_IR_EXPOSURE,
     DEFAULT_ORBBEC_IR_STREAM,
-    DEFAULT_ORBBEC_OPENVINS_PROFILE,
     DEFAULT_ORBBEC_STANDALONE_PROFILE,
     DEFAULT_STEREO_CAMERA_TO_BODY,
 )
@@ -114,14 +112,6 @@ def generate_launch_description():
     orbbec_enable_laser = LaunchConfiguration("orbbec_enable_laser")
     orbbec_enable_ldp = LaunchConfiguration("orbbec_enable_ldp")
 
-    start_openvins_orbbec = LaunchConfiguration("start_openvins_orbbec")
-    publish_px4_external_vision = LaunchConfiguration("publish_px4_external_vision")
-    openvins_orbbec_namespace = LaunchConfiguration("openvins_orbbec_namespace")
-    openvins_orbbec_config_path = LaunchConfiguration("openvins_orbbec_config_path")
-    openvins_sensor_roll_in_body_rad = LaunchConfiguration("openvins_sensor_roll_in_body_rad")
-    openvins_sensor_pitch_in_body_rad = LaunchConfiguration("openvins_sensor_pitch_in_body_rad")
-    openvins_sensor_yaw_in_body_rad = LaunchConfiguration("openvins_sensor_yaw_in_body_rad")
-
     default_recording_path = str(
         Path.home() / "uav_recordings" / f"mono_{datetime.now().strftime('%Y%m%d_%H%M%S')}.avi"
     )
@@ -132,52 +122,6 @@ def generate_launch_description():
     offboard_mode_topic = [fmu_namespace, "/in/offboard_control_mode"]
     trajectory_setpoint_topic = [fmu_namespace, "/in/trajectory_setpoint"]
     vehicle_command_topic = [fmu_namespace, "/in/vehicle_command"]
-
-    effective_orbbec_enable_left_ir = PythonExpression(
-        [f"'{DEFAULT_ORBBEC_OPENVINS_PROFILE['enable_left_ir']}' if '", start_openvins_orbbec, "' == 'true' else '", orbbec_enable_left_ir, "'"]
-    )
-    effective_orbbec_enable_right_ir = PythonExpression(
-        [f"'{DEFAULT_ORBBEC_OPENVINS_PROFILE['enable_right_ir']}' if '", start_openvins_orbbec, "' == 'true' else '", orbbec_enable_right_ir, "'"]
-    )
-    effective_orbbec_enable_depth = PythonExpression(
-        [f"'{DEFAULT_ORBBEC_OPENVINS_PROFILE['enable_depth']}' if '", start_openvins_orbbec, "' == 'true' else '", orbbec_enable_depth, "'"]
-    )
-    effective_orbbec_enable_color = PythonExpression(
-        [f"'{DEFAULT_ORBBEC_OPENVINS_PROFILE['enable_color']}' if '", start_openvins_orbbec, "' == 'true' else '", orbbec_enable_color, "'"]
-    )
-    effective_orbbec_enable_point_cloud = PythonExpression(
-        [f"'{DEFAULT_ORBBEC_OPENVINS_PROFILE['enable_point_cloud']}' if '", start_openvins_orbbec, "' == 'true' else '", orbbec_enable_point_cloud, "'"]
-    )
-    effective_orbbec_enable_colored_point_cloud = PythonExpression(
-        [
-            f"'{DEFAULT_ORBBEC_OPENVINS_PROFILE['enable_colored_point_cloud']}' if '",
-            start_openvins_orbbec,
-            "' == 'true' else '",
-            orbbec_enable_colored_point_cloud,
-            "'",
-        ]
-    )
-    effective_orbbec_enable_sync_output_accel_gyro = PythonExpression(
-        [
-            f"'{DEFAULT_ORBBEC_OPENVINS_PROFILE['enable_sync_output_accel_gyro']}' if '",
-            start_openvins_orbbec,
-            "' == 'true' else '",
-            orbbec_enable_sync_output_accel_gyro,
-            "'",
-        ]
-    )
-    effective_orbbec_enable_accel = PythonExpression(
-        [f"'{DEFAULT_ORBBEC_OPENVINS_PROFILE['enable_accel']}' if '", start_openvins_orbbec, "' == 'true' else '", orbbec_enable_accel, "'"]
-    )
-    effective_orbbec_enable_gyro = PythonExpression(
-        [f"'{DEFAULT_ORBBEC_OPENVINS_PROFILE['enable_gyro']}' if '", start_openvins_orbbec, "' == 'true' else '", orbbec_enable_gyro, "'"]
-    )
-    start_orbbec_camera_for_openvins = PythonExpression(
-        ["'false' if '", start_orbbec_depth_camera, "' == 'true' else 'true'"]
-    )
-    pre_takeoff_reset_service = conditional_namespaced_path(
-        start_openvins_orbbec, openvins_orbbec_namespace, "/reset"
-    )
 
     mono_camera_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(bringup_share, "launch", "mono_camera.launch.py")),
@@ -223,16 +167,16 @@ def generate_launch_description():
             "camera_roll": orbbec_camera_roll,
             "camera_pitch": orbbec_camera_pitch,
             "camera_yaw": orbbec_camera_yaw,
-            "enable_depth": effective_orbbec_enable_depth,
-            "enable_color": effective_orbbec_enable_color,
-            "enable_left_ir": effective_orbbec_enable_left_ir,
-            "enable_right_ir": effective_orbbec_enable_right_ir,
-            "enable_point_cloud": effective_orbbec_enable_point_cloud,
-            "enable_colored_point_cloud": effective_orbbec_enable_colored_point_cloud,
-            "enable_sync_output_accel_gyro": effective_orbbec_enable_sync_output_accel_gyro,
+            "enable_depth": orbbec_enable_depth,
+            "enable_color": orbbec_enable_color,
+            "enable_left_ir": orbbec_enable_left_ir,
+            "enable_right_ir": orbbec_enable_right_ir,
+            "enable_point_cloud": orbbec_enable_point_cloud,
+            "enable_colored_point_cloud": orbbec_enable_colored_point_cloud,
+            "enable_sync_output_accel_gyro": orbbec_enable_sync_output_accel_gyro,
             "enable_publish_extrinsic": orbbec_enable_publish_extrinsic,
-            "enable_accel": effective_orbbec_enable_accel,
-            "enable_gyro": effective_orbbec_enable_gyro,
+            "enable_accel": orbbec_enable_accel,
+            "enable_gyro": orbbec_enable_gyro,
             "accel_rate": orbbec_accel_rate,
             "gyro_rate": orbbec_gyro_rate,
             "left_ir_width": orbbec_left_ir_width,
@@ -250,58 +194,6 @@ def generate_launch_description():
             "ir_brightness": orbbec_ir_brightness,
             "enable_laser": orbbec_enable_laser,
             "enable_ldp": orbbec_enable_ldp,
-        }.items(),
-    )
-
-    openvins_orbbec_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(bringup_share, "launch", "openvins_orbbec.launch.py")),
-        condition=IfCondition(start_openvins_orbbec),
-        launch_arguments={
-            "start_openvins": start_openvins_orbbec,
-            "start_orbbec_camera": start_orbbec_camera_for_openvins,
-            "camera_name": orbbec_camera_name,
-            "base_frame_id": base_frame_id,
-            "camera_frame_id": orbbec_camera_frame_id,
-            "camera_x": orbbec_camera_x,
-            "camera_y": orbbec_camera_y,
-            "camera_z": orbbec_camera_z,
-            "camera_roll": orbbec_camera_roll,
-            "camera_pitch": orbbec_camera_pitch,
-            "camera_yaw": orbbec_camera_yaw,
-            "enable_depth": effective_orbbec_enable_depth,
-            "enable_color": effective_orbbec_enable_color,
-            "enable_left_ir": effective_orbbec_enable_left_ir,
-            "enable_right_ir": effective_orbbec_enable_right_ir,
-            "enable_point_cloud": effective_orbbec_enable_point_cloud,
-            "enable_colored_point_cloud": effective_orbbec_enable_colored_point_cloud,
-            "enable_sync_output_accel_gyro": effective_orbbec_enable_sync_output_accel_gyro,
-            "enable_publish_extrinsic": orbbec_enable_publish_extrinsic,
-            "enable_accel": effective_orbbec_enable_accel,
-            "enable_gyro": effective_orbbec_enable_gyro,
-            "accel_rate": orbbec_accel_rate,
-            "gyro_rate": orbbec_gyro_rate,
-            "left_ir_width": orbbec_left_ir_width,
-            "left_ir_height": orbbec_left_ir_height,
-            "left_ir_fps": orbbec_left_ir_fps,
-            "left_ir_format": orbbec_left_ir_format,
-            "right_ir_width": orbbec_right_ir_width,
-            "right_ir_height": orbbec_right_ir_height,
-            "right_ir_fps": orbbec_right_ir_fps,
-            "right_ir_format": orbbec_right_ir_format,
-            "enable_ir_auto_exposure": orbbec_enable_ir_auto_exposure,
-            "ir_exposure": orbbec_ir_exposure,
-            "ir_gain": orbbec_ir_gain,
-            "ir_ae_max_exposure": orbbec_ir_ae_max_exposure,
-            "ir_brightness": orbbec_ir_brightness,
-            "enable_laser": orbbec_enable_laser,
-            "enable_ldp": orbbec_enable_ldp,
-            "openvins_namespace": openvins_orbbec_namespace,
-            "openvins_config_path": openvins_orbbec_config_path,
-            "publish_px4_external_vision": publish_px4_external_vision,
-            "fmu_namespace": fmu_namespace,
-            "sensor_roll_in_body_rad": openvins_sensor_roll_in_body_rad,
-            "sensor_pitch_in_body_rad": openvins_sensor_pitch_in_body_rad,
-            "sensor_yaw_in_body_rad": openvins_sensor_yaw_in_body_rad,
         }.items(),
     )
 
@@ -339,7 +231,6 @@ def generate_launch_description():
             {"px4_local_position_topic": vehicle_local_position_topic},
             {"vehicle_status_topic": vehicle_status_topic},
             {"base_frame_id": base_frame_id},
-            {"pre_takeoff_reset_service": pre_takeoff_reset_service},
             {"takeoff_height_m": takeoff_height_m},
             {"max_velocity_setpoint_mps": max_velocity_setpoint_mps},
             {"max_acceleration_setpoint_mps2": max_acceleration_setpoint_mps2},
@@ -401,23 +292,6 @@ def generate_launch_description():
         DeclareLaunchArgument("motion_guard_pose_hard_yaw_step_rad", default_value="0.70"),
         DeclareLaunchArgument("start_mono_camera", default_value="true"),
         DeclareLaunchArgument("start_orbbec_depth_camera", default_value="false"),
-        DeclareLaunchArgument("start_openvins_orbbec", default_value="true"),
-        DeclareLaunchArgument("publish_px4_external_vision", default_value="true"),
-        DeclareLaunchArgument("openvins_orbbec_namespace", default_value="ov_msckf"),
-        DeclareLaunchArgument(
-            "openvins_orbbec_config_path",
-            default_value=os.path.join(
-                bringup_share,
-                "config",
-                "openvins",
-                "orbbec_stereo_imu",
-                "frozen_final",
-                "estimator_config.flight.yaml",
-            ),
-        ),
-        DeclareLaunchArgument("openvins_sensor_roll_in_body_rad", default_value="0.0"),
-        DeclareLaunchArgument("openvins_sensor_pitch_in_body_rad", default_value="0.0"),
-        DeclareLaunchArgument("openvins_sensor_yaw_in_body_rad", default_value="0.0"),
         DeclareLaunchArgument("camera_backend", default_value="legacy"),
         DeclareLaunchArgument("camera_device", default_value="/dev/video0"),
         DeclareLaunchArgument("camera_fourcc", default_value="MJPG"),
@@ -483,7 +357,6 @@ def generate_launch_description():
         DeclareLaunchArgument("orbbec_enable_ldp", default_value=DEFAULT_ORBBEC_STANDALONE_PROFILE["enable_ldp"]),
         mono_camera_launch,
         orbbec_depth_camera_launch,
-        openvins_orbbec_launch,
         fmu_topic_namespace_bridge,
         uav_state_bridge,
         uav_control,

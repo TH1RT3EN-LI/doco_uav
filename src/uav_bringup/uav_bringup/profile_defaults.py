@@ -57,37 +57,3 @@ DEFAULT_ORBBEC_STANDALONE_PROFILE = {
     "enable_laser": "false",
     "enable_ldp": "false",
 }
-
-DEFAULT_ORBBEC_OPENVINS_PROFILE = {
-    "enable_depth": "false",
-    "enable_color": "false",
-    "enable_left_ir": "true",
-    "enable_right_ir": "true",
-    "enable_point_cloud": "false",
-    "enable_colored_point_cloud": "false",
-    "enable_sync_output_accel_gyro": "true",
-    "enable_publish_extrinsic": "false",
-    "enable_accel": "true",
-    "enable_gyro": "true",
-    "accel_rate": "200hz",
-    "gyro_rate": "200hz",
-    "enable_laser": "false",
-    "enable_ldp": "false",
-}
-
-DEFAULT_ORBBEC_BOOTSTRAP_PROFILE = {
-    "enable_depth": "true",
-    "enable_color": DEFAULT_ORBBEC_OPENVINS_PROFILE["enable_color"],
-    "enable_left_ir": DEFAULT_ORBBEC_OPENVINS_PROFILE["enable_left_ir"],
-    "enable_right_ir": DEFAULT_ORBBEC_OPENVINS_PROFILE["enable_right_ir"],
-    "enable_point_cloud": DEFAULT_ORBBEC_OPENVINS_PROFILE["enable_point_cloud"],
-    "enable_colored_point_cloud": DEFAULT_ORBBEC_OPENVINS_PROFILE["enable_colored_point_cloud"],
-    "enable_sync_output_accel_gyro": DEFAULT_ORBBEC_OPENVINS_PROFILE["enable_sync_output_accel_gyro"],
-    "enable_publish_extrinsic": "true",
-    "enable_accel": DEFAULT_ORBBEC_OPENVINS_PROFILE["enable_accel"],
-    "enable_gyro": DEFAULT_ORBBEC_OPENVINS_PROFILE["enable_gyro"],
-    "accel_rate": DEFAULT_ORBBEC_OPENVINS_PROFILE["accel_rate"],
-    "gyro_rate": DEFAULT_ORBBEC_OPENVINS_PROFILE["gyro_rate"],
-    "enable_laser": DEFAULT_ORBBEC_OPENVINS_PROFILE["enable_laser"],
-    "enable_ldp": DEFAULT_ORBBEC_OPENVINS_PROFILE["enable_ldp"],
-}

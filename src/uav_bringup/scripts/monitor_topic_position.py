@@ -416,31 +416,6 @@ def convert_px4_position_to_ros_xyz(x: float, y: float, z: float, pose_frame: in
     return x, y, z, f"ROS 默认方向显示（原始: {describe_px4_pose_frame(pose_frame)})"
 
 
-def make_openvins_spec(topic_name: str) -> SourceSpec:
-    from nav_msgs.msg import Odometry
-
-    def extract(msg):
-        position = msg.pose.pose.position
-        stamp_s = float(msg.header.stamp.sec) + float(msg.header.stamp.nanosec) * 1e-9
-        frame_id = msg.header.frame_id or "<empty>"
-        child_frame_id = msg.child_frame_id or "<empty>"
-        return PositionSample(
-            x=float(position.x),
-            y=float(position.y),
-            z=float(position.z),
-            stamp_s=stamp_s,
-            frame_label=f"{frame_id} -> {child_frame_id}",
-        )
-
-    return SourceSpec(
-        key="openvins",
-        source_label="OpenVINS 输出位置",
-        topic_name=topic_name,
-        message_type=Odometry,
-        extractor=extract,
-    )
-
-
 def make_px4_spec(key: str, source_label: str, topic_name: str) -> SourceSpec:
     try:
         from px4_msgs.msg import VehicleOdometry
@@ -474,27 +449,18 @@ def make_px4_spec(key: str, source_label: str, topic_name: str) -> SourceSpec:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="GUI 方式实时监视 OpenVINS 与 PX4 的位置。")
+    parser = argparse.ArgumentParser(description="GUI 方式实时监视 PX4 视觉输入与融合输出的位置。")
     parser.add_argument(
         "--sources",
-        default="openvins,px4_in,px4_out",
-        help="要显示的数据源，默认全部显示：openvins,px4_in,px4_out",
+        default="px4_in,px4_out",
+        help="要显示的数据源，默认全部显示：px4_in,px4_out",
     )
     parser.add_argument(
         "--source",
         default=None,
-        help="兼容旧用法。若设置，则只显示单一路数据源。可选：openvins / px4_in / px4_out / px4",
+        help="兼容旧用法。若设置，则只显示单一路数据源。可选：px4_in / px4_out / px4",
     )
-    parser.add_argument(
-        "--topic",
-        default=None,
-        help="只在单一路模式下使用：覆盖该数据源的话题名。",
-    )
-    parser.add_argument(
-        "--openvins-topic",
-        default="/ov_msckf/odomimu",
-        help="OpenVINS 输出话题。",
-    )
+    parser.add_argument("--topic", default=None, help="只在单一路模式下使用：覆盖该数据源的话题名。")
     parser.add_argument(
         "--px4-input-topic",
         default="/fmu/in/vehicle_visual_odometry",
@@ -526,12 +492,10 @@ def build_source_specs(args) -> List[SourceSpec]:
         source_keys = [alias]
 
     builders = {
-        "openvins": lambda topic: make_openvins_spec(topic),
         "px4_in": lambda topic: make_px4_spec("px4_in", "发给 PX4 的视觉位置", topic),
         "px4_out": lambda topic: make_px4_spec("px4_out", "PX4 输出位置", topic),
     }
     default_topics = {
-        "openvins": args.openvins_topic,
         "px4_in": args.px4_input_topic,
         "px4_out": args.px4_output_topic,
     }

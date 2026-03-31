@@ -47,13 +47,6 @@ def generate_launch_description():
     record_video_output_path = LaunchConfiguration("record_video_output_path")
     record_video_fps = LaunchConfiguration("record_video_fps")
     record_video_fourcc = LaunchConfiguration("record_video_fourcc")
-    start_openvins_orbbec = LaunchConfiguration("start_openvins_orbbec")
-    publish_px4_external_vision = LaunchConfiguration("publish_px4_external_vision")
-    openvins_orbbec_namespace = LaunchConfiguration("openvins_orbbec_namespace")
-    openvins_orbbec_config_path = LaunchConfiguration("openvins_orbbec_config_path")
-    openvins_sensor_roll_in_body_rad = LaunchConfiguration("openvins_sensor_roll_in_body_rad")
-    openvins_sensor_pitch_in_body_rad = LaunchConfiguration("openvins_sensor_pitch_in_body_rad")
-    openvins_sensor_yaw_in_body_rad = LaunchConfiguration("openvins_sensor_yaw_in_body_rad")
     use_sim_time = LaunchConfiguration("use_sim_time")
     height_measurement_transport = LaunchConfiguration("height_measurement_transport")
     height_measurement_topic = LaunchConfiguration("height_measurement_topic")
@@ -91,13 +84,6 @@ def generate_launch_description():
             "motion_guard_pose_hard_z_step_m": motion_guard_pose_hard_z_step_m,
             "motion_guard_pose_hard_yaw_step_rad": motion_guard_pose_hard_yaw_step_rad,
             "record_mono_video": "false",
-            "start_openvins_orbbec": start_openvins_orbbec,
-            "publish_px4_external_vision": publish_px4_external_vision,
-            "openvins_orbbec_namespace": openvins_orbbec_namespace,
-            "openvins_orbbec_config_path": openvins_orbbec_config_path,
-            "openvins_sensor_roll_in_body_rad": openvins_sensor_roll_in_body_rad,
-            "openvins_sensor_pitch_in_body_rad": openvins_sensor_pitch_in_body_rad,
-            "openvins_sensor_yaw_in_body_rad": openvins_sensor_yaw_in_body_rad,
         }.items(),
     )
 
@@ -234,23 +220,6 @@ def generate_launch_description():
         DeclareLaunchArgument(
             "height_measurement_frame_id", default_value="uav_optical_flow_range_frame"
         ),
-        DeclareLaunchArgument("start_openvins_orbbec", default_value="true"),
-        DeclareLaunchArgument("publish_px4_external_vision", default_value="true"),
-        DeclareLaunchArgument("openvins_orbbec_namespace", default_value="ov_msckf"),
-        DeclareLaunchArgument(
-            "openvins_orbbec_config_path",
-            default_value=os.path.join(
-                bringup_share,
-                "config",
-                "openvins",
-                "orbbec_stereo_imu",
-                "frozen_final",
-                "estimator_config.flight.yaml",
-            ),
-        ),
-        DeclareLaunchArgument("openvins_sensor_roll_in_body_rad", default_value="0.0"),
-        DeclareLaunchArgument("openvins_sensor_pitch_in_body_rad", default_value="0.0"),
-        DeclareLaunchArgument("openvins_sensor_yaw_in_body_rad", default_value="0.0"),
         minimal_control_launch,
         aruco_detector,
         height_measurement_bridge,
