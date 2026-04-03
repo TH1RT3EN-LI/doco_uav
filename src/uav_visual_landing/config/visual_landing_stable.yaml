@@ -5,12 +5,12 @@ visual_landing_node:
     velocity_body_topic: /uav/control/setpoint/velocity_body
     controller_state_topic: /uav/visual_landing/controller_state
     hold_service: /uav/control/command/hold
-    land_service: /uav/control/command/land
+    disarm_service: /uav/control/command/disarm
     height_measurement_transport: stamped_range
     height_measurement_topic: /uav/sensors/downward_range
     height_measurement_mode: ""  # legacy
-    range_topic: /uav/fmu/out/distance_sensor  # legacy
-    vehicle_local_position_topic: /uav/fmu/out/vehicle_local_position
+    range_topic: /fmu/out/distance_sensor
+    vehicle_local_position_topic: /fmu/out/vehicle_local_position
     start_service: /uav/visual_landing/command/start
     stop_service: /uav/visual_landing/command/stop
 
@@ -34,23 +34,32 @@ visual_landing_node:
     max_vxy: 0.40
 
     hold_verify_s: 0.5
-    search_height_m: 1.0
+    search_height_m: 0.6
     search_height_tolerance_m: 0.10
     descend_speed: 0.12
     terminal_entry_height_m: 0.40
+    terminal_height_band_m: 0.03
+    terminal_align_lateral_m: 0.05
+    terminal_align_yaw_rad: 0.15
+    terminal_confirm_s: 2.0
+    terminal_land_height_m: 0.18
+    terminal_land_max_yaw_rate_radps: 0.05
+    offboard_land_vz_mps: 0.40
+    offboard_land_disarm_height_m: 0.18
+    offboard_land_disarm_hold_s: 0.25
+    offboard_land_disarm_max_xy_mps: 0.25
+    offboard_land_disarm_max_vz_mps: 0.25
 
     z_hold_kp: 1.20
     z_hold_max_vz: 0.18
     z_descend_kp: 1.30
     z_descend_max_vz: 0.25
-    z_terminal_kp: 1.10
-    z_terminal_max_vz: 0.12
+    z_terminal_max_vz: 0.35
     vel_damping_z: 0.18
 
     observation_timeout_s: 0.30
     observation_miss_frames: 3
     state_timeout_s: 0.20
-    terminal_entry_consecutive_samples: 2
     target_memory_timeout_s: 0.5
     range_timeout_s: 0.15
     range_min_m: 0.05

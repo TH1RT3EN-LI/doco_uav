@@ -29,5 +29,5 @@ uav_mode_supervisor:
     allow_tracking_preempt_visual_precommit: true
     auto_recover_tracking_on_visual_loss: true
     auto_hold_on_fusion_degrade: true
-    visual_landing_commit_phases: [DESCEND_TRACK, TERMINAL, LAND]
+    visual_landing_commit_phases: [TERMINAL, LAND]
     visual_landing_recover_on_phases: [HOLD_WAIT]

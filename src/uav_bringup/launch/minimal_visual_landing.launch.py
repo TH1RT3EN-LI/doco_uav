@@ -53,9 +53,8 @@ def generate_launch_description():
     height_measurement_mode = LaunchConfiguration("height_measurement_mode")
     height_measurement_frame_id = LaunchConfiguration("height_measurement_frame_id")
 
-    fmu_namespace = "/fmu"
-    vehicle_local_position_topic = f"{fmu_namespace}/out/vehicle_local_position"
-    distance_sensor_topic = f"{fmu_namespace}/out/distance_sensor"
+    vehicle_local_position_topic = "/fmu/out/vehicle_local_position"
+    distance_sensor_topic = "/fmu/out/distance_sensor"
     default_recording_path = str(
         Path.home() / "uav_recordings" / f"visual_landing_debug_{datetime.now().strftime('%Y%m%d_%H%M%S')}.avi"
     )
@@ -188,13 +187,13 @@ def generate_launch_description():
         DeclareLaunchArgument("motion_guard_soft_dwell_s", default_value="2.0"),
         DeclareLaunchArgument("motion_guard_pose_gap_reset_s", default_value="0.40"),
         DeclareLaunchArgument("motion_guard_soft_xy_mps", default_value="0.40"),
-        DeclareLaunchArgument("motion_guard_soft_z_mps", default_value="0.25"),
+        DeclareLaunchArgument("motion_guard_soft_z_mps", default_value="0.45"),
         DeclareLaunchArgument("motion_guard_soft_yaw_radps", default_value="0.60"),
         DeclareLaunchArgument("motion_guard_hard_xy_mps", default_value="0.55"),
-        DeclareLaunchArgument("motion_guard_hard_z_mps", default_value="0.35"),
+        DeclareLaunchArgument("motion_guard_hard_z_mps", default_value="0.55"),
         DeclareLaunchArgument("motion_guard_hard_yaw_radps", default_value="0.90"),
         DeclareLaunchArgument("motion_guard_feedback_hard_xy_mps", default_value="0.65"),
-        DeclareLaunchArgument("motion_guard_feedback_hard_z_mps", default_value="0.45"),
+        DeclareLaunchArgument("motion_guard_feedback_hard_z_mps", default_value="0.55"),
         DeclareLaunchArgument("motion_guard_pose_soft_xy_step_m", default_value="0.25"),
         DeclareLaunchArgument("motion_guard_pose_soft_z_step_m", default_value="0.12"),
         DeclareLaunchArgument("motion_guard_pose_soft_yaw_step_rad", default_value="0.35"),
@@ -206,7 +205,7 @@ def generate_launch_description():
         DeclareLaunchArgument("max_vxy", default_value="0.10"),
         DeclareLaunchArgument("align_enter_lateral_m", default_value="0.08"),
         DeclareLaunchArgument("align_exit_lateral_m", default_value="0.05"),
-        DeclareLaunchArgument("tag_size_m", default_value="0.13"),
+        DeclareLaunchArgument("tag_size_m", default_value="0.20"),
         DeclareLaunchArgument("record_video_source", default_value="debug"),
         DeclareLaunchArgument("record_video_output_path", default_value=default_recording_path),
         DeclareLaunchArgument("record_video_fps", default_value="30.0"),

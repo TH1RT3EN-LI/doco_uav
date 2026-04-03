@@ -16,7 +16,7 @@ public:
   HeightMeasurementBridgeNode()
   : Node("height_measurement_bridge_node")
   {
-    this->declare_parameter<std::string>("distance_sensor_topic", "/uav/fmu/out/distance_sensor");
+    this->declare_parameter<std::string>("distance_sensor_topic", "/fmu/out/distance_sensor");
     this->declare_parameter<std::string>("height_measurement_topic", "/uav/sensors/downward_range");
     this->declare_parameter<std::string>("frame_id", "uav_optical_flow_range_frame");
 

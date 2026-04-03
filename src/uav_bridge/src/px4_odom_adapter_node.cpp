@@ -30,8 +30,8 @@ public:
   : Node("px4_odom_adapter_node")
   {
     this->declare_parameter<std::string>(
-      "vehicle_local_position_topic", "/uav/fmu/out/vehicle_local_position");
-    this->declare_parameter<std::string>("vehicle_odometry_topic", "/uav/fmu/out/vehicle_odometry");
+      "vehicle_local_position_topic", "/fmu/out/vehicle_local_position");
+    this->declare_parameter<std::string>("vehicle_odometry_topic", "/fmu/out/vehicle_odometry");
     this->declare_parameter<std::string>("output_odom_topic", "/uav/odom");
     this->declare_parameter<std::string>("map_frame_id", "uav_map");
     this->declare_parameter<std::string>("odom_frame_id", "uav_odom");

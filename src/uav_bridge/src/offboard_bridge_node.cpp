@@ -70,12 +70,12 @@ namespace uav_bridge
       this->declare_parameter<std::string>("velocity_topic", "/uav/control/velocity");
       this->declare_parameter<std::string>("command_frame_id", "uav_map");
       this->declare_parameter<double>("velocity_timeout_ms", 200.0);
-      this->declare_parameter<std::string>("offboard_mode_topic", "/uav/fmu/in/offboard_control_mode");
-      this->declare_parameter<std::string>("trajectory_setpoint_topic", "/uav/fmu/in/trajectory_setpoint");
-      this->declare_parameter<std::string>("vehicle_command_topic", "/uav/fmu/in/vehicle_command");
+      this->declare_parameter<std::string>("offboard_mode_topic", "/fmu/in/offboard_control_mode");
+      this->declare_parameter<std::string>("trajectory_setpoint_topic", "/fmu/in/trajectory_setpoint");
+      this->declare_parameter<std::string>("vehicle_command_topic", "/fmu/in/vehicle_command");
       this->declare_parameter<std::string>("planner_odom_topic", "/uav/odom");
-      this->declare_parameter<std::string>("px4_local_position_topic", "/uav/fmu/out/vehicle_local_position");
-      this->declare_parameter<std::string>("vehicle_status_topic", "/uav/fmu/out/vehicle_status");
+      this->declare_parameter<std::string>("px4_local_position_topic", "/fmu/out/vehicle_local_position");
+      this->declare_parameter<std::string>("vehicle_status_topic", "/fmu/out/vehicle_status");
       this->declare_parameter<std::string>("restart_trajectory_topic", "/uav/planning/restart_trajectory");
       this->declare_parameter<std::string>("takeoff_service", "/uav/control/takeoff");
       this->declare_parameter<std::string>("hover_service", "/uav/control/hover");
@@ -845,7 +845,9 @@ namespace uav_bridge
 
       if (!landing_command_sent_ || (!is_auto_land_mode_ && (landing_retry_counter_ % kLandRetryIntervalCycles == 0)))
       {
-        publishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_LAND, 0.0f, 0.0f);
+        publishVehicleCommand(
+          px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_LAND,
+          0.0f, 0.0f, 0.0f, std::numeric_limits<float>::quiet_NaN());
         landing_command_sent_ = true;
         RCLCPP_INFO(
             this->get_logger(),

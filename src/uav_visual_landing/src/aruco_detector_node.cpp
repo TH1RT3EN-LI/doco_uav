@@ -37,7 +37,7 @@ public:
       "/uav/visual_landing/controller_state");
     this->declare_parameter<std::string>("debug_image_topic", "/uav/visual_landing/debug_image");
     this->declare_parameter<int>("target_marker_id", 0);
-    this->declare_parameter<double>("tag_size_m", 0.1625);
+    this->declare_parameter<double>("tag_size_m", 0.20);
     this->declare_parameter<double>("confidence_reproj_scale_px", 4.0);
     this->declare_parameter<double>("confidence_min_marker_span_px", 18.0);
     this->declare_parameter<double>("confidence_full_marker_span_px", 72.0);
@@ -601,7 +601,7 @@ private:
   std::string controller_state_topic_;
   std::string debug_image_topic_;
   int target_marker_id_{0};
-  float tag_size_m_{0.1625f};
+  float tag_size_m_{0.20f};
   float fx_{0.0f};
   float fy_{0.0f};
   float cx_{0.0f};

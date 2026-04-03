@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -35,6 +36,15 @@ target_compile_features(${PROJECT_NAME}_uav_state_bridge_logic PUBLIC cxx_std_17
 target_include_directories(${PROJECT_NAME}_uav_state_bridge_logic PUBLIC include)
 ament_target_dependencies(${PROJECT_NAME}_uav_state_bridge_logic
   px4_msgs
+  tf2
+)
+
+add_library(${PROJECT_NAME}_sim_vio_odometry_logic
+  src/sim_vio_odometry_logic.cpp
+)
+target_compile_features(${PROJECT_NAME}_sim_vio_odometry_logic PUBLIC cxx_std_17)
+target_include_directories(${PROJECT_NAME}_sim_vio_odometry_logic PUBLIC include)
+ament_target_dependencies(${PROJECT_NAME}_sim_vio_odometry_logic
   tf2
 )
 
@@ -109,6 +119,16 @@ target_link_libraries(uav_state_bridge_node
   ${PROJECT_NAME}_uav_state_bridge_logic
 )
 
+add_executable(trajectory_path_publisher_node
+  src/trajectory_path_publisher_node.cpp
+)
+target_compile_features(trajectory_path_publisher_node PUBLIC cxx_std_17)
+ament_target_dependencies(trajectory_path_publisher_node
+  geometry_msgs
+  nav_msgs
+  rclcpp
+)
+
 add_executable(uav_control_node
   src/uav_control_node.cpp
   src/math_utils.cpp
@@ -135,25 +155,46 @@ ament_target_dependencies(height_measurement_bridge_node
   sensor_msgs
 )
 
-add_executable(fmu_topic_namespace_bridge_node
-  src/fmu_topic_namespace_bridge_node.cpp
+add_executable(sim_vio_odometry_node
+  src/sim_vio_odometry_node.cpp
 )
-target_compile_features(fmu_topic_namespace_bridge_node PUBLIC cxx_std_17)
-ament_target_dependencies(fmu_topic_namespace_bridge_node
+target_compile_features(sim_vio_odometry_node PUBLIC cxx_std_17)
+target_include_directories(sim_vio_odometry_node PRIVATE include)
+ament_target_dependencies(sim_vio_odometry_node
+  nav_msgs
   rclcpp
+)
+target_link_libraries(sim_vio_odometry_node
+  ${PROJECT_NAME}_sim_vio_odometry_logic
+)
+
+add_executable(openvins_px4_vision_bridge_node
+  src/openvins_px4_vision_bridge_node.cpp
+  src/math_utils.cpp
+)
+target_compile_features(openvins_px4_vision_bridge_node PUBLIC cxx_std_17)
+target_include_directories(openvins_px4_vision_bridge_node PRIVATE include)
+ament_target_dependencies(openvins_px4_vision_bridge_node
+  nav_msgs
   px4_msgs
+  rclcpp
+  std_msgs
+  tf2
 )
 
 install(TARGETS
   ${PROJECT_NAME}_px4_odom_adapter_logic
+  ${PROJECT_NAME}_sim_vio_odometry_logic
   mono_camera_source_node
   mono_video_recorder_node
   px4_planar_state_reader_node
   px4_odom_adapter_node
   uav_state_bridge_node
+  trajectory_path_publisher_node
   uav_control_node
   height_measurement_bridge_node
-  fmu_topic_namespace_bridge_node
+  sim_vio_odometry_node
+  openvins_px4_vision_bridge_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -162,5 +203,17 @@ install(DIRECTORY include/
 )
 
 ament_export_include_directories(include)
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+
+  ament_add_gtest(test_sim_vio_odometry_logic
+    test/test_sim_vio_odometry_logic.cpp
+  )
+  if(TARGET test_sim_vio_odometry_logic)
+    target_link_libraries(test_sim_vio_odometry_logic ${PROJECT_NAME}_sim_vio_odometry_logic)
+    ament_target_dependencies(test_sim_vio_odometry_logic tf2)
+  endif()
+endif()
 
 ament_package()

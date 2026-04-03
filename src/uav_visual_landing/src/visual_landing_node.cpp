@@ -4,13 +4,16 @@
 #include <cstdint>
 #include <cmath>
 #include <functional>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <px4_msgs/msg/distance_sensor.hpp>
+#include <px4_msgs/msg/vehicle_land_detected.hpp>
 #include <px4_msgs/msg/vehicle_local_position.hpp>
+#include <px4_msgs/msg/vehicle_status.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/range.hpp>
 #include <std_srvs/srv/trigger.hpp>
@@ -41,13 +44,16 @@ public:
       "controller_state_topic",
       "/uav/visual_landing/controller_state");
     this->declare_parameter<std::string>("hold_service", "/uav/control/command/hold");
-    this->declare_parameter<std::string>("land_service", "/uav/control/command/land");
+    this->declare_parameter<std::string>("disarm_service", "/uav/control/command/disarm");
     this->declare_parameter<std::string>("height_measurement_transport", "");
     this->declare_parameter<std::string>("height_measurement_topic", "/uav/sensors/downward_range");
     this->declare_parameter<std::string>("height_measurement_mode", "");
-    this->declare_parameter<std::string>("range_topic", "/uav/fmu/out/distance_sensor");
+    this->declare_parameter<std::string>("range_topic", "/fmu/out/distance_sensor");
     this->declare_parameter<std::string>(
-      "vehicle_local_position_topic", "/uav/fmu/out/vehicle_local_position");
+      "vehicle_land_detected_topic", "/fmu/out/vehicle_land_detected");
+    this->declare_parameter<std::string>(
+      "vehicle_local_position_topic", "/fmu/out/vehicle_local_position");
+    this->declare_parameter<std::string>("vehicle_status_topic", "/fmu/out/vehicle_status");
     this->declare_parameter<std::string>("start_service", "/uav/visual_landing/command/start");
     this->declare_parameter<std::string>("stop_service", "/uav/visual_landing/command/stop");
 
@@ -75,18 +81,27 @@ public:
     this->declare_parameter<double>("search_height_tolerance_m", 0.10);
     this->declare_parameter<double>("descend_speed", 0.12);
     this->declare_parameter<double>("terminal_entry_height_m", 0.40);
+    this->declare_parameter<double>("terminal_height_band_m", 0.03);
+    this->declare_parameter<double>("terminal_align_lateral_m", 0.05);
+    this->declare_parameter<double>("terminal_align_yaw_rad", 0.15);
+    this->declare_parameter<double>("terminal_confirm_s", 2.0);
+    this->declare_parameter<double>("terminal_land_height_m", 0.20);
+    this->declare_parameter<double>("terminal_land_max_yaw_rate_radps", 0.05);
+    this->declare_parameter<double>("offboard_land_vz_mps", 0.40);
+    this->declare_parameter<double>("offboard_land_disarm_height_m", 0.20);
+    this->declare_parameter<double>("offboard_land_disarm_hold_s", 0.25);
+    this->declare_parameter<double>("offboard_land_disarm_max_xy_mps", 0.25);
+    this->declare_parameter<double>("offboard_land_disarm_max_vz_mps", 0.25);
     this->declare_parameter<double>("z_hold_kp", 1.20);
     this->declare_parameter<double>("z_hold_max_vz", 0.18);
     this->declare_parameter<double>("z_descend_kp", 1.30);
     this->declare_parameter<double>("z_descend_max_vz", 0.25);
-    this->declare_parameter<double>("z_terminal_kp", 1.10);
-    this->declare_parameter<double>("z_terminal_max_vz", 0.12);
+    this->declare_parameter<double>("z_terminal_max_vz", 0.35);
     this->declare_parameter<double>("vel_damping_z", 0.18);
 
     this->declare_parameter<double>("observation_timeout_s", 0.30);
     this->declare_parameter<int>("observation_miss_frames", 3);
     this->declare_parameter<double>("state_timeout_s", 0.20);
-    this->declare_parameter<int>("terminal_entry_consecutive_samples", 2);
     this->declare_parameter<double>("target_memory_timeout_s", 0.50);
     this->declare_parameter<double>("range_timeout_s", 0.15);
     this->declare_parameter<double>("range_min_m", 0.05);
@@ -100,7 +115,7 @@ public:
     velocity_body_topic_ = this->get_parameter("velocity_body_topic").as_string();
     controller_state_topic_ = this->get_parameter("controller_state_topic").as_string();
     hold_service_ = this->get_parameter("hold_service").as_string();
-    land_service_ = this->get_parameter("land_service").as_string();
+    disarm_service_ = this->get_parameter("disarm_service").as_string();
     const std::string requested_height_measurement_transport =
       this->get_parameter("height_measurement_transport").as_string();
     const std::string legacy_height_measurement_mode =
@@ -134,8 +149,11 @@ public:
     height_measurement_time_basis_ = heightMeasurementTimeBasisName(height_measurement_transport_);
     height_measurement_topic_ = this->get_parameter("height_measurement_topic").as_string();
     range_topic_ = this->get_parameter("range_topic").as_string();
+    vehicle_land_detected_topic_ =
+      this->get_parameter("vehicle_land_detected_topic").as_string();
     vehicle_local_position_topic_ =
       this->get_parameter("vehicle_local_position_topic").as_string();
+    vehicle_status_topic_ = this->get_parameter("vehicle_status_topic").as_string();
     start_service_name_ = this->get_parameter("start_service").as_string();
     stop_service_name_ = this->get_parameter("stop_service").as_string();
 
@@ -173,19 +191,42 @@ public:
     descend_speed_ = static_cast<float>(this->get_parameter("descend_speed").as_double());
     terminal_entry_height_m_ =
       static_cast<float>(this->get_parameter("terminal_entry_height_m").as_double());
+    terminal_height_band_m_ =
+      static_cast<float>(this->get_parameter("terminal_height_band_m").as_double());
+    terminal_align_lateral_m_ =
+      static_cast<float>(this->get_parameter("terminal_align_lateral_m").as_double());
+    terminal_align_yaw_rad_ =
+      static_cast<float>(this->get_parameter("terminal_align_yaw_rad").as_double());
+    terminal_confirm_s_ = this->get_parameter("terminal_confirm_s").as_double();
+    terminal_land_height_m_ =
+      static_cast<float>(this->get_parameter("terminal_land_height_m").as_double());
+    terminal_land_max_yaw_rate_radps_ =
+      static_cast<float>(this->get_parameter("terminal_land_max_yaw_rate_radps").as_double());
+    offboard_land_vz_mps_ =
+      static_cast<float>(this->get_parameter("offboard_land_vz_mps").as_double());
+    offboard_land_disarm_height_m_ =
+      static_cast<float>(this->get_parameter("offboard_land_disarm_height_m").as_double());
+    offboard_land_disarm_hold_s_ =
+      this->get_parameter("offboard_land_disarm_hold_s").as_double();
+    offboard_land_disarm_max_xy_mps_ =
+      static_cast<float>(this->get_parameter("offboard_land_disarm_max_xy_mps").as_double());
+    offboard_land_disarm_max_vz_mps_ =
+      static_cast<float>(this->get_parameter("offboard_land_disarm_max_vz_mps").as_double());
+    offboard_land_vz_mps_ = std::max(0.01f, offboard_land_vz_mps_);
+    offboard_land_disarm_height_m_ = std::max(0.0f, offboard_land_disarm_height_m_);
+    offboard_land_disarm_hold_s_ = std::max(0.0, offboard_land_disarm_hold_s_);
+    offboard_land_disarm_max_xy_mps_ = std::max(0.0f, offboard_land_disarm_max_xy_mps_);
+    offboard_land_disarm_max_vz_mps_ = std::max(0.0f, offboard_land_disarm_max_vz_mps_);
     z_hold_kp_ = static_cast<float>(this->get_parameter("z_hold_kp").as_double());
     z_hold_max_vz_ = static_cast<float>(this->get_parameter("z_hold_max_vz").as_double());
     z_descend_kp_ = static_cast<float>(this->get_parameter("z_descend_kp").as_double());
     z_descend_max_vz_ = static_cast<float>(this->get_parameter("z_descend_max_vz").as_double());
-    z_terminal_kp_ = static_cast<float>(this->get_parameter("z_terminal_kp").as_double());
     z_terminal_max_vz_ = static_cast<float>(this->get_parameter("z_terminal_max_vz").as_double());
     vel_damping_z_ = static_cast<float>(this->get_parameter("vel_damping_z").as_double());
 
     observation_timeout_s_ = this->get_parameter("observation_timeout_s").as_double();
     observation_miss_frames_ = this->get_parameter("observation_miss_frames").as_int();
     state_timeout_s_ = this->get_parameter("state_timeout_s").as_double();
-    terminal_entry_consecutive_samples_ =
-      this->get_parameter("terminal_entry_consecutive_samples").as_int();
     target_memory_timeout_s_ = this->get_parameter("target_memory_timeout_s").as_double();
     height_config_.timeout_s = this->get_parameter("range_timeout_s").as_double();
     height_config_.min_m = static_cast<float>(this->get_parameter("range_min_m").as_double());
@@ -210,7 +251,7 @@ public:
     controller_state_pub_ = this->create_publisher<uav_visual_landing::msg::LandingControllerState>(
       controller_state_topic_, rclcpp::QoS(1).reliable().transient_local());
     hold_client_ = this->create_client<Trigger>(hold_service_);
-    land_client_ = this->create_client<Trigger>(land_service_);
+    disarm_client_ = this->create_client<Trigger>(disarm_service_);
 
     observation_sub_ = this->create_subscription<uav_visual_landing::msg::TargetObservation>(
       target_observation_topic_, observation_qos,
@@ -246,6 +287,33 @@ public:
         current_yaw_rate_ = yaw_rate;
         last_state_time_ = has_stamp ? rclcpp::Time(msg->header.stamp) : this->now();
         has_state_ = true;
+      });
+
+    vehicle_status_sub_ = this->create_subscription<px4_msgs::msg::VehicleStatus>(
+      vehicle_status_topic_, rclcpp::SensorDataQoS(),
+      [this](const px4_msgs::msg::VehicleStatus::SharedPtr msg)
+      {
+        const bool was_armed = is_armed_;
+        is_armed_ =
+          msg->arming_state == px4_msgs::msg::VehicleStatus::ARMING_STATE_ARMED;
+        has_vehicle_status_ = true;
+        if (phase_ == ControllerPhase::Land && is_armed_) {
+          land_phase_armed_seen_ = true;
+        }
+        if (phase_ == ControllerPhase::Land && land_phase_armed_seen_ && was_armed && !is_armed_) {
+          RCLCPP_INFO(this->get_logger(), "landing completed via vehicle_status disarm");
+          finishAfterLandingComplete();
+        }
+      });
+
+    vehicle_land_detected_sub_ = this->create_subscription<px4_msgs::msg::VehicleLandDetected>(
+      vehicle_land_detected_topic_, rclcpp::SensorDataQoS(),
+      [this](const px4_msgs::msg::VehicleLandDetected::SharedPtr msg)
+      {
+        has_vehicle_land_detected_ = true;
+        ground_contact_ = msg->ground_contact;
+        maybe_landed_ = msg->maybe_landed;
+        landed_ = msg->landed;
       });
 
     if (height_measurement_transport_ == HeightMeasurementTransport::StampedRange) {
@@ -299,13 +367,15 @@ public:
       0.0f);
     RCLCPP_INFO(
       this->get_logger(),
-      "visual_landing_node: observation=%s state=%s velocity_body=%s hold=%s land=%s "
-      "height_transport=%s height_topic=%s range_topic=%s vehicle_local_position_topic=%s "
+      "visual_landing_node: observation=%s state=%s velocity_body=%s hold=%s disarm=%s "
+      "height_transport=%s height_topic=%s range_topic=%s vehicle_land_detected_topic=%s "
+      "vehicle_local_position_topic=%s "
       "start=%s stop=%s",
       target_observation_topic_.c_str(), state_topic_.c_str(), velocity_body_topic_.c_str(),
-      hold_service_.c_str(), land_service_.c_str(),
+      hold_service_.c_str(), disarm_service_.c_str(),
       heightMeasurementTransportName(height_measurement_transport_),
       height_measurement_topic_.c_str(), range_topic_.c_str(),
+      vehicle_land_detected_topic_.c_str(),
       vehicle_local_position_topic_.c_str(),
       start_service_name_.c_str(), stop_service_name_.c_str());
   }
@@ -395,7 +465,9 @@ private:
   bool start(std::string & message)
   {
     active_ = true;
-    resetLandRequestState();
+    resetDisarmRequestState();
+    land_phase_armed_seen_ = false;
+    land_disarm_condition_since_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
     initial_search_completed_ = false;
     clearObservationTrackingState();
     clearVisionTrackingState();
@@ -408,7 +480,9 @@ private:
   bool stop(std::string & message)
   {
     active_ = false;
-    resetLandRequestState();
+    resetDisarmRequestState();
+    land_phase_armed_seen_ = false;
+    land_disarm_condition_since_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
     initial_search_completed_ = false;
     clearObservationTrackingState();
     clearVisionTrackingState();
@@ -575,89 +649,101 @@ private:
     hold_client_->async_send_request(req);
   }
 
-  void resetLandRequestState()
+  void resetDisarmRequestState()
   {
-    land_request_in_flight_ = false;
-    land_request_accepted_ = false;
-    land_request_failed_ = false;
-    active_land_request_id_ = 0;
-    last_land_request_attempt_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+    disarm_request_in_flight_ = false;
+    disarm_request_failed_ = false;
+    active_disarm_request_id_ = 0;
+    last_disarm_request_attempt_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
   }
 
-  void handleLandResponse(uint64_t request_id, rclcpp::Client<Trigger>::SharedFuture future)
-  {
-    if (request_id != active_land_request_id_ || phase_ != ControllerPhase::Land) {
-      return;
-    }
-
-    land_request_in_flight_ = false;
-    active_land_request_id_ = 0;
-    try {
-      const auto response = future.get();
-      if (!response->success) {
-        land_request_failed_ = true;
-        RCLCPP_WARN(
-          this->get_logger(),
-          "land request rejected: %s",
-          response->message.c_str());
-        return;
-      }
-      land_request_accepted_ = true;
-      RCLCPP_INFO(this->get_logger(), "land request accepted");
-      finishAfterLandRequest();
-    } catch (const std::exception & error) {
-      land_request_failed_ = true;
-      RCLCPP_WARN(this->get_logger(), "land request failed: %s", error.what());
-    }
-  }
-
-  void requestLand()
-  {
-    if (land_request_in_flight_ || land_request_accepted_) {
-      return;
-    }
-
-    last_land_request_attempt_ = this->now();
-    land_request_failed_ = false;
-    if (!land_client_->service_is_ready()) {
-      RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000, "land service not ready");
-      land_request_failed_ = true;
-      return;
-    }
-
-    const uint64_t request_id = ++land_request_sequence_;
-    active_land_request_id_ = request_id;
-    land_request_in_flight_ = true;
-    auto req = std::make_shared<Trigger::Request>();
-    try {
-      land_client_->async_send_request(
-        req,
-        [this, request_id](rclcpp::Client<Trigger>::SharedFuture future)
-        {
-          handleLandResponse(request_id, future);
-        });
-    } catch (const std::exception & error) {
-      land_request_in_flight_ = false;
-      active_land_request_id_ = 0;
-      land_request_failed_ = true;
-      RCLCPP_WARN(this->get_logger(), "failed to queue land request: %s", error.what());
-    }
-  }
-
-  void finishAfterLandRequest()
+  void finishAfterLandingComplete()
   {
     active_ = false;
-    resetLandRequestState();
+    resetDisarmRequestState();
     clearObservationTrackingState();
     clearVisionTrackingState();
     clearTargetMemory();
     align_hold_started_ = false;
-    terminal_entry_consecutive_count_ = 0;
     terminal_trigger_source_ = "NONE";
     height_measurement_sample_fresh_ = false;
     height_measurement_receive_fresh_ = false;
+    land_phase_armed_seen_ = false;
+    land_disarm_condition_since_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
     xy_control_mode_ = "idle";
     phase_ = ControllerPhase::Ready;
+  }
+
+  void handleDisarmResponse(uint64_t request_id, rclcpp::Client<Trigger>::SharedFuture future)
+  {
+    if (request_id != active_disarm_request_id_ || phase_ != ControllerPhase::Land) {
+      return;
+    }
+
+    disarm_request_in_flight_ = false;
+    active_disarm_request_id_ = 0;
+    try {
+      const auto response = future.get();
+      if (!response->success) {
+        disarm_request_failed_ = true;
+        RCLCPP_WARN(
+          this->get_logger(),
+          "offboard-land disarm request rejected: %s",
+          response->message.c_str());
+        return;
+      }
+    } catch (const std::exception & error) {
+      disarm_request_failed_ = true;
+      RCLCPP_WARN(
+        this->get_logger(), "offboard-land disarm request failed: %s", error.what());
+    }
+  }
+
+  void requestDisarm()
+  {
+    if (disarm_request_in_flight_) {
+      return;
+    }
+    if (has_vehicle_status_ && !is_armed_) {
+      return;
+    }
+
+    const rclcpp::Time now = this->now();
+    if (last_disarm_request_attempt_.nanoseconds() != 0 &&
+      (now - last_disarm_request_attempt_).seconds() < disarm_request_retry_delay_s_)
+    {
+      return;
+    }
+
+    last_disarm_request_attempt_ = now;
+    disarm_request_failed_ = false;
+    if (!disarm_client_->service_is_ready()) {
+      RCLCPP_WARN_THROTTLE(
+        this->get_logger(), *this->get_clock(), 2000, "disarm service not ready");
+      disarm_request_failed_ = true;
+      return;
+    }
+
+    const uint64_t request_id = ++disarm_request_sequence_;
+    active_disarm_request_id_ = request_id;
+    disarm_request_in_flight_ = true;
+    auto req = std::make_shared<Trigger::Request>();
+    try {
+      disarm_client_->async_send_request(
+        req,
+        [this, request_id](rclcpp::Client<Trigger>::SharedFuture future)
+        {
+          handleDisarmResponse(request_id, future);
+        });
+    } catch (const std::exception & error) {
+      disarm_request_in_flight_ = false;
+      active_disarm_request_id_ = 0;
+      disarm_request_failed_ = true;
+      RCLCPP_WARN(
+        this->get_logger(),
+        "failed to queue offboard-land disarm request: %s",
+        error.what());
+    }
   }
 
   void transitionTo(ControllerPhase phase, bool invoke_hold)
@@ -669,11 +755,13 @@ private:
     const ControllerPhase previous_phase = phase_;
     phase_ = phase;
     align_hold_started_ = false;
-    if (phase == ControllerPhase::Terminal) {
+    if (phase == ControllerPhase::Terminal || phase == ControllerPhase::Land) {
       z_target_initialized_ = false;
     }
     if (phase == ControllerPhase::Land) {
-      resetLandRequestState();
+      resetDisarmRequestState();
+      land_phase_armed_seen_ = has_vehicle_status_ && is_armed_;
+      land_disarm_condition_since_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
     }
     if (phase == ControllerPhase::DescendTrack || phase == ControllerPhase::Terminal ||
       phase == ControllerPhase::Land)
@@ -830,6 +918,61 @@ private:
            std::abs(control_height_m - search_height_m_) <= search_height_tolerance_m_;
   }
 
+  bool withinTerminalHeightBand(const HeightDecision & height_decision, float control_height_m) const
+  {
+    return height_decision.height_valid && std::isfinite(control_height_m) &&
+           std::abs(control_height_m - terminal_entry_height_m_) <= terminal_height_band_m_;
+  }
+
+  bool terminalAlignmentSatisfied(const MetricLateralError & lateral_error) const
+  {
+    return lateral_error.valid && std::isfinite(lateral_error.norm_m) &&
+           lateral_error.norm_m <= terminal_align_lateral_m_ &&
+           last_observation_.pose_valid && std::isfinite(last_observation_.yaw_err_rad) &&
+           std::abs(last_observation_.yaw_err_rad) <= terminal_align_yaw_rad_;
+  }
+
+  bool terminalLandYawSettled() const
+  {
+    return last_observation_.pose_valid &&
+           std::isfinite(last_observation_.yaw_err_rad) &&
+           std::abs(last_observation_.yaw_err_rad) <= yaw_deadband_rad_ &&
+           std::isfinite(current_yaw_rate_) &&
+           std::abs(current_yaw_rate_) <= terminal_land_max_yaw_rate_radps_;
+  }
+
+  bool terminalLandReady(const MetricLateralError & lateral_error) const
+  {
+    return lateral_error.valid &&
+           std::isfinite(lateral_error.norm_m) &&
+           lateral_error.norm_m <= terminal_align_lateral_m_ &&
+           terminalLandYawSettled();
+  }
+
+  float offboardLandDescentSpeed() const
+  {
+    return offboard_land_vz_mps_;
+  }
+
+  bool offboardLandDisarmReady(float control_height_m) const
+  {
+    if (!std::isfinite(control_height_m) || control_height_m > offboard_land_disarm_height_m_) {
+      return false;
+    }
+    if (has_vehicle_land_detected_ && !landed_) {
+      return false;
+    }
+    if (!std::isfinite(current_body_vx_) || !std::isfinite(current_body_vy_) ||
+      !std::isfinite(current_body_vz_))
+    {
+      return false;
+    }
+
+    const float xy_speed_mps = std::hypot(current_body_vx_, current_body_vy_);
+    return xy_speed_mps <= offboard_land_disarm_max_xy_mps_ &&
+           std::abs(current_body_vz_) <= offboard_land_disarm_max_vz_mps_;
+  }
+
   void publishVelocityBody(float vx, float vy, float vz, float yaw_rate)
   {
     geometry_msgs::msg::TwistStamped msg;
@@ -972,8 +1115,6 @@ private:
     const bool terminal_height_measurement_fresh =
       supportsTerminalHeightTrigger(height_measurement_transport_) &&
       height_measurement_sample_fresh_;
-    const float terminal_height_measurement_m =
-      terminal_height_measurement_fresh ? sample_height_measurement_m : 0.0f;
     const bool fresh_observation = observationFresh();
     const MetricLateralError lateral_error = (fresh_observation && filter_initialized_) ?
       computeMetricLateralError(err_u_f_, err_v_f_, derr_u_f_, derr_v_f_, control_height_m) :
@@ -990,17 +1131,7 @@ private:
     const bool currently_aligned = fresh_observation && aligned(lateral_error);
     align_in_window_ = currently_aligned;
     xy_control_mode_ = "idle";
-
-    if (phase_ == ControllerPhase::DescendTrack) {
-      terminal_entry_consecutive_count_ = updateConsecutiveConditionCount(
-        terminal_entry_consecutive_count_,
-        terminal_height_measurement_fresh &&
-        terminal_height_measurement_m < terminal_entry_height_m_);
-      terminal_trigger_source_ = meetsConsecutiveConditionCount(
-        terminal_entry_consecutive_count_, terminal_entry_consecutive_samples_) ?
-        "RANGE_MEASUREMENT" : "NONE";
-    } else if (phase_ != ControllerPhase::Terminal) {
-      terminal_entry_consecutive_count_ = 0;
+    if (phase_ != ControllerPhase::Terminal && phase_ != ControllerPhase::Land) {
       terminal_trigger_source_ = "NONE";
     }
 
@@ -1016,7 +1147,9 @@ private:
       return;
     }
 
-    if (!state_fresh) {
+    const bool allow_terminal_without_fresh_state =
+      phase_ == ControllerPhase::Terminal || phase_ == ControllerPhase::Land;
+    if (!state_fresh && !allow_terminal_without_fresh_state) {
       if (phase_ != ControllerPhase::HoldWait && phase_ != ControllerPhase::Ready) {
         transitionTo(ControllerPhase::HoldWait, true);
       }
@@ -1025,6 +1158,8 @@ private:
         false, height_decision, control_height_m, lateral_error, 0.0f, 0.0f,
         0.0f, 0.0f);
       return;
+    } else if (!state_fresh && allow_terminal_without_fresh_state) {
+      xy_control_mode_ = "terminal_state_stale_bypass";
     }
 
     switch (phase_) {
@@ -1120,18 +1255,22 @@ private:
           transitionTo(nextPhaseOnTargetLoss(phase_), true);
           break;
         }
-        if (meetsConsecutiveConditionCount(
-            terminal_entry_consecutive_count_, terminal_entry_consecutive_samples_))
+        if (
+          current_observation_detected_ &&
+          terminal_height_measurement_fresh &&
+          withinTerminalHeightBand(height_decision, control_height_m) &&
+          terminalAlignmentSatisfied(lateral_error))
         {
-          terminal_trigger_source_ = "RANGE_MEASUREMENT";
-          transitionTo(ControllerPhase::Terminal, false);
-          break;
-        }
-        if (control_height_m <= terminal_entry_height_m_ && !terminal_height_measurement_fresh) {
-          terminal_entry_consecutive_count_ = 0;
-          terminal_trigger_source_ = "NONE";
-          transitionTo(ControllerPhase::HoldWait, true);
-          break;
+          if (!align_hold_started_) {
+            align_hold_started_ = true;
+            align_hold_since_ = this->now();
+          } else if ((this->now() - align_hold_since_).seconds() >= terminal_confirm_s_) {
+            terminal_trigger_source_ = "HEIGHT_BAND_TERMINAL";
+            transitionTo(ControllerPhase::Terminal, false);
+            break;
+          }
+        } else {
+          align_hold_started_ = false;
         }
         if (!z_target_initialized_) {
           setZTarget(control_height_m);
@@ -1149,11 +1288,37 @@ private:
         publishVelocityBody(cmd_vx, cmd_vy, cmd_vz, cmd_yaw_rate);
         break;
       case ControllerPhase::Terminal:
+        if (terminalLandReady(lateral_error)) {
+          if (!align_hold_started_) {
+            align_hold_started_ = true;
+            align_hold_since_ = this->now();
+          } else if ((this->now() - align_hold_since_).seconds() >= hold_verify_s_) {
+            terminal_trigger_source_ =
+              (terminal_height_measurement_fresh &&
+              std::isfinite(sample_height_measurement_m) &&
+              sample_height_measurement_m <= terminal_land_height_m_) ?
+              "TERMINAL_HEIGHT_SETTLED_OFFBOARD_LAND" :
+              "TERMINAL_ALIGN_SETTLED_OFFBOARD_LAND";
+            transitionTo(ControllerPhase::Land, false);
+            break;
+          }
+        } else {
+          align_hold_started_ = false;
+        }
+        if (terminal_height_measurement_fresh &&
+          std::isfinite(sample_height_measurement_m) &&
+          sample_height_measurement_m <= terminal_land_height_m_)
+        {
+          terminal_trigger_source_ = "TERMINAL_HEIGHT_WAIT_YAW_SETTLE";
+        }
         if (!fresh_observation) {
+          terminal_trigger_source_ = "TERMINAL_LOST_OBS_OFFBOARD_LAND";
           transitionTo(ControllerPhase::Land, false);
           break;
         }
         if (!z_target_initialized_) {
+          // Hold the current terminal height while continuing visual XY/yaw alignment
+          // before switching to the offboard landing descent profile.
           setZTarget(control_height_m);
         }
         computeTrackingCommand(
@@ -1162,32 +1327,37 @@ private:
           cmd_yaw_rate);
         cmd_vz = computeZCommand(
           control_height_m, current_body_vz_, z_target_height_m_,
-          z_terminal_kp_, z_terminal_max_vz_);
-        xy_control_mode_ = "vision_pd_metric";
+          z_hold_kp_, z_terminal_max_vz_);
+        xy_control_mode_ = "terminal_vision_hold";
         publishVelocityBody(cmd_vx, cmd_vy, cmd_vz, cmd_yaw_rate);
-        if (!currently_aligned) {
-          align_hold_started_ = false;
-          break;
-        }
-        if (!align_hold_started_) {
-          align_hold_started_ = true;
-          align_hold_since_ = this->now();
-        } else if ((this->now() - align_hold_since_).seconds() >= hold_verify_s_) {
-          transitionTo(ControllerPhase::Land, false);
-        }
         break;
       case ControllerPhase::Land:
-        xy_control_mode_ = land_request_in_flight_ ? "land_request_in_flight" :
-          (land_request_failed_ ? "land_request_retry_wait" : "land_request_pending");
-        publishVelocityBody(0.0f, 0.0f, 0.0f, 0.0f);
-        if (!land_request_accepted_ && !land_request_in_flight_) {
-          const bool retry_due =
-            last_land_request_attempt_.nanoseconds() == 0 ||
-            (this->now() - last_land_request_attempt_).seconds() >= land_request_retry_delay_s_;
-          if (retry_due) {
-            requestLand();
-          }
+        if (fresh_observation) {
+          computeTrackingCommand(
+            lateral_error, last_observation_.pose_valid, last_observation_.yaw_err_rad,
+            cmd_vx, cmd_vy,
+            cmd_yaw_rate);
+          cmd_yaw_rate = clamp(cmd_yaw_rate, terminal_land_max_yaw_rate_radps_);
+          xy_control_mode_ = "offboard_land_vision_track";
+        } else {
+          xy_control_mode_ = "offboard_land_vertical_only";
         }
+        cmd_vz = -offboardLandDescentSpeed();
+        if (offboardLandDisarmReady(control_height_m)) {
+          if (land_disarm_condition_since_.nanoseconds() == 0) {
+            land_disarm_condition_since_ = this->now();
+          } else if ((this->now() - land_disarm_condition_since_).seconds() >=
+            offboard_land_disarm_hold_s_)
+          {
+            xy_control_mode_ = fresh_observation ?
+              "offboard_land_disarm_wait_vision" :
+              "offboard_land_disarm_wait_vertical";
+            requestDisarm();
+          }
+        } else {
+          land_disarm_condition_since_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+        }
+        publishVelocityBody(cmd_vx, cmd_vy, cmd_vz, cmd_yaw_rate);
         break;
     }
 
@@ -1201,11 +1371,13 @@ private:
   std::string velocity_body_topic_;
   std::string controller_state_topic_;
   std::string hold_service_;
-  std::string land_service_;
+  std::string disarm_service_;
   HeightMeasurementTransport height_measurement_transport_{HeightMeasurementTransport::StampedRange};
   std::string height_measurement_topic_;
   std::string range_topic_;
+  std::string vehicle_land_detected_topic_;
   std::string vehicle_local_position_topic_;
+  std::string vehicle_status_topic_;
   std::string start_service_name_;
   std::string stop_service_name_;
   HeightConfig height_config_{};
@@ -1227,30 +1399,45 @@ private:
   float search_height_tolerance_m_{0.10f};
   float descend_speed_{0.12f};
   float terminal_entry_height_m_{0.40f};
+  float terminal_height_band_m_{0.03f};
+  float terminal_align_lateral_m_{0.05f};
+  float terminal_align_yaw_rad_{0.15f};
+  double terminal_confirm_s_{2.0};
+  float terminal_land_height_m_{0.20f};
+  float terminal_land_max_yaw_rate_radps_{0.05f};
+  float offboard_land_vz_mps_{0.40f};
+  float offboard_land_disarm_height_m_{0.20f};
+  double offboard_land_disarm_hold_s_{0.25};
+  float offboard_land_disarm_max_xy_mps_{0.25f};
+  float offboard_land_disarm_max_vz_mps_{0.25f};
   float z_hold_kp_{1.2f};
   float z_hold_max_vz_{0.18f};
   float z_descend_kp_{1.3f};
   float z_descend_max_vz_{0.25f};
-  float z_terminal_kp_{1.1f};
-  float z_terminal_max_vz_{0.12f};
+  float z_terminal_max_vz_{0.35f};
   float vel_damping_z_{0.18f};
   double observation_timeout_s_{0.30};
   int observation_miss_frames_{3};
   double state_timeout_s_{0.20};
-  int terminal_entry_consecutive_samples_{2};
   double target_memory_timeout_s_{0.50};
   bool active_{false};
   ControllerPhase phase_{ControllerPhase::Ready};
   bool align_in_window_{false};
   bool align_hold_started_{false};
-  bool land_request_in_flight_{false};
-  bool land_request_accepted_{false};
-  bool land_request_failed_{false};
+  bool disarm_request_in_flight_{false};
+  bool disarm_request_failed_{false};
   bool initial_search_completed_{false};
   bool current_observation_detected_{false};
   bool new_valid_observation_{false};
   bool has_observation_{false};
   bool has_state_{false};
+  bool has_vehicle_status_{false};
+  bool has_vehicle_land_detected_{false};
+  bool is_armed_{false};
+  bool land_phase_armed_seen_{false};
+  bool ground_contact_{false};
+  bool maybe_landed_{false};
+  bool landed_{false};
   bool has_height_measurement_{false};
   bool height_measurement_has_sample_stamp_{false};
   bool filter_initialized_{false};
@@ -1273,23 +1460,23 @@ private:
   float z_target_height_m_{0.0f};
   bool z_target_initialized_{false};
   float control_dt_s_{1.0f / 30.0f};
-  double land_request_retry_delay_s_{0.5};
+  double disarm_request_retry_delay_s_{0.5};
   double status_period_s_{0.2};
   bool status_initialized_{false};
   int consecutive_observation_miss_count_{0};
-  int terminal_entry_consecutive_count_{0};
-  uint64_t land_request_sequence_{0};
-  uint64_t active_land_request_id_{0};
+  uint64_t disarm_request_sequence_{0};
+  uint64_t active_disarm_request_id_{0};
   std::string xy_control_mode_{"idle"};
   std::string terminal_trigger_source_{"NONE"};
   rclcpp::Time last_status_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_observation_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time prev_observation_stamp_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_state_time_{0, 0, RCL_ROS_TIME};
-  rclcpp::Time last_land_request_attempt_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time last_disarm_request_attempt_{0, 0, RCL_ROS_TIME};
   rclcpp::Time height_measurement_receive_stamp_{0, 0, RCL_ROS_TIME};
   rclcpp::Time height_measurement_sample_stamp_{0, 0, RCL_ROS_TIME};
   rclcpp::Time align_hold_since_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time land_disarm_condition_since_{0, 0, RCL_ROS_TIME};
   rclcpp::Time target_memory_observed_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time target_memory_updated_time_{0, 0, RCL_ROS_TIME};
   uav_visual_landing::msg::TargetObservation last_observation_{};
@@ -1302,10 +1489,13 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::Range>::SharedPtr stamped_height_measurement_sub_;
   rclcpp::Subscription<px4_msgs::msg::DistanceSensor>::SharedPtr
     legacy_distance_sensor_height_sub_;
+  rclcpp::Subscription<px4_msgs::msg::VehicleLandDetected>::SharedPtr
+    vehicle_land_detected_sub_;
   rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr
     vehicle_local_position_height_sub_;
+  rclcpp::Subscription<px4_msgs::msg::VehicleStatus>::SharedPtr vehicle_status_sub_;
   rclcpp::Client<Trigger>::SharedPtr hold_client_;
-  rclcpp::Client<Trigger>::SharedPtr land_client_;
+  rclcpp::Client<Trigger>::SharedPtr disarm_client_;
   rclcpp::Service<Trigger>::SharedPtr start_srv_;
   rclcpp::Service<Trigger>::SharedPtr stop_srv_;
   rclcpp::TimerBase::SharedPtr timer_;

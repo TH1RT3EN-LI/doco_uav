@@ -1115,6 +1115,9 @@ private:
       message = "landing already in progress";
       return true;
     }
+    if (!captureCurrentPose(message)) {
+      return false;
+    }
     clearMotionGuardSoftViolation();
     enterLandingMode("land");
     message = "landing requested";
@@ -1150,9 +1153,8 @@ private:
 
   bool handleDisarmRequest(std::string & message)
   {
-    requestPx4PositionMode("disarm");
     publishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM, 0.0f, 0.0f);
-    message = "disarm requested and switching to px4 position mode";
+    message = "disarm requested";
     return true;
   }
 
@@ -1234,9 +1236,16 @@ private:
   void handleLandingMode()
   {
     constexpr int kRetryIntervalCycles = 50;
-    if (!land_command_sent_ || landing_retry_counter_ % kRetryIntervalCycles == 0) {
-      publishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_LAND, 0.0f, 0.0f);
+    const bool is_auto_land_mode =
+      current_nav_state_ == px4_msgs::msg::VehicleStatus::NAVIGATION_STATE_AUTO_LAND;
+    if (!land_command_sent_ || (!is_auto_land_mode && landing_retry_counter_ % kRetryIntervalCycles == 0)) {
+      publishVehicleCommand(
+        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_LAND,
+        0.0f, 0.0f, 0.0f, std::numeric_limits<float>::quiet_NaN());
       land_command_sent_ = true;
+    }
+    if (!is_auto_land_mode && is_armed_) {
+      publishHoldTarget();
     }
     ++landing_retry_counter_;
   }

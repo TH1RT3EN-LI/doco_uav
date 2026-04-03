@@ -4,7 +4,7 @@
     <pose>0 0 0.12 0 0 0</pose>
     <self_collide>false</self_collide>
     <static>false</static>
-    <link name="uav_base_link">
+    <link name="base_link">
       <inertial>
         <mass>1.19196153846</mass>
         <inertia>
@@ -604,7 +604,7 @@
           </friction>
         </surface>
       </collision>
-      <sensor name="uav_air_pressure_sensor" type="air_pressure">
+      <sensor name="air_pressure_sensor" type="air_pressure">
         <always_on>1</always_on>
         <update_rate>50</update_rate>
         <air_pressure>
@@ -616,7 +616,7 @@
           </pressure>
         </air_pressure>
       </sensor>
-      <sensor name="uav_imu_sensor" type="imu">
+      <sensor name="imu_sensor" type="imu">
         <always_on>1</always_on>
         <update_rate>250</update_rate>
         <imu>
@@ -674,7 +674,7 @@
           </linear_acceleration>
         </imu>
       </sensor>
-      <sensor name="uav_navsat_sensor" type="navsat">
+      <sensor name="navsat_sensor" type="navsat">
         <always_on>1</always_on>
         <update_rate>30</update_rate>
       </sensor>
@@ -855,8 +855,8 @@
           <quadratic>0.03</quadratic>
         </attenuation>
         <spot>
-          <inner_angle>0.45</inner_angle>
-          <outer_angle>0.80</outer_angle>
+          <inner_angle>0.80</inner_angle>
+          <outer_angle>1.20</outer_angle>
           <falloff>1.0</falloff>
         </spot>
         <direction>0 0 -1</direction>
@@ -923,7 +923,7 @@
       </collision>
     </link>
     <joint name="uav_rotor_0_joint" type="revolute">
-      <parent>uav_base_link</parent>
+      <parent>base_link</parent>
       <child>uav_rotor_0</child>
       <axis>
         <xyz>0 0 1</xyz>
@@ -995,7 +995,7 @@
       </collision>
     </link>
     <joint name="uav_rotor_1_joint" type="revolute">
-      <parent>uav_base_link</parent>
+      <parent>base_link</parent>
       <child>uav_rotor_1</child>
       <axis>
         <xyz>0 0 1</xyz>
@@ -1067,7 +1067,7 @@
       </collision>
     </link>
     <joint name="uav_rotor_2_joint" type="revolute">
-      <parent>uav_base_link</parent>
+      <parent>base_link</parent>
       <child>uav_rotor_2</child>
       <axis>
         <xyz>0 0 1</xyz>
@@ -1139,7 +1139,7 @@
       </collision>
     </link>
     <joint name="uav_rotor_3_joint" type="revolute">
-      <parent>uav_base_link</parent>
+      <parent>base_link</parent>
       <child>uav_rotor_3</child>
       <axis>
         <xyz>0 0 1</xyz>

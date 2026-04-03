@@ -24,7 +24,6 @@ from uav_bringup.profile_defaults import (
 def generate_launch_description():
     bringup_share = get_package_share_directory("uav_bringup")
 
-    fmu_namespace = LaunchConfiguration("fmu_namespace")
     takeoff_height_m = LaunchConfiguration("takeoff_height_m")
     max_velocity_setpoint_mps = LaunchConfiguration("max_velocity_setpoint_mps")
     max_acceleration_setpoint_mps2 = LaunchConfiguration("max_acceleration_setpoint_mps2")
@@ -74,6 +73,12 @@ def generate_launch_description():
     mono_video_output_path = LaunchConfiguration("mono_video_output_path")
     mono_video_fps = LaunchConfiguration("mono_video_fps")
     mono_video_fourcc = LaunchConfiguration("mono_video_fourcc")
+    publish_trajectory = LaunchConfiguration("publish_trajectory")
+    trajectory_input_odom_topic = LaunchConfiguration("trajectory_input_odom_topic")
+    trajectory_output_topic = LaunchConfiguration("trajectory_output_topic")
+    trajectory_max_samples = LaunchConfiguration("trajectory_max_samples")
+    trajectory_min_sample_distance_m = LaunchConfiguration("trajectory_min_sample_distance_m")
+    trajectory_min_sample_period_s = LaunchConfiguration("trajectory_min_sample_period_s")
 
     start_orbbec_depth_camera = LaunchConfiguration("start_orbbec_depth_camera")
     orbbec_camera_name = LaunchConfiguration("orbbec_camera_name")
@@ -116,12 +121,12 @@ def generate_launch_description():
         Path.home() / "uav_recordings" / f"mono_{datetime.now().strftime('%Y%m%d_%H%M%S')}.avi"
     )
 
-    vehicle_local_position_topic = [fmu_namespace, "/out/vehicle_local_position"]
-    vehicle_odometry_topic = [fmu_namespace, "/out/vehicle_odometry"]
-    vehicle_status_topic = [fmu_namespace, "/out/vehicle_status"]
-    offboard_mode_topic = [fmu_namespace, "/in/offboard_control_mode"]
-    trajectory_setpoint_topic = [fmu_namespace, "/in/trajectory_setpoint"]
-    vehicle_command_topic = [fmu_namespace, "/in/vehicle_command"]
+    vehicle_local_position_topic = "/fmu/out/vehicle_local_position"
+    vehicle_odometry_topic = "/fmu/out/vehicle_odometry"
+    vehicle_status_topic = "/fmu/out/vehicle_status"
+    offboard_mode_topic = "/fmu/in/offboard_control_mode"
+    trajectory_setpoint_topic = "/fmu/in/trajectory_setpoint"
+    vehicle_command_topic = "/fmu/in/vehicle_command"
 
     mono_camera_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(bringup_share, "launch", "mono_camera.launch.py")),
@@ -197,16 +202,6 @@ def generate_launch_description():
         }.items(),
     )
 
-    fmu_topic_namespace_bridge = Node(
-        package="uav_bridge",
-        executable="fmu_topic_namespace_bridge_node",
-        name="fmu_topic_namespace_bridge",
-        output="screen",
-        parameters=[
-            {"namespaced_fmu_prefix": fmu_namespace},
-        ],
-    )
-
     uav_state_bridge = Node(
         package="uav_bridge",
         executable="uav_state_bridge_node",
@@ -254,6 +249,21 @@ def generate_launch_description():
         ],
     )
 
+    trajectory_path_publisher = Node(
+        package="uav_bridge",
+        executable="trajectory_path_publisher_node",
+        name="trajectory_path_publisher",
+        output="screen",
+        condition=IfCondition(publish_trajectory),
+        parameters=[
+            {"input_odom_topic": trajectory_input_odom_topic},
+            {"output_path_topic": trajectory_output_topic},
+            {"max_samples": trajectory_max_samples},
+            {"min_sample_distance_m": trajectory_min_sample_distance_m},
+            {"min_sample_period_s": trajectory_min_sample_period_s},
+        ],
+    )
+
     mono_video_recorder = Node(
         package="uav_bridge",
         executable="mono_video_recorder_node",
@@ -269,7 +279,6 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        DeclareLaunchArgument("fmu_namespace", default_value="/fmu"),
         DeclareLaunchArgument("takeoff_height_m", default_value="0.25"),
         DeclareLaunchArgument("max_velocity_setpoint_mps", default_value="0.40"),
         DeclareLaunchArgument("max_acceleration_setpoint_mps2", default_value="0.60"),
@@ -320,6 +329,12 @@ def generate_launch_description():
         DeclareLaunchArgument("mono_video_output_path", default_value=default_recording_path),
         DeclareLaunchArgument("mono_video_fps", default_value="120.0"),
         DeclareLaunchArgument("mono_video_fourcc", default_value="MJPG"),
+        DeclareLaunchArgument("publish_trajectory", default_value="true"),
+        DeclareLaunchArgument("trajectory_input_odom_topic", default_value="/uav/state/odometry"),
+        DeclareLaunchArgument("trajectory_output_topic", default_value="/uav/state/trajectory"),
+        DeclareLaunchArgument("trajectory_max_samples", default_value="5000"),
+        DeclareLaunchArgument("trajectory_min_sample_distance_m", default_value="0.02"),
+        DeclareLaunchArgument("trajectory_min_sample_period_s", default_value="0.10"),
         DeclareLaunchArgument("orbbec_camera_name", default_value="uav_depth_camera"),
         DeclareLaunchArgument("orbbec_camera_frame_id", default_value="uav_stereo_camera_optical_frame"),
         DeclareLaunchArgument("orbbec_camera_x", default_value=DEFAULT_STEREO_CAMERA_TO_BODY["x"]),
@@ -357,8 +372,8 @@ def generate_launch_description():
         DeclareLaunchArgument("orbbec_enable_ldp", default_value=DEFAULT_ORBBEC_STANDALONE_PROFILE["enable_ldp"]),
         mono_camera_launch,
         orbbec_depth_camera_launch,
-        fmu_topic_namespace_bridge,
         uav_state_bridge,
         uav_control,
+        trajectory_path_publisher,
         mono_video_recorder,
     ])

@@ -4,7 +4,7 @@
  *
  * Subscribes to the Gazebo gpu_lidar LaserScan topic from the distance_sensor on
  * the UAV model, converts the first range reading to a px4_msgs::msg::DistanceSensor
- * message and publishes it on /uav/fmu/in/distance_sensor.
+ * message and publishes it on /fmu/in/distance_sensor.
  */
 #include <cmath>
 #include <optional>
@@ -29,7 +29,7 @@ public:
     declare_parameter<std::string>("link_name", "uav_base_link");
     declare_parameter<std::string>("sensor_name", "uav_optical_flow_range");
     declare_parameter<std::string>("gz_topic_override", "");
-    declare_parameter<std::string>("ros_topic", "/uav/fmu/in/distance_sensor");
+    declare_parameter<std::string>("ros_topic", "/fmu/in/distance_sensor");
 
     const auto gz_world_name = get_parameter("gz_world_name").as_string();
     const auto model  = get_parameter("model_name").as_string();

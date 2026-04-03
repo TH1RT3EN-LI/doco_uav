@@ -5,7 +5,7 @@
  * Subscribes to the Gazebo camera image topic from the downward optical_flow
  * camera sensor, computes optical flow using a hybrid estimator
  * (sparse LK + phase-correlation fallback), and publishes
- * px4_msgs::msg::SensorOpticalFlow on /uav/fmu/in/sensor_optical_flow.
+ * px4_msgs::msg::SensorOpticalFlow on /fmu/in/sensor_optical_flow.
  *
  * This replaces the PX4 main-branch gz_plugins/OpticalFlow* + gz_bridge approach
  * with a standalone ROS 2 node that doesn't require modifying PX4 source.
@@ -49,7 +49,7 @@ public:
     declare_parameter<std::string>("gz_topic_override", "");
     declare_parameter<std::string>("gz_range_topic_override", "");
     declare_parameter<std::string>("gz_imu_topic_override", "");
-    declare_parameter<std::string>("ros_topic", "/uav/fmu/in/sensor_optical_flow");
+    declare_parameter<std::string>("ros_topic", "/fmu/in/sensor_optical_flow");
     declare_parameter<double>("camera_hfov", 0.25);         // radians
     declare_parameter<int>("image_width", 64);
     declare_parameter<int>("image_height", 64);

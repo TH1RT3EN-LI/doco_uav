@@ -3,6 +3,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -35,7 +36,6 @@ def generate_launch_description():
     cy = LaunchConfiguration("cy")
     camera_hfov_rad = LaunchConfiguration("camera_hfov_rad")
     camera_info_url = LaunchConfiguration("camera_info_url")
-    fmu_namespace = LaunchConfiguration("fmu_namespace")
     use_sim_time = LaunchConfiguration("use_sim_time")
     height_measurement_transport = LaunchConfiguration("height_measurement_transport")
     height_measurement_topic = LaunchConfiguration("height_measurement_topic")
@@ -59,6 +59,12 @@ def generate_launch_description():
     motion_guard_pose_hard_z_step_m = LaunchConfiguration("motion_guard_pose_hard_z_step_m")
     motion_guard_pose_hard_yaw_step_rad = LaunchConfiguration("motion_guard_pose_hard_yaw_step_rad")
     tag_size_m = LaunchConfiguration("tag_size_m")
+    publish_trajectory = LaunchConfiguration("publish_trajectory")
+    trajectory_input_odom_topic = LaunchConfiguration("trajectory_input_odom_topic")
+    trajectory_output_topic = LaunchConfiguration("trajectory_output_topic")
+    trajectory_max_samples = LaunchConfiguration("trajectory_max_samples")
+    trajectory_min_sample_distance_m = LaunchConfiguration("trajectory_min_sample_distance_m")
+    trajectory_min_sample_period_s = LaunchConfiguration("trajectory_min_sample_period_s")
 
     visual_landing_config = os.path.join(visual_landing_share, "config", "visual_landing_stable.yaml")
     mono_camera_launch = IncludeLaunchDescription(
@@ -90,24 +96,13 @@ def generate_launch_description():
         }.items(),
     )
 
-    vehicle_local_position_topic = [fmu_namespace, "/out/vehicle_local_position"]
-    vehicle_odometry_topic = [fmu_namespace, "/out/vehicle_odometry"]
-    vehicle_status_topic = [fmu_namespace, "/out/vehicle_status"]
-    offboard_mode_topic = [fmu_namespace, "/in/offboard_control_mode"]
-    trajectory_setpoint_topic = [fmu_namespace, "/in/trajectory_setpoint"]
-    vehicle_command_topic = [fmu_namespace, "/in/vehicle_command"]
-    distance_sensor_topic = [fmu_namespace, "/out/distance_sensor"]
-
-    fmu_topic_namespace_bridge = Node(
-        package="uav_bridge",
-        executable="fmu_topic_namespace_bridge_node",
-        name="fmu_topic_namespace_bridge",
-        output="screen",
-        parameters=[
-            {"namespaced_fmu_prefix": fmu_namespace},
-            {"use_sim_time": use_sim_time},
-        ],
-    )
+    vehicle_local_position_topic = "/fmu/out/vehicle_local_position"
+    vehicle_odometry_topic = "/fmu/out/vehicle_odometry"
+    vehicle_status_topic = "/fmu/out/vehicle_status"
+    offboard_mode_topic = "/fmu/in/offboard_control_mode"
+    trajectory_setpoint_topic = "/fmu/in/trajectory_setpoint"
+    vehicle_command_topic = "/fmu/in/vehicle_command"
+    distance_sensor_topic = "/fmu/out/distance_sensor"
 
     uav_state_bridge = Node(
         package="uav_bridge",
@@ -155,6 +150,22 @@ def generate_launch_description():
         ],
     )
 
+    trajectory_path_publisher = Node(
+        package="uav_bridge",
+        executable="trajectory_path_publisher_node",
+        name="trajectory_path_publisher",
+        output="screen",
+        condition=IfCondition(publish_trajectory),
+        parameters=[
+            {"use_sim_time": use_sim_time},
+            {"input_odom_topic": trajectory_input_odom_topic},
+            {"output_path_topic": trajectory_output_topic},
+            {"max_samples": trajectory_max_samples},
+            {"min_sample_distance_m": trajectory_min_sample_distance_m},
+            {"min_sample_period_s": trajectory_min_sample_period_s},
+        ],
+    )
+
     height_measurement_bridge = Node(
         package="uav_bridge",
         executable="height_measurement_bridge_node",
@@ -194,6 +205,7 @@ def generate_launch_description():
             {"height_measurement_mode": height_measurement_mode},
             {"range_topic": distance_sensor_topic},
             {"vehicle_local_position_topic": vehicle_local_position_topic},
+            {"vehicle_status_topic": vehicle_status_topic},
         ],
     )
 
@@ -221,26 +233,31 @@ def generate_launch_description():
         DeclareLaunchArgument("cy", default_value="360.0"),
         DeclareLaunchArgument("camera_hfov_rad", default_value="1.3962634"),
         DeclareLaunchArgument("camera_info_url", default_value=""),
-        DeclareLaunchArgument("tag_size_m", default_value="0.1625"),
-        DeclareLaunchArgument("fmu_namespace", default_value="/fmu"),
+        DeclareLaunchArgument("tag_size_m", default_value="0.20"),
         DeclareLaunchArgument("use_sim_time", default_value="false"),
+        DeclareLaunchArgument("publish_trajectory", default_value="true"),
+        DeclareLaunchArgument("trajectory_input_odom_topic", default_value="/uav/state/odometry"),
+        DeclareLaunchArgument("trajectory_output_topic", default_value="/uav/state/trajectory"),
+        DeclareLaunchArgument("trajectory_max_samples", default_value="5000"),
+        DeclareLaunchArgument("trajectory_min_sample_distance_m", default_value="0.02"),
+        DeclareLaunchArgument("trajectory_min_sample_period_s", default_value="0.10"),
         DeclareLaunchArgument("height_measurement_transport", default_value="stamped_range"),
         DeclareLaunchArgument("height_measurement_topic", default_value="/uav/sensors/downward_range"),
         DeclareLaunchArgument("height_measurement_mode", default_value=""),
         DeclareLaunchArgument(
             "height_measurement_frame_id", default_value="uav_optical_flow_range_frame"
         ),
-        DeclareLaunchArgument("motion_guard_enabled", default_value="true"),
+        DeclareLaunchArgument("motion_guard_enabled", default_value="false"),
         DeclareLaunchArgument("motion_guard_soft_dwell_s", default_value="2.0"),
         DeclareLaunchArgument("motion_guard_pose_gap_reset_s", default_value="0.40"),
         DeclareLaunchArgument("motion_guard_soft_xy_mps", default_value="0.40"),
-        DeclareLaunchArgument("motion_guard_soft_z_mps", default_value="0.25"),
+        DeclareLaunchArgument("motion_guard_soft_z_mps", default_value="0.45"),
         DeclareLaunchArgument("motion_guard_soft_yaw_radps", default_value="0.60"),
         DeclareLaunchArgument("motion_guard_hard_xy_mps", default_value="0.55"),
-        DeclareLaunchArgument("motion_guard_hard_z_mps", default_value="0.35"),
+        DeclareLaunchArgument("motion_guard_hard_z_mps", default_value="0.55"),
         DeclareLaunchArgument("motion_guard_hard_yaw_radps", default_value="0.90"),
         DeclareLaunchArgument("motion_guard_feedback_hard_xy_mps", default_value="0.65"),
-        DeclareLaunchArgument("motion_guard_feedback_hard_z_mps", default_value="0.45"),
+        DeclareLaunchArgument("motion_guard_feedback_hard_z_mps", default_value="0.55"),
         DeclareLaunchArgument("motion_guard_pose_soft_xy_step_m", default_value="0.25"),
         DeclareLaunchArgument("motion_guard_pose_soft_z_step_m", default_value="0.12"),
         DeclareLaunchArgument("motion_guard_pose_soft_yaw_step_rad", default_value="0.35"),
@@ -248,9 +265,9 @@ def generate_launch_description():
         DeclareLaunchArgument("motion_guard_pose_hard_z_step_m", default_value="0.25"),
         DeclareLaunchArgument("motion_guard_pose_hard_yaw_step_rad", default_value="0.70"),
         mono_camera_launch,
-        fmu_topic_namespace_bridge,
         uav_state_bridge,
         uav_control,
+        trajectory_path_publisher,
         height_measurement_bridge,
         aruco_detector,
         visual_landing,
