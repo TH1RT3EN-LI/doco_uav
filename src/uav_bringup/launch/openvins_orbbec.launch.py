@@ -24,6 +24,7 @@ def generate_launch_description():
 
     start_orbbec_camera = LaunchConfiguration("start_orbbec_camera")
     start_openvins = LaunchConfiguration("start_openvins")
+    start_px4_vision_bridge = LaunchConfiguration("start_px4_vision_bridge")
     start_rviz = LaunchConfiguration("start_rviz")
     use_sim_time = LaunchConfiguration("use_sim_time")
 
@@ -33,6 +34,26 @@ def generate_launch_description():
     openvins_use_stereo = LaunchConfiguration("openvins_use_stereo")
     openvins_max_cameras = LaunchConfiguration("openvins_max_cameras")
     openvins_save_total_state = LaunchConfiguration("openvins_save_total_state")
+    openvins_yaml_left_ir_topic = LaunchConfiguration("openvins_yaml_left_ir_topic")
+    openvins_yaml_right_ir_topic = LaunchConfiguration("openvins_yaml_right_ir_topic")
+    openvins_yaml_imu_topic = LaunchConfiguration("openvins_yaml_imu_topic")
+    px4_visual_odometry_topic = LaunchConfiguration("px4_visual_odometry_topic")
+    px4_bridge_expected_odom_frame_id = LaunchConfiguration(
+        "px4_bridge_expected_odom_frame_id"
+    )
+    px4_bridge_expected_child_frame_id = LaunchConfiguration(
+        "px4_bridge_expected_child_frame_id"
+    )
+    px4_bridge_sensor_roll_in_body_rad = LaunchConfiguration(
+        "px4_bridge_sensor_roll_in_body_rad"
+    )
+    px4_bridge_sensor_pitch_in_body_rad = LaunchConfiguration(
+        "px4_bridge_sensor_pitch_in_body_rad"
+    )
+    px4_bridge_sensor_yaw_in_body_rad = LaunchConfiguration(
+        "px4_bridge_sensor_yaw_in_body_rad"
+    )
+    px4_bridge_log_debug = LaunchConfiguration("px4_bridge_log_debug")
 
     orbbec_camera_name = LaunchConfiguration("orbbec_camera_name")
     base_frame_id = LaunchConfiguration("base_frame_id")
@@ -150,9 +171,9 @@ def generate_launch_description():
     openvins = GroupAction(
         condition=IfCondition(start_openvins),
         actions=[
-            SetRemap(src=default_left_ir_topic, dst=actual_left_ir_topic),
-            SetRemap(src=default_right_ir_topic, dst=actual_right_ir_topic),
-            SetRemap(src=default_imu_topic, dst=actual_imu_topic),
+            SetRemap(src=openvins_yaml_left_ir_topic, dst=actual_left_ir_topic),
+            SetRemap(src=openvins_yaml_right_ir_topic, dst=actual_right_ir_topic),
+            SetRemap(src=openvins_yaml_imu_topic, dst=actual_imu_topic),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     os.path.join(openvins_share, "launch", "subscribe.launch.py")
@@ -168,6 +189,25 @@ def generate_launch_description():
                     "save_total_state": openvins_save_total_state,
                 }.items(),
             ),
+        ],
+    )
+
+    openvins_px4_vision_bridge = Node(
+        package="uav_bridge",
+        executable="openvins_px4_vision_bridge_node",
+        name="openvins_px4_vision_bridge",
+        output="screen",
+        condition=IfCondition(start_px4_vision_bridge),
+        parameters=[
+            {"use_sim_time": use_sim_time},
+            {"odometry_topic": actual_ov_odom_topic},
+            {"visual_odometry_topic": px4_visual_odometry_topic},
+            {"expected_odom_frame_id": px4_bridge_expected_odom_frame_id},
+            {"expected_child_frame_id": px4_bridge_expected_child_frame_id},
+            {"sensor_roll_in_body_rad": px4_bridge_sensor_roll_in_body_rad},
+            {"sensor_pitch_in_body_rad": px4_bridge_sensor_pitch_in_body_rad},
+            {"sensor_yaw_in_body_rad": px4_bridge_sensor_yaw_in_body_rad},
+            {"log_debug": px4_bridge_log_debug},
         ],
     )
 
@@ -204,6 +244,7 @@ def generate_launch_description():
         [
             DeclareLaunchArgument("start_orbbec_camera", default_value="true"),
             DeclareLaunchArgument("start_openvins", default_value="true"),
+            DeclareLaunchArgument("start_px4_vision_bridge", default_value="true"),
             DeclareLaunchArgument("start_rviz", default_value="true"),
             DeclareLaunchArgument("use_sim_time", default_value="false"),
             DeclareLaunchArgument("openvins_namespace", default_value="ov_msckf"),
@@ -212,6 +253,35 @@ def generate_launch_description():
             DeclareLaunchArgument("openvins_use_stereo", default_value="true"),
             DeclareLaunchArgument("openvins_max_cameras", default_value="2"),
             DeclareLaunchArgument("openvins_save_total_state", default_value="false"),
+            DeclareLaunchArgument(
+                "openvins_yaml_left_ir_topic", default_value=default_left_ir_topic
+            ),
+            DeclareLaunchArgument(
+                "openvins_yaml_right_ir_topic", default_value=default_right_ir_topic
+            ),
+            DeclareLaunchArgument(
+                "openvins_yaml_imu_topic", default_value=default_imu_topic
+            ),
+            DeclareLaunchArgument(
+                "px4_visual_odometry_topic",
+                default_value="/fmu/in/vehicle_visual_odometry",
+            ),
+            DeclareLaunchArgument(
+                "px4_bridge_expected_odom_frame_id", default_value="global"
+            ),
+            DeclareLaunchArgument(
+                "px4_bridge_expected_child_frame_id", default_value="imu"
+            ),
+            DeclareLaunchArgument(
+                "px4_bridge_sensor_roll_in_body_rad", default_value="0.0"
+            ),
+            DeclareLaunchArgument(
+                "px4_bridge_sensor_pitch_in_body_rad", default_value="0.0"
+            ),
+            DeclareLaunchArgument(
+                "px4_bridge_sensor_yaw_in_body_rad", default_value="0.0"
+            ),
+            DeclareLaunchArgument("px4_bridge_log_debug", default_value="false"),
             DeclareLaunchArgument("rviz_config", default_value=default_rviz_config),
             DeclareLaunchArgument("orbbec_camera_name", default_value="uav_depth_camera"),
             DeclareLaunchArgument("base_frame_id", default_value="uav_base_link"),
@@ -313,6 +383,7 @@ def generate_launch_description():
             ),
             orbbec_depth_camera,
             openvins,
+            openvins_px4_vision_bridge,
             rviz,
         ]
     )

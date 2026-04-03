@@ -126,7 +126,7 @@ class PositionMonitorGui:
         self._schedule_refresh()
 
     def _build_window(self):
-        self.root.title("位置实时监视")
+        self.root.title("OpenVINS / PX4 位置实时监视")
         self.root.geometry("1520x920")
         self.root.configure(bg="#eef3f8")
 
@@ -135,14 +135,14 @@ class PositionMonitorGui:
 
         tk.Label(
             header,
-            text="位置实时监视",
+            text="OpenVINS / PX4 位置实时监视",
             font=("Sans", 22, "bold"),
             fg="#f8fafc",
             bg="#0f172a",
         ).pack(anchor="w")
         tk.Label(
             header,
-            text="单位统一为米（m）；界面只刷新当前值，不滚动历史消息。",
+            text="默认对比 OpenVINS 原始输出、发给 PX4 的视觉里程计，以及 PX4 融合输出；单位统一为米（m）。",
             font=("Sans", 11),
             fg="#cbd5e1",
             bg="#0f172a",
@@ -416,6 +416,41 @@ def convert_px4_position_to_ros_xyz(x: float, y: float, z: float, pose_frame: in
     return x, y, z, f"ROS 默认方向显示（原始: {describe_px4_pose_frame(pose_frame)})"
 
 
+def describe_ros_odometry_frame(frame_id: str, child_frame_id: str) -> str:
+    if frame_id and child_frame_id:
+        return f"ROS Odom（{frame_id} -> {child_frame_id}）"
+    if frame_id:
+        return f"ROS frame_id={frame_id}"
+    if child_frame_id:
+        return f"ROS child_frame_id={child_frame_id}"
+    return "ROS Odom（未设置 frame_id / child_frame_id）"
+
+
+def make_openvins_spec(key: str, source_label: str, topic_name: str) -> SourceSpec:
+    try:
+        from nav_msgs.msg import Odometry
+    except ImportError as exc:
+        raise RuntimeError("当前终端没有 nav_msgs。请先 source 含有 nav_msgs 的工作区。") from exc
+
+    def extract(msg):
+        stamp_s = float(msg.header.stamp.sec) + float(msg.header.stamp.nanosec) * 1e-9
+        return PositionSample(
+            x=float(msg.pose.pose.position.x),
+            y=float(msg.pose.pose.position.y),
+            z=float(msg.pose.pose.position.z),
+            stamp_s=stamp_s,
+            frame_label=describe_ros_odometry_frame(msg.header.frame_id, msg.child_frame_id),
+        )
+
+    return SourceSpec(
+        key=key,
+        source_label=source_label,
+        topic_name=topic_name,
+        message_type=Odometry,
+        extractor=extract,
+    )
+
+
 def make_px4_spec(key: str, source_label: str, topic_name: str) -> SourceSpec:
     try:
         from px4_msgs.msg import VehicleOdometry
@@ -449,18 +484,25 @@ def make_px4_spec(key: str, source_label: str, topic_name: str) -> SourceSpec:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="GUI 方式实时监视 PX4 视觉输入与融合输出的位置。")
+    parser = argparse.ArgumentParser(
+        description="GUI 方式实时监视 OpenVINS 原始输出、PX4 视觉输入与 PX4 融合输出的位置。"
+    )
     parser.add_argument(
         "--sources",
-        default="px4_in,px4_out",
-        help="要显示的数据源，默认全部显示：px4_in,px4_out",
+        default="openvins,px4_in,px4_out",
+        help="要显示的数据源，默认全部显示：openvins,px4_in,px4_out",
     )
     parser.add_argument(
         "--source",
         default=None,
-        help="兼容旧用法。若设置，则只显示单一路数据源。可选：px4_in / px4_out / px4",
+        help="兼容旧用法。若设置，则只显示单一路数据源。可选：openvins / px4_in / px4_out / px4",
     )
     parser.add_argument("--topic", default=None, help="只在单一路模式下使用：覆盖该数据源的话题名。")
+    parser.add_argument(
+        "--openvins-topic",
+        default="/ov_msckf/odomimu",
+        help="OpenVINS 原始里程计话题。",
+    )
     parser.add_argument(
         "--px4-input-topic",
         default="/fmu/in/vehicle_visual_odometry",
@@ -492,10 +534,12 @@ def build_source_specs(args) -> List[SourceSpec]:
         source_keys = [alias]
 
     builders = {
+        "openvins": lambda topic: make_openvins_spec("openvins", "OpenVINS 原始位置", topic),
         "px4_in": lambda topic: make_px4_spec("px4_in", "发给 PX4 的视觉位置", topic),
         "px4_out": lambda topic: make_px4_spec("px4_out", "PX4 输出位置", topic),
     }
     default_topics = {
+        "openvins": args.openvins_topic,
         "px4_in": args.px4_input_topic,
         "px4_out": args.px4_output_topic,
     }

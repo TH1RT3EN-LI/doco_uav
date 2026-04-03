@@ -107,12 +107,13 @@ up_aruco_sigma_px: 1
 up_aruco_chi2_multipler: 1
 
 # masks for our images
-use_mask: false
+use_mask: true
+mask0: "mask_orbbec_left_ir_bottom_1_6.pgm" # relative to current file
+mask1: "mask_orbbec_right_ir_bottom_1_6.pgm" # relative to current file
 
 # imu and camera spacial-temporal
 # imu config should also have the correct noise values
 relative_config_imu: "kalibr_imu_chain.yaml"
 relative_config_imucam: "kalibr_imucam_chain.yaml"
-
 
 
