@@ -24,6 +24,9 @@ from uav_bringup.profile_defaults import (
 def generate_launch_description():
     bringup_share = get_package_share_directory("uav_bringup")
 
+    start_openvins_stack = LaunchConfiguration("start_openvins_stack")
+    openvins_start_rviz = LaunchConfiguration("openvins_start_rviz")
+    openvins_config_path = LaunchConfiguration("openvins_config_path")
     takeoff_height_m = LaunchConfiguration("takeoff_height_m")
     max_velocity_setpoint_mps = LaunchConfiguration("max_velocity_setpoint_mps")
     max_acceleration_setpoint_mps2 = LaunchConfiguration("max_acceleration_setpoint_mps2")
@@ -128,6 +131,54 @@ def generate_launch_description():
     trajectory_setpoint_topic = "/fmu/in/trajectory_setpoint"
     vehicle_command_topic = "/fmu/in/vehicle_command"
 
+    openvins_orbbec_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(bringup_share, "launch", "openvins_orbbec.launch.py")
+        ),
+        condition=IfCondition(start_openvins_stack),
+        launch_arguments={
+            "start_px4_vision_bridge": "false",
+            "start_rviz": openvins_start_rviz,
+            "openvins_config_path": openvins_config_path,
+            "base_frame_id": base_frame_id,
+            "orbbec_camera_name": orbbec_camera_name,
+            "orbbec_camera_frame_id": orbbec_camera_frame_id,
+            "orbbec_camera_x": orbbec_camera_x,
+            "orbbec_camera_y": orbbec_camera_y,
+            "orbbec_camera_z": orbbec_camera_z,
+            "orbbec_camera_roll": orbbec_camera_roll,
+            "orbbec_camera_pitch": orbbec_camera_pitch,
+            "orbbec_camera_yaw": orbbec_camera_yaw,
+            "orbbec_enable_depth": orbbec_enable_depth,
+            "orbbec_enable_color": orbbec_enable_color,
+            "orbbec_enable_left_ir": orbbec_enable_left_ir,
+            "orbbec_enable_right_ir": orbbec_enable_right_ir,
+            "orbbec_enable_point_cloud": orbbec_enable_point_cloud,
+            "orbbec_enable_colored_point_cloud": orbbec_enable_colored_point_cloud,
+            "orbbec_enable_sync_output_accel_gyro": orbbec_enable_sync_output_accel_gyro,
+            "orbbec_enable_publish_extrinsic": orbbec_enable_publish_extrinsic,
+            "orbbec_enable_accel": orbbec_enable_accel,
+            "orbbec_enable_gyro": orbbec_enable_gyro,
+            "orbbec_accel_rate": orbbec_accel_rate,
+            "orbbec_gyro_rate": orbbec_gyro_rate,
+            "orbbec_left_ir_width": orbbec_left_ir_width,
+            "orbbec_left_ir_height": orbbec_left_ir_height,
+            "orbbec_left_ir_fps": orbbec_left_ir_fps,
+            "orbbec_left_ir_format": orbbec_left_ir_format,
+            "orbbec_right_ir_width": orbbec_right_ir_width,
+            "orbbec_right_ir_height": orbbec_right_ir_height,
+            "orbbec_right_ir_fps": orbbec_right_ir_fps,
+            "orbbec_right_ir_format": orbbec_right_ir_format,
+            "orbbec_enable_ir_auto_exposure": orbbec_enable_ir_auto_exposure,
+            "orbbec_ir_exposure": orbbec_ir_exposure,
+            "orbbec_ir_gain": orbbec_ir_gain,
+            "orbbec_ir_ae_max_exposure": orbbec_ir_ae_max_exposure,
+            "orbbec_ir_brightness": orbbec_ir_brightness,
+            "orbbec_enable_laser": orbbec_enable_laser,
+            "orbbec_enable_ldp": orbbec_enable_ldp,
+        }.items(),
+    )
+
     mono_camera_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(bringup_share, "launch", "mono_camera.launch.py")),
         condition=IfCondition(start_mono_camera),
@@ -205,12 +256,15 @@ def generate_launch_description():
     uav_state_bridge = Node(
         package="uav_bridge",
         executable="uav_state_bridge_node",
-        name="uav_state_bridge",
+        name="uav_state_bridge_px4_debug",
         output="screen",
         parameters=[
             {"vehicle_local_position_topic": vehicle_local_position_topic},
             {"vehicle_odometry_topic": vehicle_odometry_topic},
             {"base_frame_id": base_frame_id},
+            {"output_odometry_topic": "/uav/state/odometry_px4"},
+            {"publish_tf": False},
+            {"publish_map_to_odom_tf": False},
         ],
     )
 
@@ -278,7 +332,14 @@ def generate_launch_description():
         ],
     )
 
+    default_openvins_config = os.path.join(
+        bringup_share, "config", "openvins", "orbbec_gemini336", "estimator_config.yaml"
+    )
+
     return LaunchDescription([
+        DeclareLaunchArgument("start_openvins_stack", default_value="true"),
+        DeclareLaunchArgument("openvins_start_rviz", default_value="false"),
+        DeclareLaunchArgument("openvins_config_path", default_value=default_openvins_config),
         DeclareLaunchArgument("takeoff_height_m", default_value="0.25"),
         DeclareLaunchArgument("max_velocity_setpoint_mps", default_value="0.40"),
         DeclareLaunchArgument("max_acceleration_setpoint_mps2", default_value="0.60"),
@@ -370,6 +431,7 @@ def generate_launch_description():
         DeclareLaunchArgument("orbbec_ir_brightness", default_value=DEFAULT_ORBBEC_IR_EXPOSURE["brightness"]),
         DeclareLaunchArgument("orbbec_enable_laser", default_value=DEFAULT_ORBBEC_STANDALONE_PROFILE["enable_laser"]),
         DeclareLaunchArgument("orbbec_enable_ldp", default_value=DEFAULT_ORBBEC_STANDALONE_PROFILE["enable_ldp"]),
+        openvins_orbbec_launch,
         mono_camera_launch,
         orbbec_depth_camera_launch,
         uav_state_bridge,

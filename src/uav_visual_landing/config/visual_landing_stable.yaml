@@ -5,6 +5,7 @@ visual_landing_node:
     velocity_body_topic: /uav/control/setpoint/velocity_body
     controller_state_topic: /uav/visual_landing/controller_state
     hold_service: /uav/control/command/hold
+    position_mode_service: /uav/control/command/position_mode
     disarm_service: /uav/control/command/disarm
     height_measurement_transport: stamped_range
     height_measurement_topic: /uav/sensors/downward_range

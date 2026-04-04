@@ -126,7 +126,7 @@ class PositionMonitorGui:
         self._schedule_refresh()
 
     def _build_window(self):
-        self.root.title("OpenVINS / PX4 位置实时监视")
+        self.root.title("OpenVINS 统一状态 / PX4 位置实时监视")
         self.root.geometry("1520x920")
         self.root.configure(bg="#eef3f8")
 
@@ -135,14 +135,14 @@ class PositionMonitorGui:
 
         tk.Label(
             header,
-            text="OpenVINS / PX4 位置实时监视",
+            text="OpenVINS 统一状态 / PX4 位置实时监视",
             font=("Sans", 22, "bold"),
             fg="#f8fafc",
             bg="#0f172a",
         ).pack(anchor="w")
         tk.Label(
             header,
-            text="默认对比 OpenVINS 原始输出、发给 PX4 的视觉里程计，以及 PX4 融合输出；单位统一为米（m）。",
+            text="默认对比 OpenVINS 原始输出、统一 /uav/state/odometry，以及 PX4 原始输出；单位统一为米（m）。",
             font=("Sans", 11),
             fg="#cbd5e1",
             bg="#0f172a",
@@ -426,7 +426,7 @@ def describe_ros_odometry_frame(frame_id: str, child_frame_id: str) -> str:
     return "ROS Odom（未设置 frame_id / child_frame_id）"
 
 
-def make_openvins_spec(key: str, source_label: str, topic_name: str) -> SourceSpec:
+def make_ros_odometry_spec(key: str, source_label: str, topic_name: str) -> SourceSpec:
     try:
         from nav_msgs.msg import Odometry
     except ImportError as exc:
@@ -485,23 +485,28 @@ def make_px4_spec(key: str, source_label: str, topic_name: str) -> SourceSpec:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="GUI 方式实时监视 OpenVINS 原始输出、PX4 视觉输入与 PX4 融合输出的位置。"
+        description="GUI 方式实时监视 OpenVINS 原始输出、统一 UAV 状态与 PX4 原始输出的位置。"
     )
     parser.add_argument(
         "--sources",
-        default="openvins,px4_in,px4_out",
-        help="要显示的数据源，默认全部显示：openvins,px4_in,px4_out",
+        default="openvins,uav_state,px4_out",
+        help="要显示的数据源，默认全部显示：openvins,uav_state,px4_out",
     )
     parser.add_argument(
         "--source",
         default=None,
-        help="兼容旧用法。若设置，则只显示单一路数据源。可选：openvins / px4_in / px4_out / px4",
+        help="兼容旧用法。若设置，则只显示单一路数据源。可选：openvins / uav_state / state / px4_in / px4_out / px4",
     )
     parser.add_argument("--topic", default=None, help="只在单一路模式下使用：覆盖该数据源的话题名。")
     parser.add_argument(
         "--openvins-topic",
         default="/ov_msckf/odomimu",
         help="OpenVINS 原始里程计话题。",
+    )
+    parser.add_argument(
+        "--uav-state-topic",
+        default="/uav/state/odometry",
+        help="统一的 UAV 状态里程计话题。",
     )
     parser.add_argument(
         "--px4-input-topic",
@@ -530,16 +535,24 @@ def parse_args():
 def build_source_specs(args) -> List[SourceSpec]:
     source_keys = [item.strip() for item in args.sources.split(",") if item.strip()]
     if args.source:
-        alias = "px4_out" if args.source == "px4" else args.source
+        alias_map = {
+            "px4": "px4_out",
+            "state": "uav_state",
+        }
+        alias = alias_map.get(args.source, args.source)
         source_keys = [alias]
 
     builders = {
-        "openvins": lambda topic: make_openvins_spec("openvins", "OpenVINS 原始位置", topic),
+        "openvins": lambda topic: make_ros_odometry_spec("openvins", "OpenVINS 原始位置", topic),
+        "uav_state": lambda topic: make_ros_odometry_spec(
+            "uav_state", "统一 UAV 状态", topic
+        ),
         "px4_in": lambda topic: make_px4_spec("px4_in", "发给 PX4 的视觉位置", topic),
         "px4_out": lambda topic: make_px4_spec("px4_out", "PX4 输出位置", topic),
     }
     default_topics = {
         "openvins": args.openvins_topic,
+        "uav_state": args.uav_state_topic,
         "px4_in": args.px4_input_topic,
         "px4_out": args.px4_output_topic,
     }

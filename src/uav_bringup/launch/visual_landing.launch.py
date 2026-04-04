@@ -37,6 +37,9 @@ def generate_launch_description():
     camera_hfov_rad = LaunchConfiguration("camera_hfov_rad")
     camera_info_url = LaunchConfiguration("camera_info_url")
     use_sim_time = LaunchConfiguration("use_sim_time")
+    start_openvins_stack = LaunchConfiguration("start_openvins_stack")
+    openvins_start_rviz = LaunchConfiguration("openvins_start_rviz")
+    openvins_config_path = LaunchConfiguration("openvins_config_path")
     height_measurement_transport = LaunchConfiguration("height_measurement_transport")
     height_measurement_topic = LaunchConfiguration("height_measurement_topic")
     height_measurement_mode = LaunchConfiguration("height_measurement_mode")
@@ -104,16 +107,33 @@ def generate_launch_description():
     vehicle_command_topic = "/fmu/in/vehicle_command"
     distance_sensor_topic = "/fmu/out/distance_sensor"
 
+    openvins_orbbec_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(bringup_share, "launch", "openvins_orbbec.launch.py")
+        ),
+        condition=IfCondition(start_openvins_stack),
+        launch_arguments={
+            "start_px4_vision_bridge": "false",
+            "start_rviz": openvins_start_rviz,
+            "use_sim_time": use_sim_time,
+            "openvins_config_path": openvins_config_path,
+            "base_frame_id": base_frame_id,
+        }.items(),
+    )
+
     uav_state_bridge = Node(
         package="uav_bridge",
         executable="uav_state_bridge_node",
-        name="uav_state_bridge",
+        name="uav_state_bridge_px4_debug",
         output="screen",
         parameters=[
             {"vehicle_local_position_topic": vehicle_local_position_topic},
             {"vehicle_odometry_topic": vehicle_odometry_topic},
             {"base_frame_id": base_frame_id},
             {"use_sim_time": use_sim_time},
+            {"output_odometry_topic": "/uav/state/odometry_px4"},
+            {"publish_tf": False},
+            {"publish_map_to_odom_tf": False},
         ],
     )
 
@@ -209,6 +229,10 @@ def generate_launch_description():
         ],
     )
 
+    default_openvins_config = os.path.join(
+        bringup_share, "config", "openvins", "orbbec_gemini336", "estimator_config.yaml"
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument("camera_backend", default_value="legacy"),
         DeclareLaunchArgument("camera_device", default_value="/dev/video0"),
@@ -235,6 +259,9 @@ def generate_launch_description():
         DeclareLaunchArgument("camera_info_url", default_value=""),
         DeclareLaunchArgument("tag_size_m", default_value="0.20"),
         DeclareLaunchArgument("use_sim_time", default_value="false"),
+        DeclareLaunchArgument("start_openvins_stack", default_value="true"),
+        DeclareLaunchArgument("openvins_start_rviz", default_value="false"),
+        DeclareLaunchArgument("openvins_config_path", default_value=default_openvins_config),
         DeclareLaunchArgument("publish_trajectory", default_value="true"),
         DeclareLaunchArgument("trajectory_input_odom_topic", default_value="/uav/state/odometry"),
         DeclareLaunchArgument("trajectory_output_topic", default_value="/uav/state/trajectory"),
@@ -264,6 +291,7 @@ def generate_launch_description():
         DeclareLaunchArgument("motion_guard_pose_hard_xy_step_m", default_value="0.50"),
         DeclareLaunchArgument("motion_guard_pose_hard_z_step_m", default_value="0.25"),
         DeclareLaunchArgument("motion_guard_pose_hard_yaw_step_rad", default_value="0.70"),
+        openvins_orbbec_launch,
         mono_camera_launch,
         uav_state_bridge,
         uav_control,

@@ -44,6 +44,9 @@ public:
       "controller_state_topic",
       "/uav/visual_landing/controller_state");
     this->declare_parameter<std::string>("hold_service", "/uav/control/command/hold");
+    this->declare_parameter<std::string>(
+      "position_mode_service",
+      "/uav/control/command/position_mode");
     this->declare_parameter<std::string>("disarm_service", "/uav/control/command/disarm");
     this->declare_parameter<std::string>("height_measurement_transport", "");
     this->declare_parameter<std::string>("height_measurement_topic", "/uav/sensors/downward_range");
@@ -115,6 +118,7 @@ public:
     velocity_body_topic_ = this->get_parameter("velocity_body_topic").as_string();
     controller_state_topic_ = this->get_parameter("controller_state_topic").as_string();
     hold_service_ = this->get_parameter("hold_service").as_string();
+    position_mode_service_ = this->get_parameter("position_mode_service").as_string();
     disarm_service_ = this->get_parameter("disarm_service").as_string();
     const std::string requested_height_measurement_transport =
       this->get_parameter("height_measurement_transport").as_string();
@@ -251,6 +255,7 @@ public:
     controller_state_pub_ = this->create_publisher<uav_visual_landing::msg::LandingControllerState>(
       controller_state_topic_, rclcpp::QoS(1).reliable().transient_local());
     hold_client_ = this->create_client<Trigger>(hold_service_);
+    position_mode_client_ = this->create_client<Trigger>(position_mode_service_);
     disarm_client_ = this->create_client<Trigger>(disarm_service_);
 
     observation_sub_ = this->create_subscription<uav_visual_landing::msg::TargetObservation>(
@@ -367,12 +372,12 @@ public:
       0.0f);
     RCLCPP_INFO(
       this->get_logger(),
-      "visual_landing_node: observation=%s state=%s velocity_body=%s hold=%s disarm=%s "
+      "visual_landing_node: observation=%s state=%s velocity_body=%s hold=%s position_mode=%s disarm=%s "
       "height_transport=%s height_topic=%s range_topic=%s vehicle_land_detected_topic=%s "
       "vehicle_local_position_topic=%s "
       "start=%s stop=%s",
       target_observation_topic_.c_str(), state_topic_.c_str(), velocity_body_topic_.c_str(),
-      hold_service_.c_str(), disarm_service_.c_str(),
+      hold_service_.c_str(), position_mode_service_.c_str(), disarm_service_.c_str(),
       heightMeasurementTransportName(height_measurement_transport_),
       height_measurement_topic_.c_str(), range_topic_.c_str(),
       vehicle_land_detected_topic_.c_str(),
@@ -647,6 +652,17 @@ private:
     }
     auto req = std::make_shared<Trigger::Request>();
     hold_client_->async_send_request(req);
+  }
+
+  void requestPositionMode()
+  {
+    if (!position_mode_client_->service_is_ready()) {
+      RCLCPP_WARN_THROTTLE(
+        this->get_logger(), *this->get_clock(), 2000, "position mode service not ready");
+      return;
+    }
+    auto req = std::make_shared<Trigger::Request>();
+    position_mode_client_->async_send_request(req);
   }
 
   void resetDisarmRequestState()
@@ -1152,6 +1168,7 @@ private:
     if (!state_fresh && !allow_terminal_without_fresh_state) {
       if (phase_ != ControllerPhase::HoldWait && phase_ != ControllerPhase::Ready) {
         transitionTo(ControllerPhase::HoldWait, true);
+        requestPositionMode();
       }
       xy_control_mode_ = "state_stale";
       publishControllerState(
@@ -1371,6 +1388,7 @@ private:
   std::string velocity_body_topic_;
   std::string controller_state_topic_;
   std::string hold_service_;
+  std::string position_mode_service_;
   std::string disarm_service_;
   HeightMeasurementTransport height_measurement_transport_{HeightMeasurementTransport::StampedRange};
   std::string height_measurement_topic_;
@@ -1495,6 +1513,7 @@ private:
     vehicle_local_position_height_sub_;
   rclcpp::Subscription<px4_msgs::msg::VehicleStatus>::SharedPtr vehicle_status_sub_;
   rclcpp::Client<Trigger>::SharedPtr hold_client_;
+  rclcpp::Client<Trigger>::SharedPtr position_mode_client_;
   rclcpp::Client<Trigger>::SharedPtr disarm_client_;
   rclcpp::Service<Trigger>::SharedPtr start_srv_;
   rclcpp::Service<Trigger>::SharedPtr stop_srv_;
