@@ -1,0 +1,24 @@
+rc_safety_mux:
+  ros__parameters:
+    input_rc_topic: /fmu/out/input_rc
+    state_topic: /uav/safety/rc_safety_mux/state
+
+    ch5_channel_index: 4
+    ch7_channel_index: 6
+
+    channel_min_valid_us: 800
+    channel_max_valid_us: 2200
+    ch5_low_threshold_us: 1300
+    ch5_high_threshold_us: 1700
+    ch7_active_threshold_us: 1700
+    switch_hysteresis_us: 80
+
+    debounce_s: 0.20
+    tick_rate_hz: 10.0
+    service_retry_s: 1.0
+    status_timeout_s: 1.0
+
+    # CH5 低位当前只表示“允许自主”，不直接发恢复动作。
+    ch5_low_service: ""
+    ch5_mid_service: /uav/control/command/hold
+    ch5_high_service: /uav/control/command/abort

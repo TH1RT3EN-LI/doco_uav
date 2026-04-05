@@ -22,8 +22,6 @@ class PositionSample:
     z: float
     stamp_s: float
     frame_label: str
-
-
 @dataclass
 class SourceSpec:
     key: str

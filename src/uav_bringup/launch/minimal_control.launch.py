@@ -82,6 +82,8 @@ def generate_launch_description():
     trajectory_max_samples = LaunchConfiguration("trajectory_max_samples")
     trajectory_min_sample_distance_m = LaunchConfiguration("trajectory_min_sample_distance_m")
     trajectory_min_sample_period_s = LaunchConfiguration("trajectory_min_sample_period_s")
+    start_rc_safety_mux = LaunchConfiguration("start_rc_safety_mux")
+    rc_safety_config_path = LaunchConfiguration("rc_safety_config_path")
 
     start_orbbec_depth_camera = LaunchConfiguration("start_orbbec_depth_camera")
     orbbec_camera_name = LaunchConfiguration("orbbec_camera_name")
@@ -332,8 +334,20 @@ def generate_launch_description():
         ],
     )
 
+    rc_safety_mux = Node(
+        package="uav_bridge",
+        executable="rc_safety_mux_node",
+        name="rc_safety_mux",
+        output="screen",
+        condition=IfCondition(start_rc_safety_mux),
+        parameters=[rc_safety_config_path],
+    )
+
     default_openvins_config = os.path.join(
         bringup_share, "config", "openvins", "orbbec_gemini336", "estimator_config.yaml"
+    )
+    default_rc_safety_config = os.path.join(
+        bringup_share, "config", "safety", "rc_safety_mux.yaml"
     )
 
     return LaunchDescription([
@@ -396,6 +410,8 @@ def generate_launch_description():
         DeclareLaunchArgument("trajectory_max_samples", default_value="5000"),
         DeclareLaunchArgument("trajectory_min_sample_distance_m", default_value="0.02"),
         DeclareLaunchArgument("trajectory_min_sample_period_s", default_value="0.10"),
+        DeclareLaunchArgument("start_rc_safety_mux", default_value="true"),
+        DeclareLaunchArgument("rc_safety_config_path", default_value=default_rc_safety_config),
         DeclareLaunchArgument("orbbec_camera_name", default_value="uav_depth_camera"),
         DeclareLaunchArgument("orbbec_camera_frame_id", default_value="uav_stereo_camera_optical_frame"),
         DeclareLaunchArgument("orbbec_camera_x", default_value=DEFAULT_STEREO_CAMERA_TO_BODY["x"]),
@@ -436,6 +452,7 @@ def generate_launch_description():
         orbbec_depth_camera_launch,
         uav_state_bridge,
         uav_control,
+        rc_safety_mux,
         trajectory_path_publisher,
         mono_video_recorder,
     ])

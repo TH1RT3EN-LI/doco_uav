@@ -231,7 +231,7 @@ private:
     }
 
     nav_msgs::msg::Odometry out;
-    out.header.stamp = stamp.to_msg();
+    out.header.stamp = stamp;
     out.header.frame_id = output_frame_id_;
     out.child_frame_id = base_frame_id_;
     out.pose.pose.position.x = position_world_body.x();

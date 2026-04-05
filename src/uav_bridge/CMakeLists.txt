@@ -155,6 +155,17 @@ ament_target_dependencies(height_measurement_bridge_node
   sensor_msgs
 )
 
+add_executable(rc_safety_mux_node
+  src/rc_safety_mux_node.cpp
+)
+target_compile_features(rc_safety_mux_node PUBLIC cxx_std_17)
+ament_target_dependencies(rc_safety_mux_node
+  px4_msgs
+  rclcpp
+  std_msgs
+  std_srvs
+)
+
 add_executable(sim_vio_odometry_node
   src/sim_vio_odometry_node.cpp
 )
@@ -210,6 +221,7 @@ install(TARGETS
   trajectory_path_publisher_node
   uav_control_node
   height_measurement_bridge_node
+  rc_safety_mux_node
   sim_vio_odometry_node
   openvins_px4_vision_bridge_node
   openvins_state_bridge_node

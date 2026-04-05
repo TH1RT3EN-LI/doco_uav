@@ -68,6 +68,8 @@ def generate_launch_description():
     trajectory_max_samples = LaunchConfiguration("trajectory_max_samples")
     trajectory_min_sample_distance_m = LaunchConfiguration("trajectory_min_sample_distance_m")
     trajectory_min_sample_period_s = LaunchConfiguration("trajectory_min_sample_period_s")
+    start_rc_safety_mux = LaunchConfiguration("start_rc_safety_mux")
+    rc_safety_config_path = LaunchConfiguration("rc_safety_config_path")
 
     visual_landing_config = os.path.join(visual_landing_share, "config", "visual_landing_stable.yaml")
     mono_camera_launch = IncludeLaunchDescription(
@@ -186,6 +188,15 @@ def generate_launch_description():
         ],
     )
 
+    rc_safety_mux = Node(
+        package="uav_bridge",
+        executable="rc_safety_mux_node",
+        name="rc_safety_mux",
+        output="screen",
+        condition=IfCondition(start_rc_safety_mux),
+        parameters=[rc_safety_config_path, {"use_sim_time": use_sim_time}],
+    )
+
     height_measurement_bridge = Node(
         package="uav_bridge",
         executable="height_measurement_bridge_node",
@@ -232,6 +243,9 @@ def generate_launch_description():
     default_openvins_config = os.path.join(
         bringup_share, "config", "openvins", "orbbec_gemini336", "estimator_config.yaml"
     )
+    default_rc_safety_config = os.path.join(
+        bringup_share, "config", "safety", "rc_safety_mux.yaml"
+    )
 
     return LaunchDescription([
         DeclareLaunchArgument("camera_backend", default_value="legacy"),
@@ -268,6 +282,8 @@ def generate_launch_description():
         DeclareLaunchArgument("trajectory_max_samples", default_value="5000"),
         DeclareLaunchArgument("trajectory_min_sample_distance_m", default_value="0.02"),
         DeclareLaunchArgument("trajectory_min_sample_period_s", default_value="0.10"),
+        DeclareLaunchArgument("start_rc_safety_mux", default_value="true"),
+        DeclareLaunchArgument("rc_safety_config_path", default_value=default_rc_safety_config),
         DeclareLaunchArgument("height_measurement_transport", default_value="stamped_range"),
         DeclareLaunchArgument("height_measurement_topic", default_value="/uav/sensors/downward_range"),
         DeclareLaunchArgument("height_measurement_mode", default_value=""),
@@ -295,6 +311,7 @@ def generate_launch_description():
         mono_camera_launch,
         uav_state_bridge,
         uav_control,
+        rc_safety_mux,
         trajectory_path_publisher,
         height_measurement_bridge,
         aruco_detector,
