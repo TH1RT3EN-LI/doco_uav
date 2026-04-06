@@ -385,7 +385,7 @@ def generate_launch_description():
         DeclareLaunchArgument("motion_guard_pose_hard_yaw_step_rad", default_value="0.70"),
         DeclareLaunchArgument("start_mono_camera", default_value="true"),
         DeclareLaunchArgument("camera_backend", default_value="legacy"),
-        DeclareLaunchArgument("camera_device", default_value="/dev/video0"),
+        DeclareLaunchArgument("camera_device", default_value="/dev/video1"),
         DeclareLaunchArgument("camera_fourcc", default_value="MJPG"),
         DeclareLaunchArgument("image_width", default_value="1280"),
         DeclareLaunchArgument("image_height", default_value="720"),
