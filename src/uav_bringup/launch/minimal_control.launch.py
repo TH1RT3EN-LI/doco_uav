@@ -5,7 +5,7 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription, TimerAction
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, GroupAction, IncludeLaunchDescription, TimerAction
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -152,54 +152,56 @@ def generate_launch_description():
     trajectory_setpoint_topic = "/fmu/in/trajectory_setpoint"
     vehicle_command_topic = "/fmu/in/vehicle_command"
 
-    openvins_orbbec_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(bringup_share, "launch", "openvins_orbbec.launch.py")
-        ),
+    openvins_orbbec_launch = ExecuteProcess(
+        cmd=[
+            "ros2",
+            "launch",
+            "uav_bringup",
+            "openvins_orbbec.launch.py",
+            "start_px4_vision_bridge:=false",
+            ["use_rviz:=", openvins_start_rviz],
+            ["use_sim_time:=", use_sim_time],
+            ["openvins_config_path:=", openvins_config_path],
+            ["state_bridge_log_debug:=", openvins_state_log_debug],
+            ["base_frame_id:=", base_frame_id],
+            ["orbbec_camera_name:=", orbbec_camera_name],
+            ["orbbec_camera_frame_id:=", orbbec_camera_frame_id],
+            ["orbbec_camera_x:=", orbbec_camera_x],
+            ["orbbec_camera_y:=", orbbec_camera_y],
+            ["orbbec_camera_z:=", orbbec_camera_z],
+            ["orbbec_camera_roll:=", orbbec_camera_roll],
+            ["orbbec_camera_pitch:=", orbbec_camera_pitch],
+            ["orbbec_camera_yaw:=", orbbec_camera_yaw],
+            ["orbbec_enable_depth:=", orbbec_enable_depth],
+            ["orbbec_enable_color:=", orbbec_enable_color],
+            ["orbbec_enable_left_ir:=", orbbec_enable_left_ir],
+            ["orbbec_enable_right_ir:=", orbbec_enable_right_ir],
+            ["orbbec_enable_point_cloud:=", orbbec_enable_point_cloud],
+            ["orbbec_enable_colored_point_cloud:=", orbbec_enable_colored_point_cloud],
+            ["orbbec_enable_sync_output_accel_gyro:=", orbbec_enable_sync_output_accel_gyro],
+            ["orbbec_enable_publish_extrinsic:=", orbbec_enable_publish_extrinsic],
+            ["orbbec_enable_accel:=", orbbec_enable_accel],
+            ["orbbec_enable_gyro:=", orbbec_enable_gyro],
+            ["orbbec_accel_rate:=", orbbec_accel_rate],
+            ["orbbec_gyro_rate:=", orbbec_gyro_rate],
+            ["orbbec_left_ir_width:=", orbbec_left_ir_width],
+            ["orbbec_left_ir_height:=", orbbec_left_ir_height],
+            ["orbbec_left_ir_fps:=", orbbec_left_ir_fps],
+            ["orbbec_left_ir_format:=", orbbec_left_ir_format],
+            ["orbbec_right_ir_width:=", orbbec_right_ir_width],
+            ["orbbec_right_ir_height:=", orbbec_right_ir_height],
+            ["orbbec_right_ir_fps:=", orbbec_right_ir_fps],
+            ["orbbec_right_ir_format:=", orbbec_right_ir_format],
+            ["orbbec_enable_ir_auto_exposure:=", orbbec_enable_ir_auto_exposure],
+            ["orbbec_ir_exposure:=", orbbec_ir_exposure],
+            ["orbbec_ir_gain:=", orbbec_ir_gain],
+            ["orbbec_ir_ae_max_exposure:=", orbbec_ir_ae_max_exposure],
+            ["orbbec_ir_brightness:=", orbbec_ir_brightness],
+            ["orbbec_enable_laser:=", orbbec_enable_laser],
+            ["orbbec_enable_ldp:=", orbbec_enable_ldp],
+        ],
         condition=IfCondition(start_openvins_stack),
-        launch_arguments={
-            "start_px4_vision_bridge": "false",
-            "use_rviz": openvins_start_rviz,
-            "use_sim_time": use_sim_time,
-            "openvins_config_path": openvins_config_path,
-            "state_bridge_log_debug": openvins_state_log_debug,
-            "base_frame_id": base_frame_id,
-            "orbbec_camera_name": orbbec_camera_name,
-            "orbbec_camera_frame_id": orbbec_camera_frame_id,
-            "orbbec_camera_x": orbbec_camera_x,
-            "orbbec_camera_y": orbbec_camera_y,
-            "orbbec_camera_z": orbbec_camera_z,
-            "orbbec_camera_roll": orbbec_camera_roll,
-            "orbbec_camera_pitch": orbbec_camera_pitch,
-            "orbbec_camera_yaw": orbbec_camera_yaw,
-            "orbbec_enable_depth": orbbec_enable_depth,
-            "orbbec_enable_color": orbbec_enable_color,
-            "orbbec_enable_left_ir": orbbec_enable_left_ir,
-            "orbbec_enable_right_ir": orbbec_enable_right_ir,
-            "orbbec_enable_point_cloud": orbbec_enable_point_cloud,
-            "orbbec_enable_colored_point_cloud": orbbec_enable_colored_point_cloud,
-            "orbbec_enable_sync_output_accel_gyro": orbbec_enable_sync_output_accel_gyro,
-            "orbbec_enable_publish_extrinsic": orbbec_enable_publish_extrinsic,
-            "orbbec_enable_accel": orbbec_enable_accel,
-            "orbbec_enable_gyro": orbbec_enable_gyro,
-            "orbbec_accel_rate": orbbec_accel_rate,
-            "orbbec_gyro_rate": orbbec_gyro_rate,
-            "orbbec_left_ir_width": orbbec_left_ir_width,
-            "orbbec_left_ir_height": orbbec_left_ir_height,
-            "orbbec_left_ir_fps": orbbec_left_ir_fps,
-            "orbbec_left_ir_format": orbbec_left_ir_format,
-            "orbbec_right_ir_width": orbbec_right_ir_width,
-            "orbbec_right_ir_height": orbbec_right_ir_height,
-            "orbbec_right_ir_fps": orbbec_right_ir_fps,
-            "orbbec_right_ir_format": orbbec_right_ir_format,
-            "orbbec_enable_ir_auto_exposure": orbbec_enable_ir_auto_exposure,
-            "orbbec_ir_exposure": orbbec_ir_exposure,
-            "orbbec_ir_gain": orbbec_ir_gain,
-            "orbbec_ir_ae_max_exposure": orbbec_ir_ae_max_exposure,
-            "orbbec_ir_brightness": orbbec_ir_brightness,
-            "orbbec_enable_laser": orbbec_enable_laser,
-            "orbbec_enable_ldp": orbbec_enable_ldp,
-        }.items(),
+        output="screen",
     )
 
     mono_camera_launch = IncludeLaunchDescription(
