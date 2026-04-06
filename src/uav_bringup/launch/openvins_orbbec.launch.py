@@ -26,7 +26,8 @@ def generate_launch_description():
     start_openvins = LaunchConfiguration("start_openvins")
     start_openvins_state_bridge = LaunchConfiguration("start_openvins_state_bridge")
     start_px4_vision_bridge = LaunchConfiguration("start_px4_vision_bridge")
-    start_rviz = LaunchConfiguration("start_rviz")
+    use_rviz = LaunchConfiguration("use_rviz")
+    use_monitor = LaunchConfiguration("use_monitor")
     use_sim_time = LaunchConfiguration("use_sim_time")
 
     openvins_namespace = LaunchConfiguration("openvins_namespace")
@@ -259,12 +260,28 @@ def generate_launch_description():
         ],
     )
 
+    monitor = Node(
+        package="uav_bringup",
+        executable="monitor_topic_position.py",
+        name="monitor_topic_position",
+        output="screen",
+        condition=IfCondition(use_monitor),
+        arguments=[
+            "--openvins-topic",
+            actual_ov_odom_topic,
+            "--uav-state-topic",
+            state_odometry_topic,
+            "--px4-input-topic",
+            px4_visual_odometry_topic,
+        ],
+    )
+
     rviz = Node(
         package="rviz2",
         executable="rviz2",
         name="openvins_rviz2",
         output="screen",
-        condition=IfCondition(start_rviz),
+        condition=IfCondition(use_rviz),
         arguments=["-d", rviz_config],
         parameters=[{"use_sim_time": use_sim_time}],
         remappings=[
@@ -294,7 +311,8 @@ def generate_launch_description():
             DeclareLaunchArgument("start_openvins", default_value="true"),
             DeclareLaunchArgument("start_openvins_state_bridge", default_value="true"),
             DeclareLaunchArgument("start_px4_vision_bridge", default_value="false"),
-            DeclareLaunchArgument("start_rviz", default_value="true"),
+            DeclareLaunchArgument("use_rviz", default_value="false"),
+            DeclareLaunchArgument("use_monitor", default_value="false"),
             DeclareLaunchArgument("use_sim_time", default_value="false"),
             DeclareLaunchArgument("openvins_namespace", default_value="ov_msckf"),
             DeclareLaunchArgument("openvins_config_path", default_value=default_openvins_config),
@@ -458,6 +476,7 @@ def generate_launch_description():
             openvins,
             openvins_state_bridge,
             openvins_px4_vision_bridge,
+            monitor,
             rviz,
         ]
     )
