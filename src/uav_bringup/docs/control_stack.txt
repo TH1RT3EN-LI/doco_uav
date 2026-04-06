@@ -7,17 +7,11 @@ Public Launch Entry Points
 - `launch/minimal_control.launch.py`
   Base control chain.
   Starts `uav_control_node`, `rc_safety_mux_node`, PX4 state bridge,
-  trajectory publisher, optional mono recorder, and the perception
-  sub-launches they depend on.
-  The OpenVINS/Orbbec part is launched as a separate `ros2 launch
-  uav_bringup openvins_orbbec.launch.py ...` child process so its
-  startup behavior and console output stay close to running that launch
-  directly.
-  By default it also prints throttled OV state summaries from
-  `openvins_state_bridge_node` to screen once per second.
-  The OpenVINS/Orbbec sub-launch starts immediately, while the rest of
-  the main stack is delayed by `main_stack_start_delay_s` (default
-  `8.0 s`) so OV can stabilize before the control chain comes up.
+  trajectory publisher, optional mono recorder, and the local camera
+  helper launches they depend on.
+  It does not launch OpenVINS or the OpenVINS state bridge anymore;
+  start `launch/openvins_orbbec.launch.py` separately when OV control
+  state is required.
 
 - `launch/visual_landing.launch.py`
   Visual landing composition entry.
