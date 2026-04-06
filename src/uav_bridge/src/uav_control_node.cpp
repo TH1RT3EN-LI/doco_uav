@@ -15,7 +15,6 @@
 #include <px4_msgs/msg/offboard_control_mode.hpp>
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
 #include <px4_msgs/msg/vehicle_command.hpp>
-#include <px4_msgs/msg/vehicle_local_position.hpp>
 #include <px4_msgs/msg/vehicle_status.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <std_srvs/srv/trigger.hpp>
@@ -54,11 +53,11 @@ public:
     this->declare_parameter<std::string>("position_topic", "/uav/control/pose");
     this->declare_parameter<std::string>("velocity_body_topic", "/uav/control/setpoint/velocity_body");
     this->declare_parameter<std::string>("state_topic", "/uav/state/odometry");
+    this->declare_parameter<std::string>("execution_state_topic", "/uav/state/odometry_px4");
     this->declare_parameter<std::string>("offboard_mode_topic", "/fmu/in/offboard_control_mode");
     this->declare_parameter<std::string>("trajectory_setpoint_topic", "/fmu/in/trajectory_setpoint");
     this->declare_parameter<std::string>("vehicle_command_topic", "/fmu/in/vehicle_command");
     this->declare_parameter<std::string>("vehicle_status_topic", "/fmu/out/vehicle_status");
-    this->declare_parameter<std::string>("px4_local_position_topic", "/fmu/out/vehicle_local_position");
     this->declare_parameter<std::string>("takeoff_service", "/uav/control/command/takeoff");
     this->declare_parameter<std::string>("hold_service", "/uav/control/command/hold");
     this->declare_parameter<std::string>("position_mode_service", "/uav/control/command/position_mode");
@@ -81,6 +80,19 @@ public:
     this->declare_parameter<double>("velocity_mode_max_acc_z_mps2", 0.6);
     this->declare_parameter<double>("velocity_mode_max_acc_yaw_radps2", 1.5);
     this->declare_parameter<double>("state_timeout_s", 0.20);
+    this->declare_parameter<double>("ov_hold_kp_xy", 0.8);
+    this->declare_parameter<double>("ov_hold_kp_z", 0.8);
+    this->declare_parameter<double>("ov_hold_kp_yaw", 1.0);
+    this->declare_parameter<double>("ov_hold_max_vxy", 0.4);
+    this->declare_parameter<double>("ov_hold_max_vz", 0.2);
+    this->declare_parameter<double>("ov_hold_max_yaw_rate", 0.4);
+    this->declare_parameter<double>("ov_target_xy_tolerance_m", 0.05);
+    this->declare_parameter<double>("ov_target_z_tolerance_m", 0.05);
+    this->declare_parameter<double>("ov_target_yaw_tolerance_rad", 0.08);
+    this->declare_parameter<double>("ov_fault_pose_timeout_s", 0.20);
+    this->declare_parameter<double>("ov_fault_max_xy_step_m", 0.30);
+    this->declare_parameter<double>("ov_fault_max_z_step_m", 0.20);
+    this->declare_parameter<double>("ov_fault_max_yaw_step_rad", 0.35);
     this->declare_parameter<bool>("motion_guard_enabled", true);
     this->declare_parameter<double>("motion_guard_soft_dwell_s", 2.0);
     this->declare_parameter<double>("motion_guard_pose_gap_reset_s", 0.40);
@@ -99,7 +111,7 @@ public:
     this->declare_parameter<double>("motion_guard_pose_hard_z_step_m", 0.25);
     this->declare_parameter<double>("motion_guard_pose_hard_yaw_step_rad", 0.70);
     this->declare_parameter<std::string>("base_frame_id", "uav_base_link");
-    this->declare_parameter<std::string>("position_command_frame_id", "");
+    this->declare_parameter<std::string>("position_command_frame_id", "global");
     this->declare_parameter<std::string>("px4_timestamp_source", "system");
     this->declare_parameter<std::string>("gz_world_name", "test");
     this->declare_parameter<std::string>("gz_clock_topic", "");
@@ -107,11 +119,11 @@ public:
     position_topic_ = this->get_parameter("position_topic").as_string();
     velocity_body_topic_ = this->get_parameter("velocity_body_topic").as_string();
     state_topic_ = this->get_parameter("state_topic").as_string();
+    execution_state_topic_ = this->get_parameter("execution_state_topic").as_string();
     offboard_mode_topic_ = this->get_parameter("offboard_mode_topic").as_string();
     trajectory_setpoint_topic_ = this->get_parameter("trajectory_setpoint_topic").as_string();
     vehicle_command_topic_ = this->get_parameter("vehicle_command_topic").as_string();
     vehicle_status_topic_ = this->get_parameter("vehicle_status_topic").as_string();
-    px4_local_position_topic_ = this->get_parameter("px4_local_position_topic").as_string();
     takeoff_service_ = this->get_parameter("takeoff_service").as_string();
     hold_service_ = this->get_parameter("hold_service").as_string();
     position_mode_service_ = this->get_parameter("position_mode_service").as_string();
@@ -133,7 +145,20 @@ public:
     velocity_mode_max_acc_xy_mps2_ = static_cast<float>(this->get_parameter("velocity_mode_max_acc_xy_mps2").as_double());
     velocity_mode_max_acc_z_mps2_ = static_cast<float>(this->get_parameter("velocity_mode_max_acc_z_mps2").as_double());
     velocity_mode_max_acc_yaw_radps2_ = static_cast<float>(this->get_parameter("velocity_mode_max_acc_yaw_radps2").as_double());
-    state_timeout_s_ = this->get_parameter("state_timeout_s").as_double();
+    execution_state_timeout_s_ = this->get_parameter("state_timeout_s").as_double();
+    ov_hold_kp_xy_ = static_cast<float>(this->get_parameter("ov_hold_kp_xy").as_double());
+    ov_hold_kp_z_ = static_cast<float>(this->get_parameter("ov_hold_kp_z").as_double());
+    ov_hold_kp_yaw_ = static_cast<float>(this->get_parameter("ov_hold_kp_yaw").as_double());
+    ov_hold_max_vxy_ = static_cast<float>(this->get_parameter("ov_hold_max_vxy").as_double());
+    ov_hold_max_vz_ = static_cast<float>(this->get_parameter("ov_hold_max_vz").as_double());
+    ov_hold_max_yaw_rate_ = static_cast<float>(this->get_parameter("ov_hold_max_yaw_rate").as_double());
+    ov_target_xy_tolerance_m_ = static_cast<float>(this->get_parameter("ov_target_xy_tolerance_m").as_double());
+    ov_target_z_tolerance_m_ = static_cast<float>(this->get_parameter("ov_target_z_tolerance_m").as_double());
+    ov_target_yaw_tolerance_rad_ = static_cast<float>(this->get_parameter("ov_target_yaw_tolerance_rad").as_double());
+    ov_fault_pose_timeout_s_ = this->get_parameter("ov_fault_pose_timeout_s").as_double();
+    ov_fault_max_xy_step_m_ = static_cast<float>(this->get_parameter("ov_fault_max_xy_step_m").as_double());
+    ov_fault_max_z_step_m_ = static_cast<float>(this->get_parameter("ov_fault_max_z_step_m").as_double());
+    ov_fault_max_yaw_step_rad_ = static_cast<float>(this->get_parameter("ov_fault_max_yaw_step_rad").as_double());
     motion_guard_enabled_ = this->get_parameter("motion_guard_enabled").as_bool();
     motion_guard_soft_dwell_s_ = this->get_parameter("motion_guard_soft_dwell_s").as_double();
     motion_guard_pose_gap_reset_s_ = this->get_parameter("motion_guard_pose_gap_reset_s").as_double();
@@ -194,31 +219,112 @@ public:
       {
         const bool has_stamp =
           (msg->header.stamp.sec != 0) || (msg->header.stamp.nanosec != 0);
-        current_position_enu_ = {
+        const rclcpp::Time stamp = has_stamp ? rclcpp::Time(msg->header.stamp) : this->now();
+        const std::array<float, 3> position_enu = {
           static_cast<float>(msg->pose.pose.position.x),
           static_cast<float>(msg->pose.pose.position.y),
           static_cast<float>(msg->pose.pose.position.z)};
-        current_yaw_enu_ = quaternionToYaw(msg->pose.pose.orientation);
+        if (!isFiniteVector(position_enu)) {
+          setOvFault("OV control state contains non-finite position");
+          return;
+        }
+
+        const double quaternion_norm_sq =
+          (msg->pose.pose.orientation.x * msg->pose.pose.orientation.x) +
+          (msg->pose.pose.orientation.y * msg->pose.pose.orientation.y) +
+          (msg->pose.pose.orientation.z * msg->pose.pose.orientation.z) +
+          (msg->pose.pose.orientation.w * msg->pose.pose.orientation.w);
+        if (!std::isfinite(quaternion_norm_sq) || quaternion_norm_sq <= 1.0e-12) {
+          setOvFault("OV control state contains invalid orientation");
+          return;
+        }
+
+        const float yaw_enu = quaternionToYaw(msg->pose.pose.orientation);
+        if (!std::isfinite(yaw_enu)) {
+          setOvFault("OV control state contains invalid yaw");
+          return;
+        }
+
+        if (ov_fault_active_) {
+          has_last_ov_sample_ = false;
+        }
+
+        if (has_last_ov_sample_) {
+          const float dx = position_enu[0] - last_ov_sample_position_enu_[0];
+          const float dy = position_enu[1] - last_ov_sample_position_enu_[1];
+          const float dz = position_enu[2] - last_ov_sample_position_enu_[2];
+          const float xy_step_m = std::hypot(dx, dy);
+          const float abs_z_step_m = std::abs(dz);
+          const float abs_yaw_step_rad = std::abs(normalizeAngle(yaw_enu - last_ov_sample_yaw_enu_));
+          if (exceedsPositiveLimit(xy_step_m, ov_fault_max_xy_step_m_)) {
+            setOvFault("OV control state xy jump exceeded threshold");
+            return;
+          }
+          if (exceedsPositiveLimit(abs_z_step_m, ov_fault_max_z_step_m_)) {
+            setOvFault("OV control state z jump exceeded threshold");
+            return;
+          }
+          if (exceedsPositiveLimit(abs_yaw_step_rad, ov_fault_max_yaw_step_rad_)) {
+            setOvFault("OV control state yaw jump exceeded threshold");
+            return;
+          }
+        }
+
+        current_position_enu_ = position_enu;
+        current_yaw_enu_ = yaw_enu;
         current_orientation_enu_flu_ = tf2::Quaternion(
           msg->pose.pose.orientation.x,
           msg->pose.pose.orientation.y,
           msg->pose.pose.orientation.z,
           msg->pose.pose.orientation.w);
         current_orientation_enu_flu_.normalize();
-        last_state_time_ = has_stamp ? rclcpp::Time(msg->header.stamp) : this->now();
+        last_state_time_ = stamp;
         has_state_ = true;
+        last_ov_sample_position_enu_ = position_enu;
+        last_ov_sample_yaw_enu_ = yaw_enu;
+        has_last_ov_sample_ = true;
+        clearOvFault("OV control state recovered");
       });
 
-    px4_local_position_sub_ = this->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
-      px4_local_position_topic_, rclcpp::SensorDataQoS(),
-      [this](const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg)
+    execution_state_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+      execution_state_topic_, rclcpp::SensorDataQoS(),
+      [this](const nav_msgs::msg::Odometry::SharedPtr msg)
       {
-        last_px4_local_position_receive_time_ = this->now();
-        current_local_velocity_ned_ = {msg->vx, msg->vy, msg->vz};
-        has_local_position_ = msg->xy_valid && msg->z_valid;
-        has_local_velocity_ = hasValidVelocityEstimate(
-          msg->v_xy_valid, msg->v_z_valid,
-          {msg->vx, msg->vy, msg->vz});
+        const bool has_stamp =
+          (msg->header.stamp.sec != 0) || (msg->header.stamp.nanosec != 0);
+        const rclcpp::Time stamp = has_stamp ? rclcpp::Time(msg->header.stamp) : this->now();
+        const std::array<float, 3> execution_body_velocity = {
+          static_cast<float>(msg->twist.twist.linear.x),
+          static_cast<float>(msg->twist.twist.linear.y),
+          static_cast<float>(msg->twist.twist.linear.z)};
+        const double quaternion_norm_sq =
+          (msg->pose.pose.orientation.x * msg->pose.pose.orientation.x) +
+          (msg->pose.pose.orientation.y * msg->pose.pose.orientation.y) +
+          (msg->pose.pose.orientation.z * msg->pose.pose.orientation.z) +
+          (msg->pose.pose.orientation.w * msg->pose.pose.orientation.w);
+        if (!std::isfinite(quaternion_norm_sq) || quaternion_norm_sq <= 1.0e-12) {
+          RCLCPP_WARN_THROTTLE(
+            this->get_logger(), *this->get_clock(), 1000,
+            "ignoring execution state with invalid orientation");
+          return;
+        }
+        if (!isFiniteVector(execution_body_velocity)) {
+          RCLCPP_WARN_THROTTLE(
+            this->get_logger(), *this->get_clock(), 1000,
+            "ignoring execution state with non-finite body velocity");
+          return;
+        }
+
+        current_execution_yaw_enu_ = quaternionToYaw(msg->pose.pose.orientation);
+        current_execution_orientation_enu_flu_ = tf2::Quaternion(
+          msg->pose.pose.orientation.x,
+          msg->pose.pose.orientation.y,
+          msg->pose.pose.orientation.z,
+          msg->pose.pose.orientation.w);
+        current_execution_orientation_enu_flu_.normalize();
+        current_execution_body_velocity_flu_ = execution_body_velocity;
+        last_execution_state_time_ = stamp;
+        has_execution_state_ = true;
       });
 
     vehicle_status_sub_ = this->create_subscription<px4_msgs::msg::VehicleStatus>(
@@ -282,8 +388,9 @@ public:
 
     RCLCPP_INFO(
       this->get_logger(),
-      "uav_control_node: position=%s velocity_body=%s state=%s takeoff=%s hold=%s position_mode=%s land=%s abort=%s disarm=%s",
+      "uav_control_node: position=%s velocity_body=%s control_state=%s execution_state=%s takeoff=%s hold=%s position_mode=%s land=%s abort=%s disarm=%s",
       position_topic_.c_str(), velocity_body_topic_.c_str(), state_topic_.c_str(),
+      execution_state_topic_.c_str(),
       takeoff_service_.c_str(), hold_service_.c_str(), position_mode_service_.c_str(),
       land_service_.c_str(), abort_service_.c_str(), disarm_service_.c_str());
   }
@@ -308,6 +415,45 @@ private:
     return "UNKNOWN";
   }
 
+  static bool isOvDrivenMode(UavControlMode mode)
+  {
+    switch (mode) {
+      case UavControlMode::Hold:
+      case UavControlMode::Takeoff:
+      case UavControlMode::Position:
+        return true;
+      case UavControlMode::Px4PositionHold:
+      case UavControlMode::VelocityBody:
+      case UavControlMode::Landing:
+        return false;
+    }
+    return false;
+  }
+
+  bool ovAutomaticControlActive() const
+  {
+    switch (mode_tracker_.mode()) {
+      case UavControlMode::Hold:
+      case UavControlMode::Takeoff:
+        return hold_target_valid_;
+      case UavControlMode::Position:
+        return position_target_valid_;
+      case UavControlMode::Px4PositionHold:
+      case UavControlMode::VelocityBody:
+      case UavControlMode::Landing:
+        return false;
+    }
+    return false;
+  }
+
+  static float clampSigned(float value, float max_abs)
+  {
+    if (!std::isfinite(value) || max_abs <= 0.0f) {
+      return 0.0f;
+    }
+    return std::clamp(value, -max_abs, max_abs);
+  }
+
   void resetWarmup()
   {
     setpoint_counter_ = 0;
@@ -328,6 +474,7 @@ private:
   void logModeChange(UavControlMode previous, const char * reason)
   {
     if (previous != mode_tracker_.mode()) {
+      velocity_execution_ready_once_ = false;
       if (mode_tracker_.mode() != UavControlMode::VelocityBody) {
         velocity_mode_rate_limit_initialized_ = false;
         last_velocity_mode_ned_ = {0.0f, 0.0f, 0.0f};
@@ -365,32 +512,32 @@ private:
 
   bool isPx4ExecutionReady() const
   {
-    return has_local_position_ && localPositionFresh() && has_state_ && stateFresh();
+    return has_execution_state_ && executionStateFresh();
   }
 
   bool isPx4VelocityExecutionReady() const
   {
-    return isPx4ExecutionReady() && has_local_velocity_;
+    return isPx4ExecutionReady();
   }
 
-  bool stateFresh() const
+  bool controlStateFresh() const
   {
     if (!has_state_ || last_state_time_.nanoseconds() == 0) {
       return false;
     }
 
     const double age_s = (this->now() - last_state_time_).seconds();
-    return std::isfinite(age_s) && age_s >= 0.0 && age_s <= state_timeout_s_;
+    return std::isfinite(age_s) && age_s >= 0.0 && age_s <= ov_fault_pose_timeout_s_;
   }
 
-  bool localPositionFresh() const
+  bool executionStateFresh() const
   {
-    if (last_px4_local_position_receive_time_.nanoseconds() == 0) {
+    if (last_execution_state_time_.nanoseconds() == 0) {
       return false;
     }
 
-    const double age_s = (this->now() - last_px4_local_position_receive_time_).seconds();
-    return std::isfinite(age_s) && age_s >= 0.0 && age_s <= state_timeout_s_;
+    const double age_s = (this->now() - last_execution_state_time_).seconds();
+    return std::isfinite(age_s) && age_s >= 0.0 && age_s <= execution_state_timeout_s_;
   }
 
   static bool exceedsPositiveLimit(float value, float limit)
@@ -585,7 +732,7 @@ private:
 
   bool enforceFeedbackMotionGuard()
   {
-    if (!motionGuardActive() || motion_guard_tripped_ || !localPositionFresh() || !has_local_velocity_) {
+    if (!motionGuardActive() || motion_guard_tripped_ || !executionStateFresh() || !has_execution_state_) {
       return false;
     }
 
@@ -600,19 +747,110 @@ private:
         return false;
     }
 
-    const float xy_mps = std::hypot(current_local_velocity_ned_[0], current_local_velocity_ned_[1]);
-    const float abs_z_mps = std::abs(current_local_velocity_ned_[2]);
+    const float xy_mps = std::hypot(
+      current_execution_body_velocity_flu_[0], current_execution_body_velocity_flu_[1]);
+    const float abs_z_mps = std::abs(current_execution_body_velocity_flu_[2]);
 
     if (exceedsPositiveLimit(xy_mps, motion_guard_feedback_hard_xy_mps_)) {
-      triggerMotionGuardLanding("px4 local velocity xy exceeded hard limit");
+      triggerMotionGuardLanding("px4 execution body velocity xy exceeded hard limit");
       return true;
     }
     if (exceedsPositiveLimit(abs_z_mps, motion_guard_feedback_hard_z_mps_)) {
-      triggerMotionGuardLanding("px4 local velocity z exceeded hard limit");
+      triggerMotionGuardLanding("px4 execution body velocity z exceeded hard limit");
       return true;
     }
 
     return false;
+  }
+
+  void clearOvFault(const char * reason)
+  {
+    if (!ov_fault_active_) {
+      return;
+    }
+
+    ov_fault_active_ = false;
+    ov_fault_reason_.clear();
+    if (reason != nullptr && reason[0] != '\0') {
+      RCLCPP_INFO(this->get_logger(), "%s", reason);
+    }
+  }
+
+  void setOvFault(const std::string & reason)
+  {
+    const bool reason_changed = !ov_fault_active_ || ov_fault_reason_ != reason;
+    ov_fault_active_ = true;
+    ov_fault_reason_ = reason;
+    if (reason_changed) {
+      RCLCPP_ERROR(this->get_logger(), "%s", ov_fault_reason_.c_str());
+    }
+
+    if (!ovAutomaticControlActive()) {
+      return;
+    }
+
+    takeoff_reached_since_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+    requestPx4PositionMode("ov fault");
+  }
+
+  bool ensureOvControlStateAvailable(std::string & message) const
+  {
+    if (ov_fault_active_) {
+      message = "OV control state fault";
+      if (!ov_fault_reason_.empty()) {
+        message += ": ";
+        message += ov_fault_reason_;
+      }
+      return false;
+    }
+    if (!has_state_ || !isFiniteVector(current_position_enu_)) {
+      message = "OV control state is not available yet";
+      return false;
+    }
+    if (!controlStateFresh()) {
+      message = "OV control state is stale";
+      return false;
+    }
+    return true;
+  }
+
+  bool ensureVelocityExecutionAvailable(const char * context, bool exit_to_position_on_loss)
+  {
+    if (isPx4VelocityExecutionReady()) {
+      velocity_execution_ready_once_ = true;
+      return true;
+    }
+
+    if (velocity_execution_ready_once_ && exit_to_position_on_loss) {
+      RCLCPP_ERROR_THROTTLE(
+        this->get_logger(), *this->get_clock(), 1000,
+        "PX4 execution state lost during %s, switching to px4 position mode",
+        context);
+      requestPx4PositionMode("execution state lost");
+      return false;
+    }
+
+    RCLCPP_WARN_THROTTLE(
+      this->get_logger(), *this->get_clock(), 1000,
+      "waiting for PX4 execution state before %s",
+      context);
+    return false;
+  }
+
+  void monitorOvControlHealth()
+  {
+    if (!ovAutomaticControlActive()) {
+      return;
+    }
+
+    if (!has_state_) {
+      setOvFault("OV control state is unavailable during automatic control");
+      return;
+    }
+
+    if (!controlStateFresh()) {
+      setOvFault("OV control state timed out during automatic control");
+    }
   }
 
   void publishVehicleCommand(
@@ -712,47 +950,11 @@ private:
     ++setpoint_counter_;
   }
 
-  void publishPositionSetpoint(
-    const std::array<float, 3> & position_enu,
-    float yaw_enu,
-    const std::array<float, 3> & velocity_enu,
-    const std::array<float, 3> & acceleration_enu)
+  bool publishVelocityBodySetpoint(const geometry_msgs::msg::TwistStamped & cmd)
   {
     const uint64_t stamp = nowMicros();
-    if (!ensureTimestampReady("position setpoint", stamp)) {
-      return;
-    }
-
-    px4_msgs::msg::OffboardControlMode offboard_mode{};
-    offboard_mode.timestamp = stamp;
-    offboard_mode.position = true;
-    offboard_mode.velocity = true;
-    offboard_mode.acceleration = true;
-    offboard_mode_pub_->publish(offboard_mode);
-
-    const auto pos_ned = enuPositionToNed(position_enu[0], position_enu[1], position_enu[2]);
-    std::array<float, 3> velocity_ned = {velocity_enu[1], velocity_enu[0], -velocity_enu[2]};
-    std::array<float, 3> acceleration_ned = {acceleration_enu[1], acceleration_enu[0], -acceleration_enu[2]};
-    clampVectorNorm(velocity_ned, max_velocity_setpoint_mps_);
-    clampVectorNorm(acceleration_ned, max_acceleration_setpoint_mps2_);
-
-    px4_msgs::msg::TrajectorySetpoint setpoint{};
-    setpoint.timestamp = stamp;
-    setpoint.position = {pos_ned[0], pos_ned[1], pos_ned[2]};
-    setpoint.velocity = {velocity_ned[0], velocity_ned[1], velocity_ned[2]};
-    setpoint.acceleration = {acceleration_ned[0], acceleration_ned[1], acceleration_ned[2]};
-    setpoint.jerk = {0.0f, 0.0f, 0.0f};
-    setpoint.yaw = enuYawToNed(yaw_enu);
-    setpoint.yawspeed = 0.0f;
-    trajectory_setpoint_pub_->publish(setpoint);
-    maybeEnableOffboardAndArm();
-  }
-
-  void publishVelocityBodySetpoint(const geometry_msgs::msg::TwistStamped & cmd)
-  {
-    const uint64_t stamp = nowMicros();
-    if (!ensureTimestampReady("velocity setpoint", stamp) || !has_state_) {
-      return;
+    if (!ensureTimestampReady("velocity setpoint", stamp) || !has_execution_state_) {
+      return false;
     }
 
     if (!isFiniteVelocityBodyCommand(
@@ -764,14 +966,14 @@ private:
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 1000,
         "rejecting non-finite velocity_body command");
-      return;
+      return false;
     }
 
     if (!isPx4VelocityExecutionReady()) {
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 1000,
-        "waiting for PX4 local velocity estimate before velocity offboard setpoint");
-      return;
+        "waiting for PX4 execution state before velocity offboard setpoint");
+      return false;
     }
 
     px4_msgs::msg::OffboardControlMode offboard_mode{};
@@ -781,7 +983,7 @@ private:
     offboard_mode.acceleration = false;
     offboard_mode_pub_->publish(offboard_mode);
 
-    const tf2::Matrix3x3 rotation_enu_flu(current_orientation_enu_flu_);
+    const tf2::Matrix3x3 rotation_enu_flu(current_execution_orientation_enu_flu_);
     const tf2::Vector3 velocity_body(
       static_cast<double>(cmd.twist.linear.x),
       static_cast<double>(cmd.twist.linear.y),
@@ -798,7 +1000,7 @@ private:
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 1000,
         "rejecting non-finite NED velocity setpoint");
-      return;
+      return false;
     }
 
     px4_msgs::msg::TrajectorySetpoint setpoint{};
@@ -812,6 +1014,90 @@ private:
     setpoint.yawspeed = last_velocity_mode_yawspeed_ned_;
     trajectory_setpoint_pub_->publish(setpoint);
     maybeEnableOffboardAndArm();
+    return true;
+  }
+
+  bool buildOvOuterLoopCommand(
+    const std::array<float, 3> & target_position_enu,
+    float target_yaw_enu,
+    geometry_msgs::msg::TwistStamped & cmd,
+    float * height_error_m = nullptr,
+    float * xy_error_m = nullptr,
+    float * yaw_error_rad = nullptr) const
+  {
+    if (!has_state_ || !controlStateFresh() ||
+      !isFiniteVector(current_position_enu_) || !std::isfinite(current_yaw_enu_))
+    {
+      return false;
+    }
+
+    const float ex_world = target_position_enu[0] - current_position_enu_[0];
+    const float ey_world = target_position_enu[1] - current_position_enu_[1];
+    const float ez_world = target_position_enu[2] - current_position_enu_[2];
+    const float yaw_error = normalizeAngle(target_yaw_enu - current_yaw_enu_);
+
+    const float cos_yaw = std::cos(current_yaw_enu_);
+    const float sin_yaw = std::sin(current_yaw_enu_);
+    const float ex_body = (cos_yaw * ex_world) + (sin_yaw * ey_world);
+    const float ey_body = (-sin_yaw * ex_world) + (cos_yaw * ey_world);
+
+    float vx_body = clampSigned(ov_hold_kp_xy_ * ex_body, ov_hold_max_vxy_);
+    float vy_body = clampSigned(ov_hold_kp_xy_ * ey_body, ov_hold_max_vxy_);
+    float vz_body = clampSigned(ov_hold_kp_z_ * ez_world, ov_hold_max_vz_);
+    float yaw_rate = clampSigned(ov_hold_kp_yaw_ * yaw_error, ov_hold_max_yaw_rate_);
+
+    const float xy_error = std::hypot(ex_world, ey_world);
+    if (xy_error <= ov_target_xy_tolerance_m_) {
+      vx_body = 0.0f;
+      vy_body = 0.0f;
+    }
+    if (std::abs(ez_world) <= ov_target_z_tolerance_m_) {
+      vz_body = 0.0f;
+    }
+    if (std::abs(yaw_error) <= ov_target_yaw_tolerance_rad_) {
+      yaw_rate = 0.0f;
+    }
+
+    cmd.header.stamp = this->now();
+    cmd.header.frame_id = base_frame_id_;
+    cmd.twist.linear.x = vx_body;
+    cmd.twist.linear.y = vy_body;
+    cmd.twist.linear.z = vz_body;
+    cmd.twist.angular.z = yaw_rate;
+
+    if (height_error_m != nullptr) {
+      *height_error_m = std::abs(ez_world);
+    }
+    if (xy_error_m != nullptr) {
+      *xy_error_m = xy_error;
+    }
+    if (yaw_error_rad != nullptr) {
+      *yaw_error_rad = std::abs(yaw_error);
+    }
+    return true;
+  }
+
+  bool publishOvOuterLoopTarget(
+    const std::array<float, 3> & target_position_enu,
+    float target_yaw_enu,
+    const char * context,
+    float * height_error_m = nullptr,
+    float * xy_error_m = nullptr,
+    float * yaw_error_rad = nullptr)
+  {
+    if (!ensureVelocityExecutionAvailable(context, true)) {
+      return false;
+    }
+
+    geometry_msgs::msg::TwistStamped cmd;
+    if (!buildOvOuterLoopCommand(
+        target_position_enu, target_yaw_enu, cmd,
+        height_error_m, xy_error_m, yaw_error_rad))
+    {
+      return false;
+    }
+
+    return publishVelocityBodySetpoint(cmd);
   }
 
   void applyVelocityModeRateLimit(std::array<float, 3> & velocity_ned, double yaw_rate_enu)
@@ -854,8 +1140,7 @@ private:
 
   bool captureCurrentPose(std::string & message)
   {
-    if (!has_state_ || !isFiniteVector(current_position_enu_)) {
-      message = "state odometry is not available yet";
+    if (!ensureOvControlStateAvailable(message)) {
       return false;
     }
     hold_target_position_enu_ = current_position_enu_;
@@ -881,6 +1166,14 @@ private:
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 1000,
         "ignoring position target while motion guard is latched");
+      return;
+    }
+
+    if (ov_fault_active_) {
+      RCLCPP_WARN_THROTTLE(
+        this->get_logger(), *this->get_clock(), 1000,
+        "ignoring position target while OV control state fault is active: %s",
+        ov_fault_reason_.c_str());
       return;
     }
 
@@ -954,7 +1247,7 @@ private:
         pose_reference_position_enu = last_accepted_pose_target_position_enu_;
         pose_reference_yaw_enu = last_accepted_pose_target_yaw_enu_;
         has_pose_step_reference = true;
-      } else if (has_state_ && stateFresh() && isFiniteVector(current_position_enu_)) {
+      } else if (has_state_ && controlStateFresh() && isFiniteVector(current_position_enu_)) {
         pose_reference_position_enu = current_position_enu_;
         pose_reference_yaw_enu = current_yaw_enu_;
         has_pose_step_reference = true;
@@ -1042,7 +1335,7 @@ private:
     if (!isPx4VelocityExecutionReady()) {
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 1000,
-        "ignoring velocity_body command until PX4 local velocity estimate is valid");
+        "ignoring velocity_body command until PX4 execution state is valid");
       return;
     }
 
@@ -1115,12 +1408,15 @@ private:
       message = "landing already in progress";
       return true;
     }
-    if (!captureCurrentPose(message)) {
-      return false;
+    std::string ignored;
+    if (!captureCurrentPose(ignored)) {
+      hold_target_valid_ = false;
     }
     clearMotionGuardSoftViolation();
     enterLandingMode("land");
-    message = "landing requested";
+    message = hold_target_valid_ ?
+      "landing requested with OV hold fallback" :
+      "landing requested without OV hold fallback";
     return true;
   }
 
@@ -1163,11 +1459,10 @@ private:
     if (!position_target_valid_) {
       return;
     }
-    publishPositionSetpoint(
+    publishOvOuterLoopTarget(
       position_target_position_enu_,
       position_target_yaw_enu_,
-      {0.0f, 0.0f, 0.0f},
-      {0.0f, 0.0f, 0.0f});
+      "OV position control");
   }
 
   void publishHoldTarget()
@@ -1175,10 +1470,10 @@ private:
     if (!hold_target_valid_) {
       return;
     }
-    publishPositionSetpoint(
-      hold_target_position_enu_, hold_target_yaw_enu_,
-      {0.0f, 0.0f, 0.0f},
-      {0.0f, 0.0f, 0.0f});
+    publishOvOuterLoopTarget(
+      hold_target_position_enu_,
+      hold_target_yaw_enu_,
+      "OV hold control");
   }
 
   void handleTakeoffMode()
@@ -1186,8 +1481,15 @@ private:
     if (!hold_target_valid_ || !has_state_) {
       return;
     }
-    publishHoldTarget();
-    const float height_error = std::abs(hold_target_position_enu_[2] - current_position_enu_[2]);
+    float height_error = std::numeric_limits<float>::infinity();
+    if (!publishOvOuterLoopTarget(
+        hold_target_position_enu_,
+        hold_target_yaw_enu_,
+        "OV takeoff control",
+        &height_error))
+    {
+      return;
+    }
     if (height_error <= takeoff_height_tolerance_m_) {
       if (takeoff_reached_since_.nanoseconds() == 0) {
         takeoff_reached_since_ = this->now();
@@ -1203,13 +1505,7 @@ private:
 
   void handleVelocityBodyMode()
   {
-    if (!isPx4VelocityExecutionReady()) {
-      RCLCPP_WARN_THROTTLE(
-        this->get_logger(), *this->get_clock(), 1000,
-        "PX4 state or local velocity estimate lost during velocity mode, switching to hold");
-      has_velocity_body_cmd_ = false;
-      std::string ignored;
-      handleHoldRequest(ignored);
+    if (!ensureVelocityExecutionAvailable("velocity body control", true)) {
       return;
     }
 
@@ -1244,8 +1540,14 @@ private:
         0.0f, 0.0f, 0.0f, std::numeric_limits<float>::quiet_NaN());
       land_command_sent_ = true;
     }
-    if (!is_auto_land_mode && is_armed_) {
-      publishHoldTarget();
+    if (!is_auto_land_mode && is_armed_ && hold_target_valid_ &&
+      !ov_fault_active_ && controlStateFresh() &&
+      ensureVelocityExecutionAvailable("landing hold fallback", false))
+    {
+      geometry_msgs::msg::TwistStamped cmd;
+      if (buildOvOuterLoopCommand(hold_target_position_enu_, hold_target_yaw_enu_, cmd)) {
+        publishVelocityBodySetpoint(cmd);
+      }
     }
     ++landing_retry_counter_;
   }
@@ -1278,6 +1580,7 @@ private:
   void timerCallback()
   {
     enforceFeedbackMotionGuard();
+    monitorOvControlHealth();
 
     switch (mode_tracker_.mode()) {
       case UavControlMode::Hold:
@@ -1304,11 +1607,11 @@ private:
   std::string position_topic_;
   std::string velocity_body_topic_;
   std::string state_topic_;
+  std::string execution_state_topic_;
   std::string offboard_mode_topic_;
   std::string trajectory_setpoint_topic_;
   std::string vehicle_command_topic_;
   std::string vehicle_status_topic_;
-  std::string px4_local_position_topic_;
   std::string takeoff_service_;
   std::string hold_service_;
   std::string position_mode_service_;
@@ -1333,7 +1636,20 @@ private:
   float velocity_mode_max_acc_xy_mps2_{1.0f};
   float velocity_mode_max_acc_z_mps2_{0.6f};
   float velocity_mode_max_acc_yaw_radps2_{1.5f};
-  double state_timeout_s_{0.20};
+  double execution_state_timeout_s_{0.20};
+  float ov_hold_kp_xy_{0.8f};
+  float ov_hold_kp_z_{0.8f};
+  float ov_hold_kp_yaw_{1.0f};
+  float ov_hold_max_vxy_{0.4f};
+  float ov_hold_max_vz_{0.2f};
+  float ov_hold_max_yaw_rate_{0.4f};
+  float ov_target_xy_tolerance_m_{0.05f};
+  float ov_target_z_tolerance_m_{0.05f};
+  float ov_target_yaw_tolerance_rad_{0.08f};
+  double ov_fault_pose_timeout_s_{0.20};
+  float ov_fault_max_xy_step_m_{0.30f};
+  float ov_fault_max_z_step_m_{0.20f};
+  float ov_fault_max_yaw_step_rad_{0.35f};
   bool motion_guard_enabled_{true};
   double motion_guard_soft_dwell_s_{2.0};
   double motion_guard_pose_gap_reset_s_{0.40};
@@ -1364,14 +1680,21 @@ private:
   tf2::Quaternion current_orientation_enu_flu_{0.0, 0.0, 0.0, 1.0};
   float current_yaw_enu_{0.0f};
   bool has_state_{false};
-  bool has_local_position_{false};
-  bool has_local_velocity_{false};
+  bool has_execution_state_{false};
+  bool ov_fault_active_{false};
+  bool has_last_ov_sample_{false};
   bool motion_guard_tripped_{false};
   bool is_armed_{false};
   bool is_offboard_mode_{false};
+  bool velocity_execution_ready_once_{false};
   uint8_t current_nav_state_{px4_msgs::msg::VehicleStatus::NAVIGATION_STATE_MANUAL};
+  std::string ov_fault_reason_;
   std::string motion_guard_trip_reason_;
-  std::array<float, 3> current_local_velocity_ned_{0.0f, 0.0f, 0.0f};
+  std::array<float, 3> current_execution_body_velocity_flu_{0.0f, 0.0f, 0.0f};
+  std::array<float, 3> last_ov_sample_position_enu_{0.0f, 0.0f, 0.0f};
+  tf2::Quaternion current_execution_orientation_enu_flu_{0.0, 0.0, 0.0, 1.0};
+  float current_execution_yaw_enu_{0.0f};
+  float last_ov_sample_yaw_enu_{0.0f};
   std::array<float, 3> hold_target_position_enu_{0.0f, 0.0f, 0.0f};
   float hold_target_yaw_enu_{0.0f};
   bool hold_target_valid_{false};
@@ -1379,7 +1702,7 @@ private:
   float position_target_yaw_enu_{0.0f};
   bool position_target_valid_{false};
   rclcpp::Time last_state_time_{0, 0, RCL_ROS_TIME};
-  rclcpp::Time last_px4_local_position_receive_time_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time last_execution_state_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time soft_violation_since_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_accepted_pose_target_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time takeoff_reached_since_{0, 0, RCL_ROS_TIME};
@@ -1393,7 +1716,7 @@ private:
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr position_sub_;
   rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr velocity_body_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_sub_;
-  rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr px4_local_position_sub_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr execution_state_sub_;
   rclcpp::Subscription<px4_msgs::msg::VehicleStatus>::SharedPtr vehicle_status_sub_;
   rclcpp::Publisher<px4_msgs::msg::OffboardControlMode>::SharedPtr offboard_mode_pub_;
   rclcpp::Publisher<px4_msgs::msg::TrajectorySetpoint>::SharedPtr trajectory_setpoint_pub_;

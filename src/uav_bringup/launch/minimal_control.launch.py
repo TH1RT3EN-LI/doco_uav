@@ -31,6 +31,22 @@ def generate_launch_description():
     takeoff_height_m = LaunchConfiguration("takeoff_height_m")
     max_velocity_setpoint_mps = LaunchConfiguration("max_velocity_setpoint_mps")
     max_acceleration_setpoint_mps2 = LaunchConfiguration("max_acceleration_setpoint_mps2")
+    control_state_topic = LaunchConfiguration("control_state_topic")
+    execution_state_topic = LaunchConfiguration("execution_state_topic")
+    position_command_frame_id = LaunchConfiguration("position_command_frame_id")
+    ov_hold_kp_xy = LaunchConfiguration("ov_hold_kp_xy")
+    ov_hold_kp_z = LaunchConfiguration("ov_hold_kp_z")
+    ov_hold_kp_yaw = LaunchConfiguration("ov_hold_kp_yaw")
+    ov_hold_max_vxy = LaunchConfiguration("ov_hold_max_vxy")
+    ov_hold_max_vz = LaunchConfiguration("ov_hold_max_vz")
+    ov_hold_max_yaw_rate = LaunchConfiguration("ov_hold_max_yaw_rate")
+    ov_target_xy_tolerance_m = LaunchConfiguration("ov_target_xy_tolerance_m")
+    ov_target_z_tolerance_m = LaunchConfiguration("ov_target_z_tolerance_m")
+    ov_target_yaw_tolerance_rad = LaunchConfiguration("ov_target_yaw_tolerance_rad")
+    ov_fault_pose_timeout_s = LaunchConfiguration("ov_fault_pose_timeout_s")
+    ov_fault_max_xy_step_m = LaunchConfiguration("ov_fault_max_xy_step_m")
+    ov_fault_max_z_step_m = LaunchConfiguration("ov_fault_max_z_step_m")
+    ov_fault_max_yaw_step_rad = LaunchConfiguration("ov_fault_max_yaw_step_rad")
     motion_guard_enabled = LaunchConfiguration("motion_guard_enabled")
     motion_guard_soft_dwell_s = LaunchConfiguration("motion_guard_soft_dwell_s")
     motion_guard_pose_gap_reset_s = LaunchConfiguration("motion_guard_pose_gap_reset_s")
@@ -282,13 +298,30 @@ def generate_launch_description():
             {"offboard_mode_topic": offboard_mode_topic},
             {"trajectory_setpoint_topic": trajectory_setpoint_topic},
             {"vehicle_command_topic": vehicle_command_topic},
-            {"px4_local_position_topic": vehicle_local_position_topic},
             {"vehicle_status_topic": vehicle_status_topic},
+            {"state_topic": control_state_topic},
+            {"execution_state_topic": execution_state_topic},
             {"base_frame_id": base_frame_id},
+            {"position_command_frame_id": position_command_frame_id},
             {"use_sim_time": use_sim_time},
             {"takeoff_height_m": takeoff_height_m},
             {"max_velocity_setpoint_mps": max_velocity_setpoint_mps},
             {"max_acceleration_setpoint_mps2": max_acceleration_setpoint_mps2},
+            {"velocity_mode_max_acc_xy_mps2": max_acceleration_setpoint_mps2},
+            {"velocity_mode_max_acc_z_mps2": max_acceleration_setpoint_mps2},
+            {"ov_hold_kp_xy": ov_hold_kp_xy},
+            {"ov_hold_kp_z": ov_hold_kp_z},
+            {"ov_hold_kp_yaw": ov_hold_kp_yaw},
+            {"ov_hold_max_vxy": ov_hold_max_vxy},
+            {"ov_hold_max_vz": ov_hold_max_vz},
+            {"ov_hold_max_yaw_rate": ov_hold_max_yaw_rate},
+            {"ov_target_xy_tolerance_m": ov_target_xy_tolerance_m},
+            {"ov_target_z_tolerance_m": ov_target_z_tolerance_m},
+            {"ov_target_yaw_tolerance_rad": ov_target_yaw_tolerance_rad},
+            {"ov_fault_pose_timeout_s": ov_fault_pose_timeout_s},
+            {"ov_fault_max_xy_step_m": ov_fault_max_xy_step_m},
+            {"ov_fault_max_z_step_m": ov_fault_max_z_step_m},
+            {"ov_fault_max_yaw_step_rad": ov_fault_max_yaw_step_rad},
             {"motion_guard_enabled": motion_guard_enabled},
             {"motion_guard_soft_dwell_s": motion_guard_soft_dwell_s},
             {"motion_guard_pose_gap_reset_s": motion_guard_pose_gap_reset_s},
@@ -361,9 +394,25 @@ def generate_launch_description():
         DeclareLaunchArgument("openvins_start_rviz", default_value="false"),
         DeclareLaunchArgument("openvins_config_path", default_value=default_openvins_config),
         DeclareLaunchArgument("use_sim_time", default_value="false"),
-        DeclareLaunchArgument("takeoff_height_m", default_value="0.25"),
-        DeclareLaunchArgument("max_velocity_setpoint_mps", default_value="0.40"),
-        DeclareLaunchArgument("max_acceleration_setpoint_mps2", default_value="0.60"),
+        DeclareLaunchArgument("takeoff_height_m", default_value="0.70"),
+        DeclareLaunchArgument("max_velocity_setpoint_mps", default_value="0.25"),
+        DeclareLaunchArgument("max_acceleration_setpoint_mps2", default_value="0.35"),
+        DeclareLaunchArgument("control_state_topic", default_value="/uav/state/odometry"),
+        DeclareLaunchArgument("execution_state_topic", default_value="/uav/state/odometry_px4"),
+        DeclareLaunchArgument("position_command_frame_id", default_value="global"),
+        DeclareLaunchArgument("ov_hold_kp_xy", default_value="0.80"),
+        DeclareLaunchArgument("ov_hold_kp_z", default_value="0.80"),
+        DeclareLaunchArgument("ov_hold_kp_yaw", default_value="1.00"),
+        DeclareLaunchArgument("ov_hold_max_vxy", default_value="0.20"),
+        DeclareLaunchArgument("ov_hold_max_vz", default_value="0.10"),
+        DeclareLaunchArgument("ov_hold_max_yaw_rate", default_value="0.20"),
+        DeclareLaunchArgument("ov_target_xy_tolerance_m", default_value="0.05"),
+        DeclareLaunchArgument("ov_target_z_tolerance_m", default_value="0.05"),
+        DeclareLaunchArgument("ov_target_yaw_tolerance_rad", default_value="0.08"),
+        DeclareLaunchArgument("ov_fault_pose_timeout_s", default_value="0.20"),
+        DeclareLaunchArgument("ov_fault_max_xy_step_m", default_value="0.30"),
+        DeclareLaunchArgument("ov_fault_max_z_step_m", default_value="0.20"),
+        DeclareLaunchArgument("ov_fault_max_yaw_step_rad", default_value="0.35"),
         DeclareLaunchArgument("motion_guard_enabled", default_value="false"),
         DeclareLaunchArgument("motion_guard_soft_dwell_s", default_value="2.0"),
         DeclareLaunchArgument("motion_guard_pose_gap_reset_s", default_value="0.40"),

@@ -36,7 +36,7 @@ public:
     this->declare_parameter<std::string>(
       "target_observation_topic",
       "/uav/visual_landing/target_observation");
-    this->declare_parameter<std::string>("state_topic", "/uav/state/odometry");
+    this->declare_parameter<std::string>("state_topic", "/uav/state/odometry_px4");
     this->declare_parameter<std::string>(
       "velocity_body_topic",
       "/uav/control/setpoint/velocity_body");

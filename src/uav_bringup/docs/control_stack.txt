@@ -53,11 +53,63 @@ are intentionally both kept.
 - `position_mode` is the normal explicit mode-switch interface for
   operators and scripts.
 
+State Roles
+-----------
+
+- `/uav/state/odometry`
+  Authoritative OV control state.
+  `uav_control_node` uses this topic for `hold`, `takeoff`, and
+  `/uav/control/pose`.
+
+- `/uav/state/odometry_px4`
+  PX4 execution and debug state.
+  `uav_control_node` uses this topic for execution-side attitude and
+  body velocity only, and `visual_landing_node` uses it as its default
+  state input.
+
+Control Semantics
+-----------------
+
+- `/uav/control/command/takeoff`
+  Relative takeoff in OV coordinates.
+  The node captures the current OV pose, raises the OV `z` target by
+  `takeoff_height_m` (default `0.70 m`), and runs an OV outer-loop
+  controller that outputs
+  body velocity and yaw-rate commands for PX4 to execute.
+
+- `/uav/control/command/hold`
+  OV pose hold.
+  The node captures the current OV pose and keeps that pose using the
+  same OV outer-loop body-velocity controller.
+
+- `/uav/control/pose`
+  Absolute target in the OV/map control frame.
+  Position and yaw error are computed in OV, converted into body
+  velocity and yaw-rate commands, then sent to PX4 through offboard
+  velocity setpoints.
+
+- `/uav/control/command/land`
+  PX4-native land path.
+  Landing mode itself is still requested directly from PX4 instead of
+  being reimplemented in OV coordinates.
+
+- OV fault handling
+  The control stack checks OV timeout, pose jump, and invalid values.
+  If a fault occurs during OV-driven automatic control, it exits
+  automatic control immediately and requests PX4 Position mode for
+  manual takeover.
+
 Current Defaults
 ----------------
 
 - `motion_guard_enabled` defaults to `false` in the public control
   launches.
+- OV outer-loop defaults are conservative for indoor bringup:
+  `ov_hold_max_vxy=0.20 m/s`
+  `ov_hold_max_vz=0.10 m/s`
+  `ov_hold_max_yaw_rate=0.20 rad/s`
+  `max_velocity_setpoint_mps=0.25 m/s`
+  `max_acceleration_setpoint_mps2=0.35 m/s^2`
 - RC safety remains:
   `CH5 HIGH -> /uav/control/command/abort`
   `CH5 LOW/MIDDLE -> no action`
