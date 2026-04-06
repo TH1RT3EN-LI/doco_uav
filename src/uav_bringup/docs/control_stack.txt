@@ -1,0 +1,73 @@
+UAV Control Stack
+=================
+
+Public Launch Entry Points
+--------------------------
+
+- `launch/minimal_control.launch.py`
+  Base control chain.
+  Starts `uav_control_node`, `rc_safety_mux_node`, PX4 state bridge,
+  trajectory publisher, optional mono recorder, and the perception
+  sub-launches they depend on.
+
+- `launch/visual_landing.launch.py`
+  Visual landing composition entry.
+  Includes `minimal_control.launch.py`, then adds
+  `height_measurement_bridge_node`, `aruco_detector_node`, and
+  `visual_landing_node`.
+
+- `launch/test_home_visual_landing.launch.py`
+  Test-only entry.
+  Includes `visual_landing.launch.py`, then starts
+  `home_visual_landing_test_node.py`.
+
+- `launch/openvins_orbbec.launch.py`
+  Perception and bridging leaf launch.
+  Hosts the Orbbec and OpenVINS related stack only; it is not a
+  control-stack entry point.
+
+Public Service Surface
+----------------------
+
+- Base control services:
+  `/uav/control/command/takeoff`
+  `/uav/control/command/hold`
+  `/uav/control/command/position_mode`
+  `/uav/control/command/land`
+  `/uav/control/command/abort`
+  `/uav/control/command/disarm`
+
+- Visual landing task services:
+  `/uav/visual_landing/command/start`
+  `/uav/visual_landing/command/stop`
+
+- Test-only services:
+  `/uav/test/home_takeoff`
+  `/uav/test/home_visual_land`
+
+`/uav/control/command/abort` and `/uav/control/command/position_mode`
+are intentionally both kept.
+
+- `abort` is the emergency handover path used by RC safety to force PX4
+  Position mode.
+- `position_mode` is the normal explicit mode-switch interface for
+  operators and scripts.
+
+Current Defaults
+----------------
+
+- `motion_guard_enabled` defaults to `false` in the public control
+  launches.
+- RC safety remains:
+  `CH5 HIGH -> /uav/control/command/abort`
+  `CH5 LOW/MIDDLE -> no action`
+  `CH7 -> PX4 kill path outside ROS services`
+
+Removed Legacy Paths
+--------------------
+
+- `launch/minimal_visual_landing.launch.py` has been removed.
+- `uav_bridge/src/offboard_bridge_node.cpp` and its legacy
+  `/uav/control/*` services have been removed.
+- The whole `uav_mode_supervisor` package and its `/uav/mode*`
+  interface surface have been removed.

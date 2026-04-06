@@ -47,7 +47,6 @@ def generate_launch_description():
     start_openvins_state_bridge = LaunchConfiguration("start_openvins_state_bridge")
     start_px4_vision_bridge = LaunchConfiguration("start_px4_vision_bridge")
     use_rviz = LaunchConfiguration("use_rviz")
-    use_monitor = LaunchConfiguration("use_monitor")
     use_record_bag = LaunchConfiguration("use_record_bag")
     bag_output_dir = LaunchConfiguration("bag_output_dir")
     use_sim_time = LaunchConfiguration("use_sim_time")
@@ -287,22 +286,6 @@ def generate_launch_description():
         ],
     )
 
-    monitor = Node(
-        package="uav_bringup",
-        executable="monitor_topic_position.py",
-        name="monitor_topic_position",
-        output="screen",
-        condition=IfCondition(use_monitor),
-        arguments=[
-            "--openvins-topic",
-            actual_ov_odom_topic,
-            "--uav-state-topic",
-            state_odometry_topic,
-            "--px4-input-topic",
-            px4_visual_odometry_topic,
-        ],
-    )
-
     record_bag = ExecuteProcess(
         cmd=[
             "ros2",
@@ -358,7 +341,6 @@ def generate_launch_description():
             DeclareLaunchArgument("start_openvins_state_bridge", default_value="true"),
             DeclareLaunchArgument("start_px4_vision_bridge", default_value="false"),
             DeclareLaunchArgument("use_rviz", default_value="false"),
-            DeclareLaunchArgument("use_monitor", default_value="false"),
             DeclareLaunchArgument("use_record_bag", default_value="false"),
             DeclareLaunchArgument("bag_output_dir", default_value=default_bag_output_dir),
             DeclareLaunchArgument("use_sim_time", default_value="false"),
@@ -524,7 +506,6 @@ def generate_launch_description():
             openvins,
             openvins_state_bridge,
             openvins_px4_vision_bridge,
-            monitor,
             record_bag,
             rviz,
         ]

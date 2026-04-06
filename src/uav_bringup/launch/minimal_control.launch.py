@@ -27,6 +27,7 @@ def generate_launch_description():
     start_openvins_stack = LaunchConfiguration("start_openvins_stack")
     openvins_start_rviz = LaunchConfiguration("openvins_start_rviz")
     openvins_config_path = LaunchConfiguration("openvins_config_path")
+    use_sim_time = LaunchConfiguration("use_sim_time")
     takeoff_height_m = LaunchConfiguration("takeoff_height_m")
     max_velocity_setpoint_mps = LaunchConfiguration("max_velocity_setpoint_mps")
     max_acceleration_setpoint_mps2 = LaunchConfiguration("max_acceleration_setpoint_mps2")
@@ -140,7 +141,8 @@ def generate_launch_description():
         condition=IfCondition(start_openvins_stack),
         launch_arguments={
             "start_px4_vision_bridge": "false",
-            "start_rviz": openvins_start_rviz,
+            "use_rviz": openvins_start_rviz,
+            "use_sim_time": use_sim_time,
             "openvins_config_path": openvins_config_path,
             "base_frame_id": base_frame_id,
             "orbbec_camera_name": orbbec_camera_name,
@@ -264,6 +266,7 @@ def generate_launch_description():
             {"vehicle_local_position_topic": vehicle_local_position_topic},
             {"vehicle_odometry_topic": vehicle_odometry_topic},
             {"base_frame_id": base_frame_id},
+            {"use_sim_time": use_sim_time},
             {"output_odometry_topic": "/uav/state/odometry_px4"},
             {"publish_tf": False},
             {"publish_map_to_odom_tf": False},
@@ -282,6 +285,7 @@ def generate_launch_description():
             {"px4_local_position_topic": vehicle_local_position_topic},
             {"vehicle_status_topic": vehicle_status_topic},
             {"base_frame_id": base_frame_id},
+            {"use_sim_time": use_sim_time},
             {"takeoff_height_m": takeoff_height_m},
             {"max_velocity_setpoint_mps": max_velocity_setpoint_mps},
             {"max_acceleration_setpoint_mps2": max_acceleration_setpoint_mps2},
@@ -312,6 +316,7 @@ def generate_launch_description():
         output="screen",
         condition=IfCondition(publish_trajectory),
         parameters=[
+            {"use_sim_time": use_sim_time},
             {"input_odom_topic": trajectory_input_odom_topic},
             {"output_path_topic": trajectory_output_topic},
             {"max_samples": trajectory_max_samples},
@@ -327,6 +332,7 @@ def generate_launch_description():
         output="screen",
         condition=IfCondition(record_mono_video),
         parameters=[
+            {"use_sim_time": use_sim_time},
             {"image_topic": mono_video_topic},
             {"output_path": mono_video_output_path},
             {"fps": mono_video_fps},
@@ -340,7 +346,7 @@ def generate_launch_description():
         name="rc_safety_mux",
         output="screen",
         condition=IfCondition(start_rc_safety_mux),
-        parameters=[rc_safety_config_path],
+        parameters=[rc_safety_config_path, {"use_sim_time": use_sim_time}],
     )
 
     default_openvins_config = os.path.join(
@@ -354,10 +360,11 @@ def generate_launch_description():
         DeclareLaunchArgument("start_openvins_stack", default_value="true"),
         DeclareLaunchArgument("openvins_start_rviz", default_value="false"),
         DeclareLaunchArgument("openvins_config_path", default_value=default_openvins_config),
+        DeclareLaunchArgument("use_sim_time", default_value="false"),
         DeclareLaunchArgument("takeoff_height_m", default_value="0.25"),
         DeclareLaunchArgument("max_velocity_setpoint_mps", default_value="0.40"),
         DeclareLaunchArgument("max_acceleration_setpoint_mps2", default_value="0.60"),
-        DeclareLaunchArgument("motion_guard_enabled", default_value="true"),
+        DeclareLaunchArgument("motion_guard_enabled", default_value="false"),
         DeclareLaunchArgument("motion_guard_soft_dwell_s", default_value="2.0"),
         DeclareLaunchArgument("motion_guard_pose_gap_reset_s", default_value="0.40"),
         DeclareLaunchArgument("motion_guard_soft_xy_mps", default_value="0.40"),

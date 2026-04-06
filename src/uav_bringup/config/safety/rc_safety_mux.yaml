@@ -18,7 +18,6 @@ rc_safety_mux:
     service_retry_s: 1.0
     status_timeout_s: 1.0
 
-    # CH5 低位当前只表示“允许自主”，不直接发恢复动作。
-    ch5_low_service: ""
-    ch5_mid_service: /uav/control/command/hold
+    # CH5 当前仅保留高位动作：HIGH -> abort。
+    # LOW / MIDDLE 仅保留档位观测，不触发任何 action。
     ch5_high_service: /uav/control/command/abort

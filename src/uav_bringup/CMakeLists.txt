@@ -9,12 +9,12 @@ ament_python_install_package(${PROJECT_NAME})
 install(DIRECTORY
   launch
   config
+  docs
   DESTINATION share/${PROJECT_NAME}
 )
 
 install(PROGRAMS
   scripts/home_visual_landing_test_node.py
-  scripts/monitor_topic_position.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

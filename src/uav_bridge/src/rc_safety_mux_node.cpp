@@ -30,18 +30,17 @@ class RcSafetyMuxNode : public rclcpp::Node
     High = 3,
   };
 
-  enum class EffectiveMode : uint8_t
+  enum class EffectiveAction : uint8_t
   {
     Unknown = 0,
-    AutonomyAllowed = 1,
-    Hold = 2,
-    Abort = 3,
-    KillActive = 4,
+    None = 1,
+    Abort = 2,
+    KillActive = 3,
   };
 
   struct PendingServiceCall
   {
-    EffectiveMode mode{EffectiveMode::Unknown};
+    EffectiveAction action{EffectiveAction::Unknown};
     std::string service_name;
   };
 
@@ -51,8 +50,6 @@ public:
   {
     this->declare_parameter<std::string>("input_rc_topic", "/fmu/out/input_rc");
     this->declare_parameter<std::string>("state_topic", "/uav/safety/rc_safety_mux/state");
-    this->declare_parameter<std::string>("ch5_low_service", "");
-    this->declare_parameter<std::string>("ch5_mid_service", "/uav/control/command/hold");
     this->declare_parameter<std::string>("ch5_high_service", "/uav/control/command/abort");
     this->declare_parameter<int>("ch5_channel_index", 4);
     this->declare_parameter<int>("ch7_channel_index", 6);
@@ -69,8 +66,6 @@ public:
 
     input_rc_topic_ = this->get_parameter("input_rc_topic").as_string();
     state_topic_ = this->get_parameter("state_topic").as_string();
-    ch5_low_service_ = this->get_parameter("ch5_low_service").as_string();
-    ch5_mid_service_ = this->get_parameter("ch5_mid_service").as_string();
     ch5_high_service_ = this->get_parameter("ch5_high_service").as_string();
     ch5_channel_index_ = this->get_parameter("ch5_channel_index").as_int();
     ch7_channel_index_ = this->get_parameter("ch7_channel_index").as_int();
@@ -93,8 +88,6 @@ public:
     }
 
     status_pub_ = this->create_publisher<String>(state_topic_, rclcpp::QoS(1).transient_local());
-    ch5_low_client_ = createOptionalClient(ch5_low_service_);
-    ch5_mid_client_ = createOptionalClient(ch5_mid_service_);
     ch5_high_client_ = createOptionalClient(ch5_high_service_);
 
     input_rc_sub_ = this->create_subscription<InputRc>(
@@ -107,12 +100,10 @@ public:
 
     RCLCPP_INFO(
       this->get_logger(),
-      "rc_safety_mux_node: rc=%s ch5(index=%d) ch7(index=%d) services(low=%s mid=%s high=%s) state=%s",
+      "rc_safety_mux_node: rc=%s ch5(index=%d) ch7(index=%d) action(high=%s) state=%s",
       input_rc_topic_.c_str(),
       ch5_channel_index_ + 1,
       ch7_channel_index_ + 1,
-      ch5_low_service_.empty() ? "<disabled>" : ch5_low_service_.c_str(),
-      ch5_mid_service_.empty() ? "<disabled>" : ch5_mid_service_.c_str(),
       ch5_high_service_.empty() ? "<disabled>" : ch5_high_service_.c_str(),
       state_topic_.c_str());
   }
@@ -281,8 +272,8 @@ private:
       return;
     }
 
-    const EffectiveMode desired_mode = computeDesiredMode();
-    if (desired_mode == last_applied_mode_) {
+    const EffectiveAction desired_action = computeDesiredAction();
+    if (desired_action == latched_action_) {
       return;
     }
 
@@ -291,19 +282,19 @@ private:
       return;
     }
 
-    const auto call = buildPendingServiceCall(desired_mode);
+    const auto call = buildPendingServiceCall(desired_action);
     if (!call.has_value()) {
-      last_applied_mode_ = desired_mode;
+      latched_action_ = desired_action;
       publishStateIfChanged();
       return;
     }
 
-    auto client = clientForMode(call->mode);
+    auto client = clientForAction(call->action);
     if (!client) {
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 3000,
-        "no service client configured for desired mode %s",
-        effectiveModeName(call->mode));
+        "no service client configured for desired action %s",
+        effectiveActionName(call->action));
       return;
     }
 
@@ -311,9 +302,9 @@ private:
       last_service_attempt_time_ = now;
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 3000,
-        "waiting for service %s for desired mode %s",
+        "waiting for service %s for desired action %s",
         call->service_name.c_str(),
-        effectiveModeName(call->mode));
+        effectiveActionName(call->action));
       return;
     }
 
@@ -322,99 +313,80 @@ private:
     auto request = std::make_shared<Trigger::Request>();
     client->async_send_request(
       request,
-      [this, mode = call->mode, service_name = call->service_name](
+      [this, action = call->action, service_name = call->service_name](
         rclcpp::Client<Trigger>::SharedFuture future)
       {
         service_request_in_flight_ = false;
         try {
           const auto response = future.get();
           if (response->success) {
-            last_applied_mode_ = mode;
+            latched_action_ = action;
             RCLCPP_INFO(
               this->get_logger(),
-              "applied RC safety mode %s via %s: %s",
-              effectiveModeName(mode),
+              "triggered RC safety action %s via %s: %s",
+              effectiveActionName(action),
               service_name.c_str(),
               response->message.c_str());
           } else {
             RCLCPP_WARN(
               this->get_logger(),
-              "service %s rejected RC safety mode %s: %s",
+              "service %s rejected RC safety action %s: %s",
               service_name.c_str(),
-              effectiveModeName(mode),
+              effectiveActionName(action),
               response->message.c_str());
           }
         } catch (const std::exception & ex) {
           RCLCPP_WARN(
             this->get_logger(),
-            "service %s failed for RC safety mode %s: %s",
+            "service %s failed for RC safety action %s: %s",
             service_name.c_str(),
-            effectiveModeName(mode),
+            effectiveActionName(action),
             ex.what());
         }
         publishStateIfChanged();
       });
   }
 
-  EffectiveMode computeDesiredMode() const
+  EffectiveAction computeDesiredAction() const
   {
     if (!rc_valid_) {
-      return last_applied_mode_;
+      return latched_action_;
     }
     if (stable_ch7_active_) {
-      return EffectiveMode::KillActive;
+      return EffectiveAction::KillActive;
     }
 
-    switch (stable_ch5_position_) {
-      case Ch5Position::Low:
-        return EffectiveMode::AutonomyAllowed;
-      case Ch5Position::Middle:
-        return EffectiveMode::Hold;
-      case Ch5Position::High:
-        return EffectiveMode::Abort;
-      case Ch5Position::Unknown:
-        break;
+    if (stable_ch5_position_ == Ch5Position::High) {
+      return EffectiveAction::Abort;
     }
 
-    return last_applied_mode_;
+    return EffectiveAction::None;
   }
 
-  std::optional<PendingServiceCall> buildPendingServiceCall(EffectiveMode mode) const
+  std::optional<PendingServiceCall> buildPendingServiceCall(EffectiveAction action) const
   {
-    switch (mode) {
-      case EffectiveMode::AutonomyAllowed:
-        if (ch5_low_service_.empty()) {
-          return std::nullopt;
-        }
-        return PendingServiceCall{mode, ch5_low_service_};
-      case EffectiveMode::Hold:
-        if (ch5_mid_service_.empty()) {
-          return std::nullopt;
-        }
-        return PendingServiceCall{mode, ch5_mid_service_};
-      case EffectiveMode::Abort:
+    switch (action) {
+      case EffectiveAction::Abort:
         if (ch5_high_service_.empty()) {
           return std::nullopt;
         }
-        return PendingServiceCall{mode, ch5_high_service_};
-      case EffectiveMode::KillActive:
-      case EffectiveMode::Unknown:
+        return PendingServiceCall{action, ch5_high_service_};
+      case EffectiveAction::None:
+      case EffectiveAction::KillActive:
+      case EffectiveAction::Unknown:
         return std::nullopt;
     }
     return std::nullopt;
   }
 
-  rclcpp::Client<Trigger>::SharedPtr clientForMode(EffectiveMode mode) const
+  rclcpp::Client<Trigger>::SharedPtr clientForAction(EffectiveAction action) const
   {
-    switch (mode) {
-      case EffectiveMode::AutonomyAllowed:
-        return ch5_low_client_;
-      case EffectiveMode::Hold:
-        return ch5_mid_client_;
-      case EffectiveMode::Abort:
+    switch (action) {
+      case EffectiveAction::Abort:
         return ch5_high_client_;
-      case EffectiveMode::KillActive:
-      case EffectiveMode::Unknown:
+      case EffectiveAction::None:
+      case EffectiveAction::KillActive:
+      case EffectiveAction::Unknown:
         break;
     }
     return nullptr;
@@ -444,8 +416,8 @@ private:
       << " rc_fresh=" << (rc_fresh ? "true" : "false")
       << " ch5=" << ch5PositionName(stable_ch5_position_) << "(" << raw_ch5_pwm_us_ << "us)"
       << " ch7=" << (stable_ch7_active_ ? "ACTIVE" : "inactive") << "(" << raw_ch7_pwm_us_ << "us)"
-      << " desired=" << effectiveModeName(computeDesiredMode())
-      << " applied=" << effectiveModeName(last_applied_mode_)
+      << " desired_action=" << effectiveActionName(computeDesiredAction())
+      << " latched_action=" << effectiveActionName(latched_action_)
       << " in_flight=" << (service_request_in_flight_ ? "true" : "false");
     return stream.str();
   }
@@ -465,18 +437,16 @@ private:
     return "UNKNOWN";
   }
 
-  static const char * effectiveModeName(EffectiveMode mode)
+  static const char * effectiveActionName(EffectiveAction action)
   {
-    switch (mode) {
-      case EffectiveMode::Unknown:
+    switch (action) {
+      case EffectiveAction::Unknown:
         return "UNKNOWN";
-      case EffectiveMode::AutonomyAllowed:
-        return "AUTONOMY_ALLOWED";
-      case EffectiveMode::Hold:
-        return "HOLD";
-      case EffectiveMode::Abort:
+      case EffectiveAction::None:
+        return "NONE";
+      case EffectiveAction::Abort:
         return "ABORT";
-      case EffectiveMode::KillActive:
+      case EffectiveAction::KillActive:
         return "KILL_ACTIVE";
     }
     return "UNKNOWN";
@@ -484,8 +454,6 @@ private:
 
   std::string input_rc_topic_;
   std::string state_topic_;
-  std::string ch5_low_service_;
-  std::string ch5_mid_service_;
   std::string ch5_high_service_;
 
   int ch5_channel_index_{4};
@@ -504,8 +472,6 @@ private:
 
   rclcpp::Subscription<InputRc>::SharedPtr input_rc_sub_;
   rclcpp::Publisher<String>::SharedPtr status_pub_;
-  rclcpp::Client<Trigger>::SharedPtr ch5_low_client_;
-  rclcpp::Client<Trigger>::SharedPtr ch5_mid_client_;
   rclcpp::Client<Trigger>::SharedPtr ch5_high_client_;
   rclcpp::TimerBase::SharedPtr timer_;
 
@@ -522,7 +488,7 @@ private:
   bool stable_ch7_active_{false};
   rclcpp::Time candidate_ch7_since_{0, 0, RCL_ROS_TIME};
 
-  EffectiveMode last_applied_mode_{EffectiveMode::Unknown};
+  EffectiveAction latched_action_{EffectiveAction::Unknown};
   bool service_request_in_flight_{false};
   rclcpp::Time last_service_attempt_time_{0, 0, RCL_ROS_TIME};
   std::string last_state_text_;
