@@ -5,17 +5,8 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import (
-    DeclareLaunchArgument,
-    EmitEvent,
-    ExecuteProcess,
-    GroupAction,
-    IncludeLaunchDescription,
-    RegisterEventHandler,
-)
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, GroupAction, IncludeLaunchDescription
 from launch.conditions import IfCondition
-from launch.event_handlers import OnProcessExit
-from launch.events import Shutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node, SetRemap
@@ -55,8 +46,6 @@ def generate_launch_description():
     start_openvins = LaunchConfiguration("start_openvins")
     start_openvins_state_bridge = LaunchConfiguration("start_openvins_state_bridge")
     start_px4_vision_bridge = LaunchConfiguration("start_px4_vision_bridge")
-    shutdown_on_rc_kill = LaunchConfiguration("shutdown_on_rc_kill")
-    openvins_shutdown_service = LaunchConfiguration("openvins_shutdown_service")
     use_rviz = LaunchConfiguration("use_rviz")
     use_record_bag = LaunchConfiguration("use_record_bag")
     bag_output_dir = LaunchConfiguration("bag_output_dir")
@@ -297,31 +286,6 @@ def generate_launch_description():
         ],
     )
 
-    openvins_launch_shutdown_service = Node(
-        package="uav_bringup",
-        executable="openvins_launch_shutdown_service_node.py",
-        name="openvins_launch_shutdown_service",
-        output="screen",
-        condition=IfCondition(shutdown_on_rc_kill),
-        parameters=[
-            {"shutdown_service": openvins_shutdown_service},
-            {"shutdown_delay_s": 0.05},
-        ],
-    )
-
-    shutdown_openvins_launch_on_service_exit = RegisterEventHandler(
-        OnProcessExit(
-            target_action=openvins_launch_shutdown_service,
-            on_exit=[
-                EmitEvent(
-                    event=Shutdown(
-                        reason="openvins launch shutdown requested from rc kill"
-                    )
-                )
-            ],
-        )
-    )
-
     record_bag = ExecuteProcess(
         cmd=[
             "ros2",
@@ -376,11 +340,6 @@ def generate_launch_description():
             DeclareLaunchArgument("start_openvins", default_value="true"),
             DeclareLaunchArgument("start_openvins_state_bridge", default_value="true"),
             DeclareLaunchArgument("start_px4_vision_bridge", default_value="false"),
-            DeclareLaunchArgument("shutdown_on_rc_kill", default_value="true"),
-            DeclareLaunchArgument(
-                "openvins_shutdown_service",
-                default_value="/uav/openvins/command/shutdown",
-            ),
             DeclareLaunchArgument("use_rviz", default_value="false"),
             DeclareLaunchArgument("use_record_bag", default_value="false"),
             DeclareLaunchArgument("bag_output_dir", default_value=default_bag_output_dir),
@@ -547,8 +506,6 @@ def generate_launch_description():
             openvins,
             openvins_state_bridge,
             openvins_px4_vision_bridge,
-            openvins_launch_shutdown_service,
-            shutdown_openvins_launch_on_service_exit,
             record_bag,
             rviz,
         ]

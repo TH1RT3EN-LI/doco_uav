@@ -321,9 +321,16 @@ private:
     }
 
     cv::Mat warmup_frame;
-    if (capture_.read(warmup_frame) && !warmup_frame.empty()) {
-      actual_width_ = warmup_frame.cols;
-      actual_height_ = warmup_frame.rows;
+    try {
+      if (capture_.read(warmup_frame) && !warmup_frame.empty()) {
+        actual_width_ = warmup_frame.cols;
+        actual_height_ = warmup_frame.rows;
+      }
+    } catch (const cv::Exception & error) {
+      RCLCPP_WARN(
+        this->get_logger(),
+        "mono camera warmup read failed on %s: %s",
+        device_.c_str(), error.what());
     }
 
     if (actual_width_ <= 0) {
@@ -407,10 +414,17 @@ private:
   void captureAndPublishFrame()
   {
     cv::Mat frame;
-    if (!capture_.read(frame) || frame.empty()) {
+    try {
+      if (!capture_.read(frame) || frame.empty()) {
+        RCLCPP_WARN_THROTTLE(
+          this->get_logger(), *this->get_clock(), 2000,
+          "failed to read frame from mono camera device %s", device_.c_str());
+        return;
+      }
+    } catch (const cv::Exception & error) {
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 2000,
-        "failed to read frame from mono camera device %s", device_.c_str());
+        "mono camera read failed on %s: %s", device_.c_str(), error.what());
       return;
     }
 

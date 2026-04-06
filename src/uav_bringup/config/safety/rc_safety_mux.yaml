@@ -20,6 +20,4 @@ rc_safety_mux:
 
     # CH5 当前仅保留高位动作：HIGH -> abort。
     # LOW / MIDDLE 仅保留档位观测，不触发任何 action。
-    # CH7 HIGH -> kill state；ROS 侧额外触发 OV shutdown。
     ch5_high_service: /uav/control/command/abort
-    kill_active_service: /uav/openvins/command/shutdown
