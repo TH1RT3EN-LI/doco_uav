@@ -15,6 +15,7 @@ install(DIRECTORY
 
 install(PROGRAMS
   scripts/home_visual_landing_test_node.py
+  scripts/openvins_launch_shutdown_service_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

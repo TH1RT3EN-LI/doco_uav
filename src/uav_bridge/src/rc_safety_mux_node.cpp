@@ -51,6 +51,7 @@ public:
     this->declare_parameter<std::string>("input_rc_topic", "/fmu/out/input_rc");
     this->declare_parameter<std::string>("state_topic", "/uav/safety/rc_safety_mux/state");
     this->declare_parameter<std::string>("ch5_high_service", "/uav/control/command/abort");
+    this->declare_parameter<std::string>("kill_active_service", "");
     this->declare_parameter<int>("ch5_channel_index", 4);
     this->declare_parameter<int>("ch7_channel_index", 6);
     this->declare_parameter<int>("channel_min_valid_us", 800);
@@ -67,6 +68,7 @@ public:
     input_rc_topic_ = this->get_parameter("input_rc_topic").as_string();
     state_topic_ = this->get_parameter("state_topic").as_string();
     ch5_high_service_ = this->get_parameter("ch5_high_service").as_string();
+    kill_active_service_ = this->get_parameter("kill_active_service").as_string();
     ch5_channel_index_ = this->get_parameter("ch5_channel_index").as_int();
     ch7_channel_index_ = this->get_parameter("ch7_channel_index").as_int();
     channel_min_valid_us_ = this->get_parameter("channel_min_valid_us").as_int();
@@ -89,6 +91,7 @@ public:
 
     status_pub_ = this->create_publisher<String>(state_topic_, rclcpp::QoS(1).transient_local());
     ch5_high_client_ = createOptionalClient(ch5_high_service_);
+    kill_active_client_ = createOptionalClient(kill_active_service_);
 
     input_rc_sub_ = this->create_subscription<InputRc>(
       input_rc_topic_, rclcpp::SensorDataQoS(),
@@ -100,11 +103,12 @@ public:
 
     RCLCPP_INFO(
       this->get_logger(),
-      "rc_safety_mux_node: rc=%s ch5(index=%d) ch7(index=%d) action(high=%s) state=%s",
+      "rc_safety_mux_node: rc=%s ch5(index=%d) ch7(index=%d) action(high=%s kill=%s) state=%s",
       input_rc_topic_.c_str(),
       ch5_channel_index_ + 1,
       ch7_channel_index_ + 1,
       ch5_high_service_.empty() ? "<disabled>" : ch5_high_service_.c_str(),
+      kill_active_service_.empty() ? "<disabled>" : kill_active_service_.c_str(),
       state_topic_.c_str());
   }
 
@@ -371,8 +375,12 @@ private:
           return std::nullopt;
         }
         return PendingServiceCall{action, ch5_high_service_};
-      case EffectiveAction::None:
       case EffectiveAction::KillActive:
+        if (kill_active_service_.empty()) {
+          return std::nullopt;
+        }
+        return PendingServiceCall{action, kill_active_service_};
+      case EffectiveAction::None:
       case EffectiveAction::Unknown:
         return std::nullopt;
     }
@@ -384,8 +392,9 @@ private:
     switch (action) {
       case EffectiveAction::Abort:
         return ch5_high_client_;
-      case EffectiveAction::None:
       case EffectiveAction::KillActive:
+        return kill_active_client_;
+      case EffectiveAction::None:
       case EffectiveAction::Unknown:
         break;
     }
@@ -455,6 +464,7 @@ private:
   std::string input_rc_topic_;
   std::string state_topic_;
   std::string ch5_high_service_;
+  std::string kill_active_service_;
 
   int ch5_channel_index_{4};
   int ch7_channel_index_{6};
@@ -473,6 +483,7 @@ private:
   rclcpp::Subscription<InputRc>::SharedPtr input_rc_sub_;
   rclcpp::Publisher<String>::SharedPtr status_pub_;
   rclcpp::Client<Trigger>::SharedPtr ch5_high_client_;
+  rclcpp::Client<Trigger>::SharedPtr kill_active_client_;
   rclcpp::TimerBase::SharedPtr timer_;
 
   bool rc_valid_{false};
