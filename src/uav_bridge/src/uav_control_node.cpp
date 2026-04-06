@@ -81,11 +81,20 @@ public:
     this->declare_parameter<double>("velocity_mode_max_acc_yaw_radps2", 1.5);
     this->declare_parameter<double>("state_timeout_s", 0.20);
     this->declare_parameter<double>("ov_hold_kp_xy", 0.8);
+    this->declare_parameter<double>("ov_hold_ki_xy", 0.08);
+    this->declare_parameter<double>("ov_hold_kd_xy", 0.35);
     this->declare_parameter<double>("ov_hold_kp_z", 0.8);
+    this->declare_parameter<double>("ov_hold_ki_z", 0.10);
+    this->declare_parameter<double>("ov_hold_kd_z", 0.30);
     this->declare_parameter<double>("ov_hold_kp_yaw", 1.0);
+    this->declare_parameter<double>("ov_hold_ki_yaw", 0.03);
+    this->declare_parameter<double>("ov_hold_kd_yaw", 0.20);
     this->declare_parameter<double>("ov_hold_max_vxy", 0.4);
     this->declare_parameter<double>("ov_hold_max_vz", 0.2);
     this->declare_parameter<double>("ov_hold_max_yaw_rate", 0.4);
+    this->declare_parameter<double>("ov_hold_max_integral_vxy", 0.06);
+    this->declare_parameter<double>("ov_hold_max_integral_vz", 0.05);
+    this->declare_parameter<double>("ov_hold_max_integral_yaw_rate", 0.04);
     this->declare_parameter<double>("ov_target_xy_tolerance_m", 0.05);
     this->declare_parameter<double>("ov_target_z_tolerance_m", 0.05);
     this->declare_parameter<double>("ov_target_yaw_tolerance_rad", 0.08);
@@ -147,11 +156,23 @@ public:
     velocity_mode_max_acc_yaw_radps2_ = static_cast<float>(this->get_parameter("velocity_mode_max_acc_yaw_radps2").as_double());
     execution_state_timeout_s_ = this->get_parameter("state_timeout_s").as_double();
     ov_hold_kp_xy_ = static_cast<float>(this->get_parameter("ov_hold_kp_xy").as_double());
+    ov_hold_ki_xy_ = static_cast<float>(this->get_parameter("ov_hold_ki_xy").as_double());
+    ov_hold_kd_xy_ = static_cast<float>(this->get_parameter("ov_hold_kd_xy").as_double());
     ov_hold_kp_z_ = static_cast<float>(this->get_parameter("ov_hold_kp_z").as_double());
+    ov_hold_ki_z_ = static_cast<float>(this->get_parameter("ov_hold_ki_z").as_double());
+    ov_hold_kd_z_ = static_cast<float>(this->get_parameter("ov_hold_kd_z").as_double());
     ov_hold_kp_yaw_ = static_cast<float>(this->get_parameter("ov_hold_kp_yaw").as_double());
+    ov_hold_ki_yaw_ = static_cast<float>(this->get_parameter("ov_hold_ki_yaw").as_double());
+    ov_hold_kd_yaw_ = static_cast<float>(this->get_parameter("ov_hold_kd_yaw").as_double());
     ov_hold_max_vxy_ = static_cast<float>(this->get_parameter("ov_hold_max_vxy").as_double());
     ov_hold_max_vz_ = static_cast<float>(this->get_parameter("ov_hold_max_vz").as_double());
     ov_hold_max_yaw_rate_ = static_cast<float>(this->get_parameter("ov_hold_max_yaw_rate").as_double());
+    ov_hold_max_integral_vxy_ = static_cast<float>(
+      this->get_parameter("ov_hold_max_integral_vxy").as_double());
+    ov_hold_max_integral_vz_ = static_cast<float>(
+      this->get_parameter("ov_hold_max_integral_vz").as_double());
+    ov_hold_max_integral_yaw_rate_ = static_cast<float>(
+      this->get_parameter("ov_hold_max_integral_yaw_rate").as_double());
     ov_target_xy_tolerance_m_ = static_cast<float>(this->get_parameter("ov_target_xy_tolerance_m").as_double());
     ov_target_z_tolerance_m_ = static_cast<float>(this->get_parameter("ov_target_z_tolerance_m").as_double());
     ov_target_yaw_tolerance_rad_ = static_cast<float>(this->get_parameter("ov_target_yaw_tolerance_rad").as_double());
@@ -278,6 +299,20 @@ public:
           msg->pose.pose.orientation.z,
           msg->pose.pose.orientation.w);
         current_orientation_enu_flu_.normalize();
+        const std::array<float, 3> control_body_velocity = {
+          static_cast<float>(msg->twist.twist.linear.x),
+          static_cast<float>(msg->twist.twist.linear.y),
+          static_cast<float>(msg->twist.twist.linear.z)};
+        if (isFiniteVector(control_body_velocity)) {
+          current_control_body_velocity_flu_ = control_body_velocity;
+          has_control_body_velocity_ = true;
+        } else {
+          current_control_body_velocity_flu_ = {0.0f, 0.0f, 0.0f};
+          has_control_body_velocity_ = false;
+        }
+        current_control_yaw_rate_radps_ =
+          std::isfinite(msg->twist.twist.angular.z) ?
+          static_cast<float>(msg->twist.twist.angular.z) : 0.0f;
         last_state_time_ = stamp;
         has_state_ = true;
         last_ov_sample_position_enu_ = position_enu;
@@ -454,6 +489,31 @@ private:
     return std::clamp(value, -max_abs, max_abs);
   }
 
+  static void clampPlanarNorm(float & x, float & y, float max_norm)
+  {
+    if (!std::isfinite(x) || !std::isfinite(y) || max_norm <= 0.0f) {
+      x = 0.0f;
+      y = 0.0f;
+      return;
+    }
+
+    const float norm = std::hypot(x, y);
+    if (!std::isfinite(norm) || norm <= max_norm || norm <= 1.0e-6f) {
+      return;
+    }
+
+    const float scale = max_norm / norm;
+    x *= scale;
+    y *= scale;
+  }
+
+  void resetOvOuterLoopController()
+  {
+    ov_position_error_integral_enu_ = {0.0f, 0.0f, 0.0f};
+    ov_yaw_error_integral_rad_s_ = 0.0f;
+    last_ov_outer_loop_time_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+  }
+
   void resetWarmup()
   {
     setpoint_counter_ = 0;
@@ -466,6 +526,7 @@ private:
     velocity_mode_rate_limit_initialized_ = false;
     last_velocity_mode_ned_ = {0.0f, 0.0f, 0.0f};
     last_velocity_mode_yawspeed_ned_ = 0.0f;
+    resetOvOuterLoopController();
     hold_target_valid_ = false;
     position_target_valid_ = false;
     clearMotionGuardSoftViolation();
@@ -1036,33 +1097,109 @@ private:
     const float ez_world = target_position_enu[2] - current_position_enu_[2];
     const float yaw_error = normalizeAngle(target_yaw_enu - current_yaw_enu_);
 
-    const float cos_yaw = std::cos(current_yaw_enu_);
-    const float sin_yaw = std::sin(current_yaw_enu_);
-    const float ex_body = (cos_yaw * ex_world) + (sin_yaw * ey_world);
-    const float ey_body = (-sin_yaw * ex_world) + (cos_yaw * ey_world);
+    const auto now = this->now();
+    float dt_s = 0.0f;
+    if (last_ov_outer_loop_time_.nanoseconds() != 0) {
+      const double dt = (now - last_ov_outer_loop_time_).seconds();
+      if (std::isfinite(dt) && dt > 1.0e-4 && dt <= ov_fault_pose_timeout_s_) {
+        dt_s = static_cast<float>(dt);
+      }
+    }
+    last_ov_outer_loop_time_ = now;
 
-    float vx_body = clampSigned(ov_hold_kp_xy_ * ex_body, ov_hold_max_vxy_);
-    float vy_body = clampSigned(ov_hold_kp_xy_ * ey_body, ov_hold_max_vxy_);
-    float vz_body = clampSigned(ov_hold_kp_z_ * ez_world, ov_hold_max_vz_);
-    float yaw_rate = clampSigned(ov_hold_kp_yaw_ * yaw_error, ov_hold_max_yaw_rate_);
+    if (dt_s > 0.0f) {
+      ov_position_error_integral_enu_[0] += ex_world * dt_s;
+      ov_position_error_integral_enu_[1] += ey_world * dt_s;
+      ov_position_error_integral_enu_[2] += ez_world * dt_s;
+      ov_yaw_error_integral_rad_s_ += yaw_error * dt_s;
+    }
 
+    float ix_world = clampSigned(ov_hold_ki_xy_ * ov_position_error_integral_enu_[0], ov_hold_max_integral_vxy_);
+    float iy_world = clampSigned(ov_hold_ki_xy_ * ov_position_error_integral_enu_[1], ov_hold_max_integral_vxy_);
+    clampPlanarNorm(ix_world, iy_world, ov_hold_max_integral_vxy_);
+    if (ov_hold_ki_xy_ > 1.0e-6f) {
+      ov_position_error_integral_enu_[0] = ix_world / ov_hold_ki_xy_;
+      ov_position_error_integral_enu_[1] = iy_world / ov_hold_ki_xy_;
+    } else {
+      ov_position_error_integral_enu_[0] = 0.0f;
+      ov_position_error_integral_enu_[1] = 0.0f;
+      ix_world = 0.0f;
+      iy_world = 0.0f;
+    }
+
+    float iz_world = clampSigned(ov_hold_ki_z_ * ov_position_error_integral_enu_[2], ov_hold_max_integral_vz_);
+    if (ov_hold_ki_z_ > 1.0e-6f) {
+      ov_position_error_integral_enu_[2] = iz_world / ov_hold_ki_z_;
+    } else {
+      ov_position_error_integral_enu_[2] = 0.0f;
+      iz_world = 0.0f;
+    }
+
+    float iyaw_rate = clampSigned(
+      ov_hold_ki_yaw_ * ov_yaw_error_integral_rad_s_,
+      ov_hold_max_integral_yaw_rate_);
+    if (ov_hold_ki_yaw_ > 1.0e-6f) {
+      ov_yaw_error_integral_rad_s_ = iyaw_rate / ov_hold_ki_yaw_;
+    } else {
+      ov_yaw_error_integral_rad_s_ = 0.0f;
+      iyaw_rate = 0.0f;
+    }
+
+    float ex_world_for_p = ex_world;
+    float ey_world_for_p = ey_world;
     const float xy_error = std::hypot(ex_world, ey_world);
     if (xy_error <= ov_target_xy_tolerance_m_) {
-      vx_body = 0.0f;
-      vy_body = 0.0f;
+      ex_world_for_p = 0.0f;
+      ey_world_for_p = 0.0f;
     }
-    if (std::abs(ez_world) <= ov_target_z_tolerance_m_) {
-      vz_body = 0.0f;
-    }
-    if (std::abs(yaw_error) <= ov_target_yaw_tolerance_rad_) {
-      yaw_rate = 0.0f;
+    const float ez_world_for_p =
+      std::abs(ez_world) <= ov_target_z_tolerance_m_ ? 0.0f : ez_world;
+    const float yaw_error_for_p =
+      std::abs(yaw_error) <= ov_target_yaw_tolerance_rad_ ? 0.0f : yaw_error;
+
+    tf2::Vector3 velocity_world(0.0, 0.0, 0.0);
+    if (has_control_body_velocity_) {
+      const tf2::Matrix3x3 rotation_enu_flu(current_orientation_enu_flu_);
+      const tf2::Vector3 velocity_body(
+        static_cast<double>(current_control_body_velocity_flu_[0]),
+        static_cast<double>(current_control_body_velocity_flu_[1]),
+        static_cast<double>(current_control_body_velocity_flu_[2]));
+      velocity_world = rotation_enu_flu * velocity_body;
     }
 
-    cmd.header.stamp = this->now();
+    float vx_world =
+      (ov_hold_kp_xy_ * ex_world_for_p) +
+      ix_world -
+      (ov_hold_kd_xy_ * static_cast<float>(velocity_world.x()));
+    float vy_world =
+      (ov_hold_kp_xy_ * ey_world_for_p) +
+      iy_world -
+      (ov_hold_kd_xy_ * static_cast<float>(velocity_world.y()));
+    clampPlanarNorm(vx_world, vy_world, ov_hold_max_vxy_);
+
+    const float vz_world = clampSigned(
+      (ov_hold_kp_z_ * ez_world_for_p) +
+      iz_world -
+      (ov_hold_kd_z_ * static_cast<float>(velocity_world.z())),
+      ov_hold_max_vz_);
+    const float yaw_rate = clampSigned(
+      (ov_hold_kp_yaw_ * yaw_error_for_p) +
+      iyaw_rate -
+      (ov_hold_kd_yaw_ * current_control_yaw_rate_radps_),
+      ov_hold_max_yaw_rate_);
+
+    const tf2::Matrix3x3 rotation_enu_flu(current_execution_orientation_enu_flu_);
+    const tf2::Vector3 velocity_world_cmd(
+      static_cast<double>(vx_world),
+      static_cast<double>(vy_world),
+      static_cast<double>(vz_world));
+    const tf2::Vector3 velocity_body_cmd = rotation_enu_flu.transpose() * velocity_world_cmd;
+
+    cmd.header.stamp = now;
     cmd.header.frame_id = base_frame_id_;
-    cmd.twist.linear.x = vx_body;
-    cmd.twist.linear.y = vy_body;
-    cmd.twist.linear.z = vz_body;
+    cmd.twist.linear.x = velocity_body_cmd.x();
+    cmd.twist.linear.y = velocity_body_cmd.y();
+    cmd.twist.linear.z = velocity_body_cmd.z();
     cmd.twist.angular.z = yaw_rate;
 
     if (height_error_m != nullptr) {
@@ -1146,6 +1283,7 @@ private:
     hold_target_position_enu_ = current_position_enu_;
     hold_target_yaw_enu_ = current_yaw_enu_;
     hold_target_valid_ = true;
+    resetOvOuterLoopController();
     return true;
   }
 
@@ -1286,9 +1424,19 @@ private:
       }
     }
 
+    const bool reset_ov_outer_loop =
+      !position_target_valid_ ||
+      std::hypot(
+        target_position_enu[0] - position_target_position_enu_[0],
+        target_position_enu[1] - position_target_position_enu_[1]) > ov_target_xy_tolerance_m_ ||
+      std::abs(target_position_enu[2] - position_target_position_enu_[2]) > ov_target_z_tolerance_m_ ||
+      std::abs(normalizeAngle(target_yaw_enu - position_target_yaw_enu_)) > ov_target_yaw_tolerance_rad_;
     position_target_position_enu_ = target_position_enu;
     position_target_yaw_enu_ = target_yaw_enu;
     position_target_valid_ = true;
+    if (reset_ov_outer_loop) {
+      resetOvOuterLoopController();
+    }
     if (motionGuardActive()) {
       last_accepted_pose_target_position_enu_ = target_position_enu;
       last_accepted_pose_target_yaw_enu_ = target_yaw_enu;
@@ -1638,11 +1786,20 @@ private:
   float velocity_mode_max_acc_yaw_radps2_{1.5f};
   double execution_state_timeout_s_{0.20};
   float ov_hold_kp_xy_{0.8f};
+  float ov_hold_ki_xy_{0.08f};
+  float ov_hold_kd_xy_{0.35f};
   float ov_hold_kp_z_{0.8f};
+  float ov_hold_ki_z_{0.10f};
+  float ov_hold_kd_z_{0.30f};
   float ov_hold_kp_yaw_{1.0f};
+  float ov_hold_ki_yaw_{0.03f};
+  float ov_hold_kd_yaw_{0.20f};
   float ov_hold_max_vxy_{0.4f};
   float ov_hold_max_vz_{0.2f};
   float ov_hold_max_yaw_rate_{0.4f};
+  float ov_hold_max_integral_vxy_{0.06f};
+  float ov_hold_max_integral_vz_{0.05f};
+  float ov_hold_max_integral_yaw_rate_{0.04f};
   float ov_target_xy_tolerance_m_{0.05f};
   float ov_target_z_tolerance_m_{0.05f};
   float ov_target_yaw_tolerance_rad_{0.08f};
@@ -1695,14 +1852,20 @@ private:
   tf2::Quaternion current_execution_orientation_enu_flu_{0.0, 0.0, 0.0, 1.0};
   float current_execution_yaw_enu_{0.0f};
   float last_ov_sample_yaw_enu_{0.0f};
+  std::array<float, 3> current_control_body_velocity_flu_{0.0f, 0.0f, 0.0f};
+  bool has_control_body_velocity_{false};
+  float current_control_yaw_rate_radps_{0.0f};
   std::array<float, 3> hold_target_position_enu_{0.0f, 0.0f, 0.0f};
   float hold_target_yaw_enu_{0.0f};
   bool hold_target_valid_{false};
   std::array<float, 3> position_target_position_enu_{0.0f, 0.0f, 0.0f};
   float position_target_yaw_enu_{0.0f};
   bool position_target_valid_{false};
+  std::array<float, 3> ov_position_error_integral_enu_{0.0f, 0.0f, 0.0f};
+  float ov_yaw_error_integral_rad_s_{0.0f};
   rclcpp::Time last_state_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_execution_state_time_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time last_ov_outer_loop_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time soft_violation_since_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_accepted_pose_target_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time takeoff_reached_since_{0, 0, RCL_ROS_TIME};

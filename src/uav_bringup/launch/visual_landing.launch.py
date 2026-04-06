@@ -32,11 +32,20 @@ def generate_launch_description():
     execution_state_topic = LaunchConfiguration("execution_state_topic")
     position_command_frame_id = LaunchConfiguration("position_command_frame_id")
     ov_hold_kp_xy = LaunchConfiguration("ov_hold_kp_xy")
+    ov_hold_ki_xy = LaunchConfiguration("ov_hold_ki_xy")
+    ov_hold_kd_xy = LaunchConfiguration("ov_hold_kd_xy")
     ov_hold_kp_z = LaunchConfiguration("ov_hold_kp_z")
+    ov_hold_ki_z = LaunchConfiguration("ov_hold_ki_z")
+    ov_hold_kd_z = LaunchConfiguration("ov_hold_kd_z")
     ov_hold_kp_yaw = LaunchConfiguration("ov_hold_kp_yaw")
+    ov_hold_ki_yaw = LaunchConfiguration("ov_hold_ki_yaw")
+    ov_hold_kd_yaw = LaunchConfiguration("ov_hold_kd_yaw")
     ov_hold_max_vxy = LaunchConfiguration("ov_hold_max_vxy")
     ov_hold_max_vz = LaunchConfiguration("ov_hold_max_vz")
     ov_hold_max_yaw_rate = LaunchConfiguration("ov_hold_max_yaw_rate")
+    ov_hold_max_integral_vxy = LaunchConfiguration("ov_hold_max_integral_vxy")
+    ov_hold_max_integral_vz = LaunchConfiguration("ov_hold_max_integral_vz")
+    ov_hold_max_integral_yaw_rate = LaunchConfiguration("ov_hold_max_integral_yaw_rate")
     ov_target_xy_tolerance_m = LaunchConfiguration("ov_target_xy_tolerance_m")
     ov_target_z_tolerance_m = LaunchConfiguration("ov_target_z_tolerance_m")
     ov_target_yaw_tolerance_rad = LaunchConfiguration("ov_target_yaw_tolerance_rad")
@@ -171,11 +180,20 @@ def generate_launch_description():
             "execution_state_topic": execution_state_topic,
             "position_command_frame_id": position_command_frame_id,
             "ov_hold_kp_xy": ov_hold_kp_xy,
+            "ov_hold_ki_xy": ov_hold_ki_xy,
+            "ov_hold_kd_xy": ov_hold_kd_xy,
             "ov_hold_kp_z": ov_hold_kp_z,
+            "ov_hold_ki_z": ov_hold_ki_z,
+            "ov_hold_kd_z": ov_hold_kd_z,
             "ov_hold_kp_yaw": ov_hold_kp_yaw,
+            "ov_hold_ki_yaw": ov_hold_ki_yaw,
+            "ov_hold_kd_yaw": ov_hold_kd_yaw,
             "ov_hold_max_vxy": ov_hold_max_vxy,
             "ov_hold_max_vz": ov_hold_max_vz,
             "ov_hold_max_yaw_rate": ov_hold_max_yaw_rate,
+            "ov_hold_max_integral_vxy": ov_hold_max_integral_vxy,
+            "ov_hold_max_integral_vz": ov_hold_max_integral_vz,
+            "ov_hold_max_integral_yaw_rate": ov_hold_max_integral_yaw_rate,
             "ov_target_xy_tolerance_m": ov_target_xy_tolerance_m,
             "ov_target_z_tolerance_m": ov_target_z_tolerance_m,
             "ov_target_yaw_tolerance_rad": ov_target_yaw_tolerance_rad,
@@ -341,15 +359,24 @@ def generate_launch_description():
         DeclareLaunchArgument("control_state_topic", default_value="/uav/state/odometry"),
         DeclareLaunchArgument("execution_state_topic", default_value="/uav/state/odometry_px4"),
         DeclareLaunchArgument("position_command_frame_id", default_value="global"),
-        DeclareLaunchArgument("ov_hold_kp_xy", default_value="0.80"),
-        DeclareLaunchArgument("ov_hold_kp_z", default_value="0.80"),
-        DeclareLaunchArgument("ov_hold_kp_yaw", default_value="1.00"),
+        DeclareLaunchArgument("ov_hold_kp_xy", default_value="1.00"),
+        DeclareLaunchArgument("ov_hold_ki_xy", default_value="0.08"),
+        DeclareLaunchArgument("ov_hold_kd_xy", default_value="0.35"),
+        DeclareLaunchArgument("ov_hold_kp_z", default_value="1.00"),
+        DeclareLaunchArgument("ov_hold_ki_z", default_value="0.10"),
+        DeclareLaunchArgument("ov_hold_kd_z", default_value="0.30"),
+        DeclareLaunchArgument("ov_hold_kp_yaw", default_value="1.20"),
+        DeclareLaunchArgument("ov_hold_ki_yaw", default_value="0.03"),
+        DeclareLaunchArgument("ov_hold_kd_yaw", default_value="0.20"),
         DeclareLaunchArgument("ov_hold_max_vxy", default_value="0.20"),
         DeclareLaunchArgument("ov_hold_max_vz", default_value="0.15"),
         DeclareLaunchArgument("ov_hold_max_yaw_rate", default_value="0.20"),
-        DeclareLaunchArgument("ov_target_xy_tolerance_m", default_value="0.05"),
-        DeclareLaunchArgument("ov_target_z_tolerance_m", default_value="0.05"),
-        DeclareLaunchArgument("ov_target_yaw_tolerance_rad", default_value="0.08"),
+        DeclareLaunchArgument("ov_hold_max_integral_vxy", default_value="0.06"),
+        DeclareLaunchArgument("ov_hold_max_integral_vz", default_value="0.05"),
+        DeclareLaunchArgument("ov_hold_max_integral_yaw_rate", default_value="0.04"),
+        DeclareLaunchArgument("ov_target_xy_tolerance_m", default_value="0.02"),
+        DeclareLaunchArgument("ov_target_z_tolerance_m", default_value="0.03"),
+        DeclareLaunchArgument("ov_target_yaw_tolerance_rad", default_value="0.04"),
         DeclareLaunchArgument("ov_fault_pose_timeout_s", default_value="0.20"),
         DeclareLaunchArgument("ov_fault_max_xy_step_m", default_value="0.30"),
         DeclareLaunchArgument("ov_fault_max_z_step_m", default_value="0.20"),
