@@ -103,7 +103,7 @@ public:
 
     RCLCPP_INFO(
       this->get_logger(),
-      "rc_safety_mux_node: rc=%s ch5(index=%d) ch7(index=%d) action(high=%s kill=%s) state=%s",
+      "rc_safety_mux_node: rc=%s ch5(index=%d) ch7(index=%d) abort_service=%s kill_service=%s state=%s",
       input_rc_topic_.c_str(),
       ch5_channel_index_ + 1,
       ch7_channel_index_ + 1,
@@ -356,6 +356,7 @@ private:
     if (!rc_valid_) {
       return latched_action_;
     }
+
     if (stable_ch7_active_) {
       return EffectiveAction::KillActive;
     }
