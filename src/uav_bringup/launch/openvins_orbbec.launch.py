@@ -167,19 +167,7 @@ def generate_launch_description():
     actual_right_ir_topic = namespaced_path(orbbec_camera_name, "right_ir/image_raw")
     actual_imu_topic = namespaced_path(orbbec_camera_name, "gyro_accel/sample")
     bag_record_topics = [
-        actual_left_ir_topic,
-        actual_right_ir_topic,
-        actual_imu_topic,
-        actual_ov_odom_topic,
-        actual_ov_path_topic,
-        actual_ov_trackhist_topic,
-        actual_ov_loop_depth_topic,
-        actual_ov_msckf_points_topic,
-        actual_ov_slam_points_topic,
-        actual_ov_aruco_points_topic,
-        actual_ov_loop_feats_topic,
         state_odometry_topic,
-        px4_visual_odometry_topic,
         "/tf",
         "/tf_static",
     ]
