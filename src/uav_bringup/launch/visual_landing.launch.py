@@ -345,7 +345,7 @@ def generate_launch_description():
         DeclareLaunchArgument("ov_hold_kp_z", default_value="0.80"),
         DeclareLaunchArgument("ov_hold_kp_yaw", default_value="1.00"),
         DeclareLaunchArgument("ov_hold_max_vxy", default_value="0.20"),
-        DeclareLaunchArgument("ov_hold_max_vz", default_value="0.10"),
+        DeclareLaunchArgument("ov_hold_max_vz", default_value="0.15"),
         DeclareLaunchArgument("ov_hold_max_yaw_rate", default_value="0.20"),
         DeclareLaunchArgument("ov_target_xy_tolerance_m", default_value="0.05"),
         DeclareLaunchArgument("ov_target_z_tolerance_m", default_value="0.05"),
