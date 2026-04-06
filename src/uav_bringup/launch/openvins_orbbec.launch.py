@@ -20,6 +20,24 @@ from uav_bringup.profile_defaults import (
 )
 
 
+def next_bag_run_id(base_dir: Path, prefix: str) -> int:
+    if not base_dir.exists():
+        return 1
+
+    max_id = 0
+    stem = f"{prefix}_"
+    for entry in base_dir.iterdir():
+        if not entry.name.startswith(stem):
+            continue
+
+        suffix = entry.name[len(stem) :]
+        run_id, _, _ = suffix.partition("_")
+        if run_id.isdigit():
+            max_id = max(max_id, int(run_id))
+
+    return max_id + 1
+
+
 def generate_launch_description():
     bringup_share = get_package_share_directory("uav_bringup")
     openvins_share = get_package_share_directory("ov_msckf")
@@ -148,6 +166,23 @@ def generate_launch_description():
     actual_left_ir_topic = namespaced_path(orbbec_camera_name, "left_ir/image_raw")
     actual_right_ir_topic = namespaced_path(orbbec_camera_name, "right_ir/image_raw")
     actual_imu_topic = namespaced_path(orbbec_camera_name, "gyro_accel/sample")
+    bag_record_topics = [
+        actual_left_ir_topic,
+        actual_right_ir_topic,
+        actual_imu_topic,
+        actual_ov_odom_topic,
+        actual_ov_path_topic,
+        actual_ov_trackhist_topic,
+        actual_ov_loop_depth_topic,
+        actual_ov_msckf_points_topic,
+        actual_ov_slam_points_topic,
+        actual_ov_aruco_points_topic,
+        actual_ov_loop_feats_topic,
+        state_odometry_topic,
+        px4_visual_odometry_topic,
+        "/tf",
+        "/tf_static",
+    ]
 
     orbbec_depth_camera = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -287,9 +322,7 @@ def generate_launch_description():
             "record",
             "--output",
             bag_output_dir,
-            actual_left_ir_topic,
-            actual_right_ir_topic,
-            actual_imu_topic,
+            *bag_record_topics,
         ],
         output="screen",
         condition=IfCondition(use_record_bag),
@@ -323,10 +356,11 @@ def generate_launch_description():
     default_rviz_config = os.path.join(
         bringup_share, "config", "rviz", "openvins_orbbec.rviz"
     )
+    bag_root_dir = Path.home() / "uav_bags"
+    default_bag_id = next_bag_run_id(bag_root_dir, "openvins_orbbec")
     default_bag_output_dir = str(
-        Path.home()
-        / "uav_bags"
-        / f"openvins_orbbec_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        bag_root_dir
+        / f"openvins_orbbec_{default_bag_id:03d}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     )
 
     return LaunchDescription(
