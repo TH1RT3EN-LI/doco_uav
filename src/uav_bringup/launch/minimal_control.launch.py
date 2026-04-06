@@ -455,7 +455,7 @@ def generate_launch_description():
         DeclareLaunchArgument("cy", default_value=DEFAULT_CAMERA_INTRINSICS["cy"]),
         DeclareLaunchArgument("camera_hfov_rad", default_value="1.3962634"),
         DeclareLaunchArgument("camera_info_url", default_value=""),
-        DeclareLaunchArgument("record_mono_video", default_value="true"),
+        DeclareLaunchArgument("record_mono_video", default_value="false"),
         DeclareLaunchArgument("mono_video_topic", default_value=image_topic),
         DeclareLaunchArgument("mono_video_output_path", default_value=default_recording_path),
         DeclareLaunchArgument("mono_video_fps", default_value="120.0"),
