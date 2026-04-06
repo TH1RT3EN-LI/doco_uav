@@ -5,7 +5,7 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription, TimerAction
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -28,6 +28,7 @@ def generate_launch_description():
     openvins_start_rviz = LaunchConfiguration("openvins_start_rviz")
     openvins_config_path = LaunchConfiguration("openvins_config_path")
     openvins_state_log_debug = LaunchConfiguration("openvins_state_log_debug")
+    main_stack_start_delay_s = LaunchConfiguration("main_stack_start_delay_s")
     use_sim_time = LaunchConfiguration("use_sim_time")
     takeoff_height_m = LaunchConfiguration("takeoff_height_m")
     max_velocity_setpoint_mps = LaunchConfiguration("max_velocity_setpoint_mps")
@@ -391,11 +392,29 @@ def generate_launch_description():
         bringup_share, "config", "safety", "rc_safety_mux.yaml"
     )
 
+    delayed_main_stack = TimerAction(
+        period=main_stack_start_delay_s,
+        actions=[
+            GroupAction(
+                actions=[
+                    mono_camera_launch,
+                    orbbec_depth_camera_launch,
+                    uav_state_bridge,
+                    uav_control,
+                    rc_safety_mux,
+                    trajectory_path_publisher,
+                    mono_video_recorder,
+                ]
+            )
+        ],
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument("start_openvins_stack", default_value="true"),
         DeclareLaunchArgument("openvins_start_rviz", default_value="false"),
         DeclareLaunchArgument("openvins_config_path", default_value=default_openvins_config),
         DeclareLaunchArgument("openvins_state_log_debug", default_value="true"),
+        DeclareLaunchArgument("main_stack_start_delay_s", default_value="8.0"),
         DeclareLaunchArgument("use_sim_time", default_value="false"),
         DeclareLaunchArgument("takeoff_height_m", default_value="0.70"),
         DeclareLaunchArgument("max_velocity_setpoint_mps", default_value="0.25"),
@@ -507,11 +526,5 @@ def generate_launch_description():
         DeclareLaunchArgument("orbbec_enable_laser", default_value=DEFAULT_ORBBEC_STANDALONE_PROFILE["enable_laser"]),
         DeclareLaunchArgument("orbbec_enable_ldp", default_value=DEFAULT_ORBBEC_STANDALONE_PROFILE["enable_ldp"]),
         openvins_orbbec_launch,
-        mono_camera_launch,
-        orbbec_depth_camera_launch,
-        uav_state_bridge,
-        uav_control,
-        rc_safety_mux,
-        trajectory_path_publisher,
-        mono_video_recorder,
+        delayed_main_stack,
     ])

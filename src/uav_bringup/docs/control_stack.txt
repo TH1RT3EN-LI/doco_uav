@@ -11,6 +11,9 @@ Public Launch Entry Points
   sub-launches they depend on.
   By default it also prints throttled OV state summaries from
   `openvins_state_bridge_node` to screen once per second.
+  The OpenVINS/Orbbec sub-launch starts immediately, while the rest of
+  the main stack is delayed by `main_stack_start_delay_s` (default
+  `8.0 s`) so OV can stabilize before the control chain comes up.
 
 - `launch/visual_landing.launch.py`
   Visual landing composition entry.
