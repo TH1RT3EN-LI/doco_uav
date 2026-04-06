@@ -1,9 +1,11 @@
 import math
 import os
+from datetime import datetime
+from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, GroupAction, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -28,6 +30,8 @@ def generate_launch_description():
     start_px4_vision_bridge = LaunchConfiguration("start_px4_vision_bridge")
     use_rviz = LaunchConfiguration("use_rviz")
     use_monitor = LaunchConfiguration("use_monitor")
+    use_record_bag = LaunchConfiguration("use_record_bag")
+    bag_output_dir = LaunchConfiguration("bag_output_dir")
     use_sim_time = LaunchConfiguration("use_sim_time")
 
     openvins_namespace = LaunchConfiguration("openvins_namespace")
@@ -276,6 +280,21 @@ def generate_launch_description():
         ],
     )
 
+    record_bag = ExecuteProcess(
+        cmd=[
+            "ros2",
+            "bag",
+            "record",
+            "--output",
+            bag_output_dir,
+            actual_left_ir_topic,
+            actual_right_ir_topic,
+            actual_imu_topic,
+        ],
+        output="screen",
+        condition=IfCondition(use_record_bag),
+    )
+
     rviz = Node(
         package="rviz2",
         executable="rviz2",
@@ -304,6 +323,11 @@ def generate_launch_description():
     default_rviz_config = os.path.join(
         bringup_share, "config", "rviz", "openvins_orbbec.rviz"
     )
+    default_bag_output_dir = str(
+        Path.home()
+        / "uav_bags"
+        / f"openvins_orbbec_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    )
 
     return LaunchDescription(
         [
@@ -313,6 +337,8 @@ def generate_launch_description():
             DeclareLaunchArgument("start_px4_vision_bridge", default_value="false"),
             DeclareLaunchArgument("use_rviz", default_value="false"),
             DeclareLaunchArgument("use_monitor", default_value="false"),
+            DeclareLaunchArgument("use_record_bag", default_value="false"),
+            DeclareLaunchArgument("bag_output_dir", default_value=default_bag_output_dir),
             DeclareLaunchArgument("use_sim_time", default_value="false"),
             DeclareLaunchArgument("openvins_namespace", default_value="ov_msckf"),
             DeclareLaunchArgument("openvins_config_path", default_value=default_openvins_config),
@@ -477,6 +503,7 @@ def generate_launch_description():
             openvins_state_bridge,
             openvins_px4_vision_bridge,
             monitor,
+            record_bag,
             rviz,
         ]
     )
