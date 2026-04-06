@@ -1084,7 +1084,7 @@ private:
     geometry_msgs::msg::TwistStamped & cmd,
     float * height_error_m = nullptr,
     float * xy_error_m = nullptr,
-    float * yaw_error_rad = nullptr) const
+    float * yaw_error_rad = nullptr)
   {
     if (!has_state_ || !controlStateFresh() ||
       !isFiniteVector(current_position_enu_) || !std::isfinite(current_yaw_enu_))
