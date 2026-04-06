@@ -27,6 +27,7 @@ def generate_launch_description():
     start_openvins_stack = LaunchConfiguration("start_openvins_stack")
     openvins_start_rviz = LaunchConfiguration("openvins_start_rviz")
     openvins_config_path = LaunchConfiguration("openvins_config_path")
+    openvins_state_log_debug = LaunchConfiguration("openvins_state_log_debug")
     use_sim_time = LaunchConfiguration("use_sim_time")
     takeoff_height_m = LaunchConfiguration("takeoff_height_m")
     max_velocity_setpoint_mps = LaunchConfiguration("max_velocity_setpoint_mps")
@@ -169,6 +170,7 @@ def generate_launch_description():
             "start_openvins_stack": start_openvins_stack,
             "openvins_start_rviz": openvins_start_rviz,
             "openvins_config_path": openvins_config_path,
+            "openvins_state_log_debug": openvins_state_log_debug,
             "use_sim_time": use_sim_time,
             "takeoff_height_m": takeoff_height_m,
             "max_velocity_setpoint_mps": max_velocity_setpoint_mps,
@@ -346,6 +348,7 @@ def generate_launch_description():
         DeclareLaunchArgument("start_openvins_stack", default_value="true"),
         DeclareLaunchArgument("openvins_start_rviz", default_value="false"),
         DeclareLaunchArgument("openvins_config_path", default_value=default_openvins_config),
+        DeclareLaunchArgument("openvins_state_log_debug", default_value="true"),
         DeclareLaunchArgument("use_sim_time", default_value="false"),
         DeclareLaunchArgument("takeoff_height_m", default_value="0.70"),
         DeclareLaunchArgument("max_velocity_setpoint_mps", default_value="0.25"),
