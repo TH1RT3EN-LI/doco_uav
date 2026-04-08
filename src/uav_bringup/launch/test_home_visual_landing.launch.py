@@ -30,8 +30,8 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {"use_sim_time": use_sim_time},
-            {"state_topic": "/uav/state/odometry"},
-            {"position_topic": "/uav/control/pose"},
+            {"state_topic": "/uav/state/odometry_px4"},
+            {"position_topic": "/uav/control/position_yaw"},
             {"takeoff_service": "/uav/control/command/takeoff"},
             {"hold_service": "/uav/control/command/hold"},
             {"visual_landing_start_service": "/uav/visual_landing/command/start"},

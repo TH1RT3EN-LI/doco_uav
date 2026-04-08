@@ -193,23 +193,6 @@ ament_target_dependencies(openvins_px4_vision_bridge_node
   tf2
 )
 
-add_executable(openvins_state_bridge_node
-  src/openvins_state_bridge_node.cpp
-)
-target_compile_features(openvins_state_bridge_node PUBLIC cxx_std_17)
-target_include_directories(openvins_state_bridge_node PRIVATE include)
-ament_target_dependencies(openvins_state_bridge_node
-  geometry_msgs
-  nav_msgs
-  px4_msgs
-  rclcpp
-  tf2
-  tf2_ros
-)
-target_link_libraries(openvins_state_bridge_node
-  ${PROJECT_NAME}_uav_state_bridge_logic
-)
-
 install(TARGETS
   ${PROJECT_NAME}_px4_odom_adapter_logic
   ${PROJECT_NAME}_sim_vio_odometry_logic
@@ -224,7 +207,6 @@ install(TARGETS
   rc_safety_mux_node
   sim_vio_odometry_node
   openvins_px4_vision_bridge_node
-  openvins_state_bridge_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

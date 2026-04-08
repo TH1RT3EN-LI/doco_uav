@@ -44,7 +44,6 @@ def generate_launch_description():
 
     start_orbbec_camera = LaunchConfiguration("start_orbbec_camera")
     start_openvins = LaunchConfiguration("start_openvins")
-    start_openvins_state_bridge = LaunchConfiguration("start_openvins_state_bridge")
     start_px4_vision_bridge = LaunchConfiguration("start_px4_vision_bridge")
     use_rviz = LaunchConfiguration("use_rviz")
     use_record_bag = LaunchConfiguration("use_record_bag")
@@ -60,28 +59,6 @@ def generate_launch_description():
     openvins_yaml_left_ir_topic = LaunchConfiguration("openvins_yaml_left_ir_topic")
     openvins_yaml_right_ir_topic = LaunchConfiguration("openvins_yaml_right_ir_topic")
     openvins_yaml_imu_topic = LaunchConfiguration("openvins_yaml_imu_topic")
-    state_odometry_topic = LaunchConfiguration("state_odometry_topic")
-    state_bridge_expected_odom_frame_id = LaunchConfiguration(
-        "state_bridge_expected_odom_frame_id"
-    )
-    state_bridge_expected_child_frame_id = LaunchConfiguration(
-        "state_bridge_expected_child_frame_id"
-    )
-    state_bridge_output_frame_id = LaunchConfiguration("state_bridge_output_frame_id")
-    state_bridge_sensor_x_in_body_m = LaunchConfiguration("state_bridge_sensor_x_in_body_m")
-    state_bridge_sensor_y_in_body_m = LaunchConfiguration("state_bridge_sensor_y_in_body_m")
-    state_bridge_sensor_z_in_body_m = LaunchConfiguration("state_bridge_sensor_z_in_body_m")
-    state_bridge_sensor_roll_in_body_rad = LaunchConfiguration(
-        "state_bridge_sensor_roll_in_body_rad"
-    )
-    state_bridge_sensor_pitch_in_body_rad = LaunchConfiguration(
-        "state_bridge_sensor_pitch_in_body_rad"
-    )
-    state_bridge_sensor_yaw_in_body_rad = LaunchConfiguration(
-        "state_bridge_sensor_yaw_in_body_rad"
-    )
-    state_bridge_publish_tf = LaunchConfiguration("state_bridge_publish_tf")
-    state_bridge_log_debug = LaunchConfiguration("state_bridge_log_debug")
     px4_visual_odometry_topic = LaunchConfiguration("px4_visual_odometry_topic")
     px4_bridge_expected_odom_frame_id = LaunchConfiguration(
         "px4_bridge_expected_odom_frame_id"
@@ -89,6 +66,9 @@ def generate_launch_description():
     px4_bridge_expected_child_frame_id = LaunchConfiguration(
         "px4_bridge_expected_child_frame_id"
     )
+    px4_bridge_sensor_x_in_body_m = LaunchConfiguration("px4_bridge_sensor_x_in_body_m")
+    px4_bridge_sensor_y_in_body_m = LaunchConfiguration("px4_bridge_sensor_y_in_body_m")
+    px4_bridge_sensor_z_in_body_m = LaunchConfiguration("px4_bridge_sensor_z_in_body_m")
     px4_bridge_sensor_roll_in_body_rad = LaunchConfiguration(
         "px4_bridge_sensor_roll_in_body_rad"
     )
@@ -97,6 +77,10 @@ def generate_launch_description():
     )
     px4_bridge_sensor_yaw_in_body_rad = LaunchConfiguration(
         "px4_bridge_sensor_yaw_in_body_rad"
+    )
+    px4_bridge_timestamp_source = LaunchConfiguration("px4_bridge_timestamp_source")
+    px4_bridge_timesync_status_topic = LaunchConfiguration(
+        "px4_bridge_timesync_status_topic"
     )
     px4_bridge_log_debug = LaunchConfiguration("px4_bridge_log_debug")
 
@@ -166,7 +150,7 @@ def generate_launch_description():
     actual_right_ir_topic = namespaced_path(orbbec_camera_name, "right_ir/image_raw")
     actual_imu_topic = namespaced_path(orbbec_camera_name, "gyro_accel/sample")
     bag_record_topics = [
-        state_odometry_topic,
+        actual_ov_odom_topic,
         "/tf",
         "/tf_static",
     ]
@@ -242,31 +226,6 @@ def generate_launch_description():
         ],
     )
 
-    openvins_state_bridge = Node(
-        package="uav_bridge",
-        executable="openvins_state_bridge_node",
-        name="openvins_state_bridge",
-        output="screen",
-        condition=IfCondition(start_openvins_state_bridge),
-        parameters=[
-            {"use_sim_time": use_sim_time},
-            {"odometry_topic": actual_ov_odom_topic},
-            {"output_odometry_topic": state_odometry_topic},
-            {"expected_odom_frame_id": state_bridge_expected_odom_frame_id},
-            {"expected_child_frame_id": state_bridge_expected_child_frame_id},
-            {"output_frame_id": state_bridge_output_frame_id},
-            {"base_frame_id": base_frame_id},
-            {"sensor_x_in_body_m": state_bridge_sensor_x_in_body_m},
-            {"sensor_y_in_body_m": state_bridge_sensor_y_in_body_m},
-            {"sensor_z_in_body_m": state_bridge_sensor_z_in_body_m},
-            {"sensor_roll_in_body_rad": state_bridge_sensor_roll_in_body_rad},
-            {"sensor_pitch_in_body_rad": state_bridge_sensor_pitch_in_body_rad},
-            {"sensor_yaw_in_body_rad": state_bridge_sensor_yaw_in_body_rad},
-            {"publish_tf": state_bridge_publish_tf},
-            {"log_debug": state_bridge_log_debug},
-        ],
-    )
-
     openvins_px4_vision_bridge = Node(
         package="uav_bridge",
         executable="openvins_px4_vision_bridge_node",
@@ -279,9 +238,14 @@ def generate_launch_description():
             {"visual_odometry_topic": px4_visual_odometry_topic},
             {"expected_odom_frame_id": px4_bridge_expected_odom_frame_id},
             {"expected_child_frame_id": px4_bridge_expected_child_frame_id},
+            {"sensor_x_in_body_m": px4_bridge_sensor_x_in_body_m},
+            {"sensor_y_in_body_m": px4_bridge_sensor_y_in_body_m},
+            {"sensor_z_in_body_m": px4_bridge_sensor_z_in_body_m},
             {"sensor_roll_in_body_rad": px4_bridge_sensor_roll_in_body_rad},
             {"sensor_pitch_in_body_rad": px4_bridge_sensor_pitch_in_body_rad},
             {"sensor_yaw_in_body_rad": px4_bridge_sensor_yaw_in_body_rad},
+            {"px4_timestamp_source": px4_bridge_timestamp_source},
+            {"timesync_status_topic": px4_bridge_timesync_status_topic},
             {"log_debug": px4_bridge_log_debug},
         ],
     )
@@ -338,8 +302,7 @@ def generate_launch_description():
         [
             DeclareLaunchArgument("start_orbbec_camera", default_value="true"),
             DeclareLaunchArgument("start_openvins", default_value="true"),
-            DeclareLaunchArgument("start_openvins_state_bridge", default_value="true"),
-            DeclareLaunchArgument("start_px4_vision_bridge", default_value="false"),
+            DeclareLaunchArgument("start_px4_vision_bridge", default_value="true"),
             DeclareLaunchArgument("use_rviz", default_value="false"),
             DeclareLaunchArgument("use_record_bag", default_value="false"),
             DeclareLaunchArgument("bag_output_dir", default_value=default_bag_output_dir),
@@ -360,30 +323,6 @@ def generate_launch_description():
                 "openvins_yaml_imu_topic", default_value=default_imu_topic
             ),
             DeclareLaunchArgument(
-                "state_odometry_topic", default_value="/uav/state/odometry"
-            ),
-            DeclareLaunchArgument(
-                "state_bridge_expected_odom_frame_id", default_value="global"
-            ),
-            DeclareLaunchArgument(
-                "state_bridge_expected_child_frame_id", default_value="imu"
-            ),
-            DeclareLaunchArgument("state_bridge_output_frame_id", default_value="global"),
-            DeclareLaunchArgument("state_bridge_sensor_x_in_body_m", default_value="0.06"),
-            DeclareLaunchArgument("state_bridge_sensor_y_in_body_m", default_value="0.0"),
-            DeclareLaunchArgument("state_bridge_sensor_z_in_body_m", default_value="0.06"),
-            DeclareLaunchArgument(
-                "state_bridge_sensor_roll_in_body_rad", default_value="0.0"
-            ),
-            DeclareLaunchArgument(
-                "state_bridge_sensor_pitch_in_body_rad", default_value="0.0"
-            ),
-            DeclareLaunchArgument(
-                "state_bridge_sensor_yaw_in_body_rad", default_value="0.0"
-            ),
-            DeclareLaunchArgument("state_bridge_publish_tf", default_value="true"),
-            DeclareLaunchArgument("state_bridge_log_debug", default_value="false"),
-            DeclareLaunchArgument(
                 "px4_visual_odometry_topic",
                 default_value="/fmu/in/vehicle_visual_odometry",
             ),
@@ -394,6 +333,18 @@ def generate_launch_description():
                 "px4_bridge_expected_child_frame_id", default_value="imu"
             ),
             DeclareLaunchArgument(
+                "px4_bridge_sensor_x_in_body_m",
+                default_value="0.0",
+            ),
+            DeclareLaunchArgument(
+                "px4_bridge_sensor_y_in_body_m",
+                default_value="0.0",
+            ),
+            DeclareLaunchArgument(
+                "px4_bridge_sensor_z_in_body_m",
+                default_value="0.0",
+            ),
+            DeclareLaunchArgument(
                 "px4_bridge_sensor_roll_in_body_rad", default_value="0.0"
             ),
             DeclareLaunchArgument(
@@ -401,6 +352,13 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "px4_bridge_sensor_yaw_in_body_rad", default_value="0.0"
+            ),
+            DeclareLaunchArgument(
+                "px4_bridge_timestamp_source", default_value="px4_timesync"
+            ),
+            DeclareLaunchArgument(
+                "px4_bridge_timesync_status_topic",
+                default_value="/fmu/out/timesync_status",
             ),
             DeclareLaunchArgument("px4_bridge_log_debug", default_value="false"),
             DeclareLaunchArgument("rviz_config", default_value=default_rviz_config),

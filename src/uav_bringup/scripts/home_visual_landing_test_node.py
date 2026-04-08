@@ -52,8 +52,8 @@ class HomeVisualLandingTestNode(Node):
     def __init__(self) -> None:
         super().__init__("home_visual_landing_test_node")
 
-        self.declare_parameter("state_topic", "/uav/state/odometry")
-        self.declare_parameter("position_topic", "/uav/control/pose")
+        self.declare_parameter("state_topic", "/uav/state/odometry_px4")
+        self.declare_parameter("position_topic", "/uav/control/position_yaw")
         self.declare_parameter("takeoff_service", "/uav/control/command/takeoff")
         self.declare_parameter("hold_service", "/uav/control/command/hold")
         self.declare_parameter(

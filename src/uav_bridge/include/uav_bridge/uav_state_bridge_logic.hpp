@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <optional>
 
 #include <px4_msgs/msg/vehicle_local_position.hpp>
@@ -10,11 +11,21 @@
 namespace uav_bridge
 {
 
+enum class UavStateBridgeDataSource : uint8_t
+{
+  None = 0,
+  LocalPosition = 1,
+  VehicleOdometry = 2,
+};
+
 struct UavStateBridgeResolvedState
 {
   bool position_valid{false};
   bool orientation_valid{false};
   bool linear_velocity_valid{false};
+  UavStateBridgeDataSource position_source{UavStateBridgeDataSource::None};
+  UavStateBridgeDataSource orientation_source{UavStateBridgeDataSource::None};
+  UavStateBridgeDataSource velocity_source{UavStateBridgeDataSource::None};
 
   std::array<double, 3> position_enu_m{};
   std::array<double, 3> linear_velocity_body_flu_mps{};

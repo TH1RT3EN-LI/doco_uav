@@ -14,6 +14,7 @@ enum class UavControlMode
   Takeoff,
   Position,
   Px4PositionHold,
+  Px4Stabilized,
   VelocityBody,
   Landing,
 };
@@ -22,6 +23,7 @@ enum class Px4TimestampSource
 {
   System = 0,
   GazeboSim = 1,
+  Px4Timesync = 2,
 };
 
 class UavControlModeTracker
@@ -68,6 +70,18 @@ public:
     }
   }
 
+  void requestPx4Stabilized()
+  {
+    if (mode_ != UavControlMode::Landing) {
+      mode_ = UavControlMode::Px4Stabilized;
+    }
+  }
+
+  void forcePx4Stabilized()
+  {
+    mode_ = UavControlMode::Px4Stabilized;
+  }
+
   void requestLanding()
   {
     mode_ = UavControlMode::Landing;
@@ -86,7 +100,13 @@ private:
 
 inline Px4TimestampSource parsePx4TimestampSource(std::string_view value)
 {
-  return value == "gz_sim" ? Px4TimestampSource::GazeboSim : Px4TimestampSource::System;
+  if (value == "gz_sim") {
+    return Px4TimestampSource::GazeboSim;
+  }
+  if (value == "px4_timesync") {
+    return Px4TimestampSource::Px4Timesync;
+  }
+  return Px4TimestampSource::System;
 }
 
 inline uint64_t selectPx4TimestampMicros(

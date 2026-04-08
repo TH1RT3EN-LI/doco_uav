@@ -1166,11 +1166,8 @@ private:
     const bool allow_terminal_without_fresh_state =
       phase_ == ControllerPhase::Terminal || phase_ == ControllerPhase::Land;
     if (!state_fresh && !allow_terminal_without_fresh_state) {
-      if (phase_ != ControllerPhase::HoldWait && phase_ != ControllerPhase::Ready) {
-        transitionTo(ControllerPhase::HoldWait, true);
-        requestPositionMode();
-      }
-      xy_control_mode_ = "state_stale";
+      xy_control_mode_ = "state_stale_zero_velocity";
+      publishVelocityBody(0.0f, 0.0f, 0.0f, 0.0f);
       publishControllerState(
         false, height_decision, control_height_m, lateral_error, 0.0f, 0.0f,
         0.0f, 0.0f);

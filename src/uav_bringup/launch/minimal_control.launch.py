@@ -30,7 +30,11 @@ def generate_launch_description():
     max_acceleration_setpoint_mps2 = LaunchConfiguration("max_acceleration_setpoint_mps2")
     control_state_topic = LaunchConfiguration("control_state_topic")
     execution_state_topic = LaunchConfiguration("execution_state_topic")
+    position_topic = LaunchConfiguration("position_topic")
+    position_keep_yaw_topic = LaunchConfiguration("position_keep_yaw_topic")
     position_command_frame_id = LaunchConfiguration("position_command_frame_id")
+    px4_timestamp_source = LaunchConfiguration("px4_timestamp_source")
+    timesync_status_topic = LaunchConfiguration("timesync_status_topic")
     ov_hold_kp_xy = LaunchConfiguration("ov_hold_kp_xy")
     ov_hold_ki_xy = LaunchConfiguration("ov_hold_ki_xy")
     ov_hold_kd_xy = LaunchConfiguration("ov_hold_kd_xy")
@@ -239,6 +243,8 @@ def generate_launch_description():
             {"vehicle_local_position_topic": vehicle_local_position_topic},
             {"vehicle_odometry_topic": vehicle_odometry_topic},
             {"base_frame_id": base_frame_id},
+            {"px4_timestamp_source": px4_timestamp_source},
+            {"timesync_status_topic": timesync_status_topic},
             {"use_sim_time": use_sim_time},
             {"output_odometry_topic": "/uav/state/odometry_px4"},
             {"publish_tf": False},
@@ -252,14 +258,19 @@ def generate_launch_description():
         name="uav_control",
         output="screen",
         parameters=[
+            {"position_topic": position_topic},
+            {"position_keep_yaw_topic": position_keep_yaw_topic},
             {"offboard_mode_topic": offboard_mode_topic},
             {"trajectory_setpoint_topic": trajectory_setpoint_topic},
             {"vehicle_command_topic": vehicle_command_topic},
             {"vehicle_status_topic": vehicle_status_topic},
             {"state_topic": control_state_topic},
             {"execution_state_topic": execution_state_topic},
+            {"vehicle_local_position_topic": vehicle_local_position_topic},
             {"base_frame_id": base_frame_id},
             {"position_command_frame_id": position_command_frame_id},
+            {"px4_timestamp_source": px4_timestamp_source},
+            {"timesync_status_topic": timesync_status_topic},
             {"use_sim_time": use_sim_time},
             {"takeoff_height_m": takeoff_height_m},
             {"max_velocity_setpoint_mps": max_velocity_setpoint_mps},
@@ -357,9 +368,15 @@ def generate_launch_description():
         DeclareLaunchArgument("takeoff_height_m", default_value="0.70"),
         DeclareLaunchArgument("max_velocity_setpoint_mps", default_value="0.25"),
         DeclareLaunchArgument("max_acceleration_setpoint_mps2", default_value="0.35"),
-        DeclareLaunchArgument("control_state_topic", default_value="/uav/state/odometry"),
+        DeclareLaunchArgument("control_state_topic", default_value="/uav/state/odometry_px4"),
         DeclareLaunchArgument("execution_state_topic", default_value="/uav/state/odometry_px4"),
-        DeclareLaunchArgument("position_command_frame_id", default_value="global"),
+        DeclareLaunchArgument("position_topic", default_value="/uav/control/position_yaw"),
+        DeclareLaunchArgument(
+            "position_keep_yaw_topic", default_value="/uav/control/position_keep_yaw"
+        ),
+        DeclareLaunchArgument("position_command_frame_id", default_value="uav_odom"),
+        DeclareLaunchArgument("px4_timestamp_source", default_value="px4_timesync"),
+        DeclareLaunchArgument("timesync_status_topic", default_value="/fmu/out/timesync_status"),
         DeclareLaunchArgument("ov_hold_kp_xy", default_value="1.00"),
         DeclareLaunchArgument("ov_hold_ki_xy", default_value="0.08"),
         DeclareLaunchArgument("ov_hold_kd_xy", default_value="0.35"),
@@ -430,7 +447,7 @@ def generate_launch_description():
         DeclareLaunchArgument("mono_video_fps", default_value="120.0"),
         DeclareLaunchArgument("mono_video_fourcc", default_value="MJPG"),
         DeclareLaunchArgument("publish_trajectory", default_value="true"),
-        DeclareLaunchArgument("trajectory_input_odom_topic", default_value="/uav/state/odometry"),
+        DeclareLaunchArgument("trajectory_input_odom_topic", default_value="/uav/state/odometry_px4"),
         DeclareLaunchArgument("trajectory_output_topic", default_value="/uav/state/trajectory"),
         DeclareLaunchArgument("trajectory_max_samples", default_value="5000"),
         DeclareLaunchArgument("trajectory_min_sample_distance_m", default_value="0.02"),

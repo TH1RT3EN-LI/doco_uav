@@ -193,6 +193,7 @@ UavStateBridgeResolvedState resolveUavStateBridgeState(
   if (vehicle_odometry.has_value()) {
     if (hasValidOdometryPosition(*vehicle_odometry)) {
       resolved.position_valid = true;
+      resolved.position_source = UavStateBridgeDataSource::VehicleOdometry;
       resolved.position_enu_m = nedToEnuPosition3D(
         static_cast<double>(vehicle_odometry->position[0]),
         static_cast<double>(vehicle_odometry->position[1]),
@@ -201,6 +202,7 @@ UavStateBridgeResolvedState resolveUavStateBridgeState(
 
     if (hasValidOdometryOrientation(*vehicle_odometry)) {
       resolved.orientation_valid = true;
+      resolved.orientation_source = UavStateBridgeDataSource::VehicleOdometry;
       orientation_q_ned_frd = vehicle_odometry->q;
       has_orientation_q = true;
       resolved.orientation_enu_flu = px4QuaternionToEnuFluQuaternion(vehicle_odometry->q);
@@ -209,6 +211,7 @@ UavStateBridgeResolvedState resolveUavStateBridgeState(
 
   if (!resolved.position_valid && local_position.has_value() && hasValidLocalPosition(*local_position)) {
     resolved.position_valid = true;
+    resolved.position_source = UavStateBridgeDataSource::LocalPosition;
     resolved.position_enu_m = nedToEnuPosition3D(
       static_cast<double>(local_position->x),
       static_cast<double>(local_position->y),
@@ -219,6 +222,7 @@ UavStateBridgeResolvedState resolveUavStateBridgeState(
       std::isfinite(static_cast<double>(local_position->heading)))
   {
     resolved.orientation_valid = true;
+    resolved.orientation_source = UavStateBridgeDataSource::LocalPosition;
     orientation_q_ned_frd = yawNedQuaternionArray(local_position->heading);
     has_orientation_q = true;
     resolved.orientation_enu_flu = yawNedToEnuQuaternion(local_position->heading);
@@ -227,15 +231,18 @@ UavStateBridgeResolvedState resolveUavStateBridgeState(
   if (vehicle_odometry.has_value()) {
     if (hasValidOdometryVelocityBody(*vehicle_odometry)) {
       resolved.linear_velocity_valid = true;
+      resolved.velocity_source = UavStateBridgeDataSource::VehicleOdometry;
       resolved.linear_velocity_body_flu_mps = bodyFrdToFluVelocity(vehicle_odometry->velocity);
     } else if (hasValidOdometryVelocityNed(*vehicle_odometry) && has_orientation_q) {
       resolved.linear_velocity_valid = true;
+      resolved.velocity_source = UavStateBridgeDataSource::VehicleOdometry;
       resolved.linear_velocity_body_flu_mps = velocityNedToBodyFlu(vehicle_odometry->velocity, orientation_q_ned_frd);
     }
   }
 
   if (!resolved.linear_velocity_valid && local_position.has_value() && hasValidLocalVelocity(*local_position) && has_orientation_q) {
     resolved.linear_velocity_valid = true;
+    resolved.velocity_source = UavStateBridgeDataSource::LocalPosition;
     resolved.linear_velocity_body_flu_mps = velocityNedToBodyFlu(
       {local_position->vx, local_position->vy, local_position->vz},
       orientation_q_ned_frd);
