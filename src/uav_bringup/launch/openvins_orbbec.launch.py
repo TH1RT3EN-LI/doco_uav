@@ -462,7 +462,6 @@ def generate_launch_description():
             ),
             orbbec_depth_camera,
             openvins,
-            openvins_state_bridge,
             openvins_px4_vision_bridge,
             record_bag,
             rviz,
