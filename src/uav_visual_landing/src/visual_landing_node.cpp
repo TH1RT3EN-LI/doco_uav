@@ -969,7 +969,7 @@ private:
   {
     return offboard_land_vz_mps_;
   }
-
+  /*  */
   bool offboardLandDisarmReady(float control_height_m) const
   {
     if (!std::isfinite(control_height_m) || control_height_m > offboard_land_disarm_height_m_) {

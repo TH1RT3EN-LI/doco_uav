@@ -103,11 +103,36 @@ Launch Defaults
   `position_command_frame_id=uav_odom`
   `trajectory_input_odom_topic=/uav/state/odometry_px4`
   `px4_timestamp_source=px4_timesync`
+  Optional Micro XRCE-DDS agent:
+  `start_micro_xrce_agent:=true`
+  `micro_xrce_agent_transport:=udp4`
+  `micro_xrce_agent_port:=8888`
 
 - `launch/openvins_orbbec.launch.py`
   `start_px4_vision_bridge=true`
   PX4 EV bridge sensor translation defaults are `0.0`.
   Use PX4 `EKF2_EV_POS_*` for EV lever-arm compensation.
+  Optional Micro XRCE-DDS agent:
+  `start_micro_xrce_agent:=true`
+
+PX4 uXRCE-DDS Agent
+-------------------
+
+- Source location in `dev_full`:
+  `src/workspace/src/Micro-XRCE-DDS-Agent`
+
+- One-time setup/build:
+  `./setup_micro_xrce_agent.sh`
+
+- Standalone run from the workspace root:
+  `./run_micro_xrce_agent.sh`
+  Default command is `MicroXRCEAgent udp4 -p 8888`.
+
+- ROS 2 launch entrypoint:
+  `ros2 launch uav_bringup micro_xrce_agent.launch.py`
+
+- Serial example:
+  `ros2 launch uav_bringup micro_xrce_agent.launch.py transport:=serial serial_device:=/dev/ttyUSB0 serial_baudrate:=921600`
 
 Important Runtime Semantics
 ---------------------------

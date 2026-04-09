@@ -83,6 +83,15 @@ def generate_launch_description():
         "px4_bridge_timesync_status_topic"
     )
     px4_bridge_log_debug = LaunchConfiguration("px4_bridge_log_debug")
+    start_micro_xrce_agent = LaunchConfiguration("start_micro_xrce_agent")
+    micro_xrce_agent_executable = LaunchConfiguration("micro_xrce_agent_executable")
+    micro_xrce_agent_transport = LaunchConfiguration("micro_xrce_agent_transport")
+    micro_xrce_agent_port = LaunchConfiguration("micro_xrce_agent_port")
+    micro_xrce_agent_device = LaunchConfiguration("micro_xrce_agent_device")
+    micro_xrce_agent_baudrate = LaunchConfiguration("micro_xrce_agent_baudrate")
+    micro_xrce_agent_middleware = LaunchConfiguration("micro_xrce_agent_middleware")
+    micro_xrce_agent_refs_file = LaunchConfiguration("micro_xrce_agent_refs_file")
+    micro_xrce_agent_verbose_level = LaunchConfiguration("micro_xrce_agent_verbose_level")
 
     orbbec_camera_name = LaunchConfiguration("orbbec_camera_name")
     base_frame_id = LaunchConfiguration("base_frame_id")
@@ -250,6 +259,23 @@ def generate_launch_description():
         ],
     )
 
+    micro_xrce_agent = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(bringup_share, "launch", "micro_xrce_agent.launch.py")
+        ),
+        condition=IfCondition(start_micro_xrce_agent),
+        launch_arguments={
+            "agent_executable": micro_xrce_agent_executable,
+            "transport": micro_xrce_agent_transport,
+            "port": micro_xrce_agent_port,
+            "serial_device": micro_xrce_agent_device,
+            "serial_baudrate": micro_xrce_agent_baudrate,
+            "middleware": micro_xrce_agent_middleware,
+            "refs_file": micro_xrce_agent_refs_file,
+            "verbose_level": micro_xrce_agent_verbose_level,
+        }.items(),
+    )
+
     record_bag = ExecuteProcess(
         cmd=[
             "ros2",
@@ -361,6 +387,15 @@ def generate_launch_description():
                 default_value="/fmu/out/timesync_status",
             ),
             DeclareLaunchArgument("px4_bridge_log_debug", default_value="false"),
+            DeclareLaunchArgument("start_micro_xrce_agent", default_value="false"),
+            DeclareLaunchArgument("micro_xrce_agent_executable", default_value="MicroXRCEAgent"),
+            DeclareLaunchArgument("micro_xrce_agent_transport", default_value="udp4"),
+            DeclareLaunchArgument("micro_xrce_agent_port", default_value="8888"),
+            DeclareLaunchArgument("micro_xrce_agent_device", default_value="/dev/ttyUSB0"),
+            DeclareLaunchArgument("micro_xrce_agent_baudrate", default_value="921600"),
+            DeclareLaunchArgument("micro_xrce_agent_middleware", default_value="dds"),
+            DeclareLaunchArgument("micro_xrce_agent_refs_file", default_value=""),
+            DeclareLaunchArgument("micro_xrce_agent_verbose_level", default_value=""),
             DeclareLaunchArgument("rviz_config", default_value=default_rviz_config),
             DeclareLaunchArgument("orbbec_camera_name", default_value="uav_depth_camera"),
             DeclareLaunchArgument("base_frame_id", default_value="uav_base_link"),
@@ -460,6 +495,7 @@ def generate_launch_description():
                 "orbbec_enable_ldp",
                 default_value=DEFAULT_ORBBEC_STANDALONE_PROFILE["enable_ldp"],
             ),
+            micro_xrce_agent,
             orbbec_depth_camera,
             openvins,
             openvins_px4_vision_bridge,

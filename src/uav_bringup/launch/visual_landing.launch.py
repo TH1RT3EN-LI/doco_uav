@@ -160,6 +160,15 @@ def generate_launch_description():
     height_measurement_topic = LaunchConfiguration("height_measurement_topic")
     height_measurement_mode = LaunchConfiguration("height_measurement_mode")
     height_measurement_frame_id = LaunchConfiguration("height_measurement_frame_id")
+    start_micro_xrce_agent = LaunchConfiguration("start_micro_xrce_agent")
+    micro_xrce_agent_executable = LaunchConfiguration("micro_xrce_agent_executable")
+    micro_xrce_agent_transport = LaunchConfiguration("micro_xrce_agent_transport")
+    micro_xrce_agent_port = LaunchConfiguration("micro_xrce_agent_port")
+    micro_xrce_agent_device = LaunchConfiguration("micro_xrce_agent_device")
+    micro_xrce_agent_baudrate = LaunchConfiguration("micro_xrce_agent_baudrate")
+    micro_xrce_agent_middleware = LaunchConfiguration("micro_xrce_agent_middleware")
+    micro_xrce_agent_refs_file = LaunchConfiguration("micro_xrce_agent_refs_file")
+    micro_xrce_agent_verbose_level = LaunchConfiguration("micro_xrce_agent_verbose_level")
 
     default_recording_path = str(
         Path.home() / "uav_recordings" / f"mono_{datetime.now().strftime('%Y%m%d_%H%M%S')}.avi"
@@ -183,6 +192,15 @@ def generate_launch_description():
             "position_command_frame_id": position_command_frame_id,
             "px4_timestamp_source": px4_timestamp_source,
             "timesync_status_topic": timesync_status_topic,
+            "start_micro_xrce_agent": start_micro_xrce_agent,
+            "micro_xrce_agent_executable": micro_xrce_agent_executable,
+            "micro_xrce_agent_transport": micro_xrce_agent_transport,
+            "micro_xrce_agent_port": micro_xrce_agent_port,
+            "micro_xrce_agent_device": micro_xrce_agent_device,
+            "micro_xrce_agent_baudrate": micro_xrce_agent_baudrate,
+            "micro_xrce_agent_middleware": micro_xrce_agent_middleware,
+            "micro_xrce_agent_refs_file": micro_xrce_agent_refs_file,
+            "micro_xrce_agent_verbose_level": micro_xrce_agent_verbose_level,
             "ov_hold_kp_xy": ov_hold_kp_xy,
             "ov_hold_ki_xy": ov_hold_ki_xy,
             "ov_hold_kd_xy": ov_hold_kd_xy,
@@ -365,6 +383,15 @@ def generate_launch_description():
         DeclareLaunchArgument("position_command_frame_id", default_value="uav_odom"),
         DeclareLaunchArgument("px4_timestamp_source", default_value="px4_timesync"),
         DeclareLaunchArgument("timesync_status_topic", default_value="/fmu/out/timesync_status"),
+        DeclareLaunchArgument("start_micro_xrce_agent", default_value="false"),
+        DeclareLaunchArgument("micro_xrce_agent_executable", default_value="MicroXRCEAgent"),
+        DeclareLaunchArgument("micro_xrce_agent_transport", default_value="udp4"),
+        DeclareLaunchArgument("micro_xrce_agent_port", default_value="8888"),
+        DeclareLaunchArgument("micro_xrce_agent_device", default_value="/dev/ttyUSB0"),
+        DeclareLaunchArgument("micro_xrce_agent_baudrate", default_value="921600"),
+        DeclareLaunchArgument("micro_xrce_agent_middleware", default_value="dds"),
+        DeclareLaunchArgument("micro_xrce_agent_refs_file", default_value=""),
+        DeclareLaunchArgument("micro_xrce_agent_verbose_level", default_value=""),
         DeclareLaunchArgument("ov_hold_kp_xy", default_value="1.00"),
         DeclareLaunchArgument("ov_hold_ki_xy", default_value="0.08"),
         DeclareLaunchArgument("ov_hold_kd_xy", default_value="0.35"),
