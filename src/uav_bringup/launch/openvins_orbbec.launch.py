@@ -45,6 +45,7 @@ def generate_launch_description():
     start_orbbec_camera = LaunchConfiguration("start_orbbec_camera")
     start_openvins = LaunchConfiguration("start_openvins")
     start_px4_vision_bridge = LaunchConfiguration("start_px4_vision_bridge")
+    start_uav_state_bridge = LaunchConfiguration("start_uav_state_bridge")
     use_rviz = LaunchConfiguration("use_rviz")
     use_record_bag = LaunchConfiguration("use_record_bag")
     bag_output_dir = LaunchConfiguration("bag_output_dir")
@@ -83,6 +84,24 @@ def generate_launch_description():
         "px4_bridge_timesync_status_topic"
     )
     px4_bridge_log_debug = LaunchConfiguration("px4_bridge_log_debug")
+    state_bridge_vehicle_local_position_topic = LaunchConfiguration(
+        "state_bridge_vehicle_local_position_topic"
+    )
+    state_bridge_vehicle_odometry_topic = LaunchConfiguration(
+        "state_bridge_vehicle_odometry_topic"
+    )
+    state_bridge_output_odometry_topic = LaunchConfiguration(
+        "state_bridge_output_odometry_topic"
+    )
+    state_bridge_timestamp_source = LaunchConfiguration("state_bridge_timestamp_source")
+    state_bridge_timesync_status_topic = LaunchConfiguration(
+        "state_bridge_timesync_status_topic"
+    )
+    state_bridge_publish_tf = LaunchConfiguration("state_bridge_publish_tf")
+    state_bridge_publish_map_to_odom_tf = LaunchConfiguration(
+        "state_bridge_publish_map_to_odom_tf"
+    )
+    state_bridge_log_state = LaunchConfiguration("state_bridge_log_state")
 
     orbbec_camera_name = LaunchConfiguration("orbbec_camera_name")
     base_frame_id = LaunchConfiguration("base_frame_id")
@@ -250,6 +269,26 @@ def generate_launch_description():
         ],
     )
 
+    uav_state_bridge = Node(
+        package="uav_bridge",
+        executable="uav_state_bridge_node",
+        name="uav_state_bridge",
+        output="screen",
+        condition=IfCondition(start_uav_state_bridge),
+        parameters=[
+            {"use_sim_time": use_sim_time},
+            {"vehicle_local_position_topic": state_bridge_vehicle_local_position_topic},
+            {"vehicle_odometry_topic": state_bridge_vehicle_odometry_topic},
+            {"output_odometry_topic": state_bridge_output_odometry_topic},
+            {"base_frame_id": base_frame_id},
+            {"px4_timestamp_source": state_bridge_timestamp_source},
+            {"timesync_status_topic": state_bridge_timesync_status_topic},
+            {"publish_tf": state_bridge_publish_tf},
+            {"publish_map_to_odom_tf": state_bridge_publish_map_to_odom_tf},
+            {"log_state": state_bridge_log_state},
+        ],
+    )
+
     record_bag = ExecuteProcess(
         cmd=[
             "ros2",
@@ -303,6 +342,7 @@ def generate_launch_description():
             DeclareLaunchArgument("start_orbbec_camera", default_value="true"),
             DeclareLaunchArgument("start_openvins", default_value="true"),
             DeclareLaunchArgument("start_px4_vision_bridge", default_value="true"),
+            DeclareLaunchArgument("start_uav_state_bridge", default_value="true"),
             DeclareLaunchArgument("use_rviz", default_value="false"),
             DeclareLaunchArgument("use_record_bag", default_value="false"),
             DeclareLaunchArgument("bag_output_dir", default_value=default_bag_output_dir),
@@ -361,6 +401,30 @@ def generate_launch_description():
                 default_value="/fmu/out/timesync_status",
             ),
             DeclareLaunchArgument("px4_bridge_log_debug", default_value="false"),
+            DeclareLaunchArgument(
+                "state_bridge_vehicle_local_position_topic",
+                default_value="/fmu/out/vehicle_local_position",
+            ),
+            DeclareLaunchArgument(
+                "state_bridge_vehicle_odometry_topic",
+                default_value="/fmu/out/vehicle_odometry",
+            ),
+            DeclareLaunchArgument(
+                "state_bridge_output_odometry_topic",
+                default_value="/uav/state/odometry_px4",
+            ),
+            DeclareLaunchArgument(
+                "state_bridge_timestamp_source", default_value="px4_timesync"
+            ),
+            DeclareLaunchArgument(
+                "state_bridge_timesync_status_topic",
+                default_value="/fmu/out/timesync_status",
+            ),
+            DeclareLaunchArgument("state_bridge_publish_tf", default_value="false"),
+            DeclareLaunchArgument(
+                "state_bridge_publish_map_to_odom_tf", default_value="false"
+            ),
+            DeclareLaunchArgument("state_bridge_log_state", default_value="false"),
             DeclareLaunchArgument("rviz_config", default_value=default_rviz_config),
             DeclareLaunchArgument("orbbec_camera_name", default_value="uav_depth_camera"),
             DeclareLaunchArgument("base_frame_id", default_value="uav_base_link"),
@@ -463,6 +527,7 @@ def generate_launch_description():
             orbbec_depth_camera,
             openvins,
             openvins_px4_vision_bridge,
+            uav_state_bridge,
             record_bag,
             rviz,
         ]
