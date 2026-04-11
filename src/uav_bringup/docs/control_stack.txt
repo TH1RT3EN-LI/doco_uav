@@ -137,5 +137,9 @@ Removed Legacy Semantics
 
 - OV PID outer-loop hold/takeoff/position control has been removed.
 
+- Obsolete compatibility parameters and launch arguments were removed from the
+  active stack, including `ov_hold_*`, `ov_target_*`, `ov_fault_*`, and
+  `motion_guard_*`.
+
 - Jetson is no longer the primary closed-loop position controller.
   Jetson now issues PX4-native setpoints and PX4 executes the closed loop.

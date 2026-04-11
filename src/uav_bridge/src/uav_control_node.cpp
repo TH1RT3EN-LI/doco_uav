@@ -18,6 +18,7 @@
 #include <px4_msgs/msg/vehicle_local_position.hpp>
 #include <px4_msgs/msg/vehicle_status.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
@@ -37,8 +38,6 @@ public:
   UavControlNode()
   : Node("uav_control_node")
   {
-    declareCompatibilityParameters();
-
     this->declare_parameter<std::string>("position_topic", "/uav/control/position_yaw");
     this->declare_parameter<std::string>(
       "position_keep_yaw_topic", "/uav/control/position_keep_yaw");
@@ -56,6 +55,7 @@ public:
       "trajectory_setpoint_topic", "/fmu/in/trajectory_setpoint");
     this->declare_parameter<std::string>("vehicle_command_topic", "/fmu/in/vehicle_command");
     this->declare_parameter<std::string>("vehicle_status_topic", "/fmu/out/vehicle_status");
+    this->declare_parameter<std::string>("ov_health_topic", "/uav/ov/bridge/health_ok");
     this->declare_parameter<std::string>(
       "takeoff_service", "/uav/control/command/takeoff");
     this->declare_parameter<std::string>("hold_service", "/uav/control/command/hold");
@@ -98,6 +98,7 @@ public:
     trajectory_setpoint_topic_ = this->get_parameter("trajectory_setpoint_topic").as_string();
     vehicle_command_topic_ = this->get_parameter("vehicle_command_topic").as_string();
     vehicle_status_topic_ = this->get_parameter("vehicle_status_topic").as_string();
+    ov_health_topic_ = this->get_parameter("ov_health_topic").as_string();
     takeoff_service_ = this->get_parameter("takeoff_service").as_string();
     hold_service_ = this->get_parameter("hold_service").as_string();
     position_mode_service_ = this->get_parameter("position_mode_service").as_string();
@@ -209,6 +210,14 @@ public:
         }
       });
 
+    const auto status_qos = rclcpp::QoS(1).reliable().transient_local();
+    ov_health_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+      ov_health_topic_, status_qos,
+      [this](const std_msgs::msg::Bool::SharedPtr msg)
+      {
+        handleOvHealth(msg->data);
+      });
+
     if (px4_timestamp_source_ == Px4TimestampSource::Px4Timesync) {
       timesync_status_sub_ = this->create_subscription<px4_msgs::msg::TimesyncStatus>(
         timesync_status_topic_, rclcpp::SensorDataQoS(),
@@ -268,56 +277,13 @@ public:
 
     RCLCPP_INFO(
       this->get_logger(),
-      "uav_control_node: position=%s position_keep_yaw=%s velocity_body=%s state=%s execution=%s vlp=%s",
+      "uav_control_node: position=%s position_keep_yaw=%s velocity_body=%s state=%s execution=%s vlp=%s ov_health=%s",
       position_topic_.c_str(), position_keep_yaw_topic_.c_str(), velocity_body_topic_.c_str(),
-      state_topic_.c_str(), execution_state_topic_.c_str(), vehicle_local_position_topic_.c_str());
+      state_topic_.c_str(), execution_state_topic_.c_str(), vehicle_local_position_topic_.c_str(),
+      ov_health_topic_.c_str());
   }
 
 private:
-  void declareCompatibilityParameters()
-  {
-    this->declare_parameter<double>("ov_hold_kp_xy", 0.8);
-    this->declare_parameter<double>("ov_hold_ki_xy", 0.08);
-    this->declare_parameter<double>("ov_hold_kd_xy", 0.35);
-    this->declare_parameter<double>("ov_hold_kp_z", 0.8);
-    this->declare_parameter<double>("ov_hold_ki_z", 0.10);
-    this->declare_parameter<double>("ov_hold_kd_z", 0.30);
-    this->declare_parameter<double>("ov_hold_kp_yaw", 1.0);
-    this->declare_parameter<double>("ov_hold_ki_yaw", 0.03);
-    this->declare_parameter<double>("ov_hold_kd_yaw", 0.20);
-    this->declare_parameter<double>("ov_hold_max_vxy", 0.4);
-    this->declare_parameter<double>("ov_hold_max_vz", 0.2);
-    this->declare_parameter<double>("ov_hold_max_yaw_rate", 0.4);
-    this->declare_parameter<double>("ov_hold_max_integral_vxy", 0.06);
-    this->declare_parameter<double>("ov_hold_max_integral_vz", 0.05);
-    this->declare_parameter<double>("ov_hold_max_integral_yaw_rate", 0.04);
-    this->declare_parameter<double>("ov_target_xy_tolerance_m", 0.05);
-    this->declare_parameter<double>("ov_target_z_tolerance_m", 0.05);
-    this->declare_parameter<double>("ov_target_yaw_tolerance_rad", 0.08);
-    this->declare_parameter<double>("ov_fault_pose_timeout_s", 0.20);
-    this->declare_parameter<double>("ov_fault_max_xy_step_m", 0.30);
-    this->declare_parameter<double>("ov_fault_max_z_step_m", 0.20);
-    this->declare_parameter<double>("ov_fault_max_yaw_step_rad", 0.35);
-    this->declare_parameter<bool>("motion_guard_enabled", false);
-    this->declare_parameter<double>("motion_guard_soft_dwell_s", 2.0);
-    this->declare_parameter<double>("motion_guard_pose_gap_reset_s", 0.40);
-    this->declare_parameter<double>("motion_guard_soft_xy_mps", 0.40);
-    this->declare_parameter<double>("motion_guard_soft_z_mps", 0.25);
-    this->declare_parameter<double>("motion_guard_soft_yaw_radps", 0.60);
-    this->declare_parameter<double>("motion_guard_hard_xy_mps", 0.55);
-    this->declare_parameter<double>("motion_guard_hard_z_mps", 0.35);
-    this->declare_parameter<double>("motion_guard_hard_yaw_radps", 0.90);
-    this->declare_parameter<double>("motion_guard_feedback_hard_xy_mps", 0.65);
-    this->declare_parameter<double>("motion_guard_feedback_hard_z_mps", 0.45);
-    this->declare_parameter<double>("motion_guard_pose_soft_xy_step_m", 0.25);
-    this->declare_parameter<double>("motion_guard_pose_soft_z_step_m", 0.12);
-    this->declare_parameter<double>("motion_guard_pose_soft_yaw_step_rad", 0.35);
-    this->declare_parameter<double>("motion_guard_pose_hard_xy_step_m", 0.50);
-    this->declare_parameter<double>("motion_guard_pose_hard_z_step_m", 0.25);
-    this->declare_parameter<double>("motion_guard_pose_hard_yaw_step_rad", 0.70);
-    this->declare_parameter<std::string>("gz_world_name", "test");
-  }
-
   static const char * modeName(UavControlMode mode)
   {
     switch (mode) {
@@ -446,6 +412,28 @@ private:
       return false;
     }
     message.clear();
+    return true;
+  }
+
+  bool autonomyAvailable(std::string & message) const
+  {
+    if (ov_fault_latched_) {
+      message = "OV fault latched; autonomy disabled until restart";
+      return false;
+    }
+    message.clear();
+    return true;
+  }
+
+  bool rejectAutonomyCommand(const char * context)
+  {
+    if (!ov_fault_latched_) {
+      return false;
+    }
+    RCLCPP_WARN_THROTTLE(
+      this->get_logger(), *this->get_clock(), 1000,
+      "ignoring %s: OV fault latched, autonomy disabled until restart",
+      context);
     return true;
   }
 
@@ -918,6 +906,10 @@ private:
 
   void handlePositionTarget(const geometry_msgs::msg::PoseStamped & msg)
   {
+    if (rejectAutonomyCommand("position target")) {
+      return;
+    }
+
     if (!acceptPositionCommandFrame(msg.header.frame_id)) {
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 1000,
@@ -963,6 +955,10 @@ private:
 
   void handlePositionKeepYawTarget(const geometry_msgs::msg::PointStamped & msg)
   {
+    if (rejectAutonomyCommand("position_keep_yaw target")) {
+      return;
+    }
+
     if (!acceptPositionCommandFrame(msg.header.frame_id)) {
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 1000,
@@ -997,6 +993,10 @@ private:
 
   void handleVelocityBodyTarget(const geometry_msgs::msg::TwistStamped & msg)
   {
+    if (rejectAutonomyCommand("velocity_body command")) {
+      return;
+    }
+
     if (!msg.header.frame_id.empty() && msg.header.frame_id != base_frame_id_) {
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 1000,
@@ -1027,11 +1027,17 @@ private:
 
   bool handleTakeoffRequest(std::string & message)
   {
+    if (!autonomyAvailable(message)) {
+      return false;
+    }
     return startTakeoff("takeoff", message);
   }
 
   bool handleHoldRequest(std::string & message)
   {
+    if (!autonomyAvailable(message)) {
+      return false;
+    }
     if (!captureCurrentPose(message)) {
       return false;
     }
@@ -1045,6 +1051,9 @@ private:
 
   bool handleLandRequest(std::string & message)
   {
+    if (!autonomyAvailable(message)) {
+      return false;
+    }
     if (mode_tracker_.mode() == UavControlMode::Landing) {
       message = "landing already in progress";
       return true;
@@ -1057,8 +1066,13 @@ private:
 
   bool handlePositionModeRequest(std::string & message)
   {
-    requestPx4PositionMode("position_mode");
-    message = "PX4 Position mode requested";
+    if (ov_fault_latched_) {
+      forcePx4PositionMode("position_mode_ov_fault");
+      message = "OV fault latched; keeping PX4 Position mode";
+    } else {
+      requestPx4PositionMode("position_mode");
+      message = "PX4 Position mode requested";
+    }
     return true;
   }
 
@@ -1236,6 +1250,27 @@ private:
     logModeChange(previous, "external disarm");
   }
 
+  void handleOvHealth(bool health_ok)
+  {
+    has_ov_health_status_ = true;
+    ov_health_ok_ = health_ok;
+    if (health_ok || ov_fault_latched_) {
+      return;
+    }
+
+    ov_fault_latched_ = true;
+    clearCommandTargets();
+    land_command_sent_ = false;
+    landing_retry_counter_ = 0;
+    position_mode_retry_counter_ = 0;
+    const auto previous = mode_tracker_.mode();
+    mode_tracker_.forcePx4PositionHold();
+    logModeChange(previous, "ov_guard_fault");
+    RCLCPP_ERROR(
+      this->get_logger(),
+      "OV guard unhealthy; stopping autonomy and forcing PX4 Position mode");
+  }
+
   void timerCallback()
   {
     switch (mode_tracker_.mode()) {
@@ -1280,6 +1315,7 @@ private:
   std::string trajectory_setpoint_topic_;
   std::string vehicle_command_topic_;
   std::string vehicle_status_topic_;
+  std::string ov_health_topic_;
   std::string takeoff_service_;
   std::string hold_service_;
   std::string position_mode_service_;
@@ -1316,12 +1352,15 @@ private:
   bool land_command_sent_{false};
   bool has_state_{false};
   bool has_execution_state_{false};
+  bool has_ov_health_status_{false};
   bool is_armed_{false};
   bool is_offboard_mode_{false};
   bool has_velocity_body_cmd_{false};
   bool velocity_mode_rate_limit_initialized_{false};
   bool has_timesync_status_{false};
   bool has_local_position_reset_reference_{false};
+  bool ov_health_ok_{true};
+  bool ov_fault_latched_{false};
   uint8_t current_nav_state_{px4_msgs::msg::VehicleStatus::NAVIGATION_STATE_MANUAL};
   uint8_t last_xy_reset_counter_{0};
   uint8_t last_z_reset_counter_{0};
@@ -1354,6 +1393,7 @@ private:
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr execution_state_sub_;
   rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr vehicle_local_position_sub_;
   rclcpp::Subscription<px4_msgs::msg::VehicleStatus>::SharedPtr vehicle_status_sub_;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr ov_health_sub_;
   rclcpp::Subscription<px4_msgs::msg::TimesyncStatus>::SharedPtr timesync_status_sub_;
   rclcpp::Service<Trigger>::SharedPtr takeoff_srv_;
   rclcpp::Service<Trigger>::SharedPtr hold_srv_;

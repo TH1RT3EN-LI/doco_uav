@@ -33,45 +33,6 @@ def generate_launch_description():
     position_command_frame_id = LaunchConfiguration("position_command_frame_id")
     px4_timestamp_source = LaunchConfiguration("px4_timestamp_source")
     timesync_status_topic = LaunchConfiguration("timesync_status_topic")
-    ov_hold_kp_xy = LaunchConfiguration("ov_hold_kp_xy")
-    ov_hold_ki_xy = LaunchConfiguration("ov_hold_ki_xy")
-    ov_hold_kd_xy = LaunchConfiguration("ov_hold_kd_xy")
-    ov_hold_kp_z = LaunchConfiguration("ov_hold_kp_z")
-    ov_hold_ki_z = LaunchConfiguration("ov_hold_ki_z")
-    ov_hold_kd_z = LaunchConfiguration("ov_hold_kd_z")
-    ov_hold_kp_yaw = LaunchConfiguration("ov_hold_kp_yaw")
-    ov_hold_ki_yaw = LaunchConfiguration("ov_hold_ki_yaw")
-    ov_hold_kd_yaw = LaunchConfiguration("ov_hold_kd_yaw")
-    ov_hold_max_vxy = LaunchConfiguration("ov_hold_max_vxy")
-    ov_hold_max_vz = LaunchConfiguration("ov_hold_max_vz")
-    ov_hold_max_yaw_rate = LaunchConfiguration("ov_hold_max_yaw_rate")
-    ov_hold_max_integral_vxy = LaunchConfiguration("ov_hold_max_integral_vxy")
-    ov_hold_max_integral_vz = LaunchConfiguration("ov_hold_max_integral_vz")
-    ov_hold_max_integral_yaw_rate = LaunchConfiguration("ov_hold_max_integral_yaw_rate")
-    ov_target_xy_tolerance_m = LaunchConfiguration("ov_target_xy_tolerance_m")
-    ov_target_z_tolerance_m = LaunchConfiguration("ov_target_z_tolerance_m")
-    ov_target_yaw_tolerance_rad = LaunchConfiguration("ov_target_yaw_tolerance_rad")
-    ov_fault_pose_timeout_s = LaunchConfiguration("ov_fault_pose_timeout_s")
-    ov_fault_max_xy_step_m = LaunchConfiguration("ov_fault_max_xy_step_m")
-    ov_fault_max_z_step_m = LaunchConfiguration("ov_fault_max_z_step_m")
-    ov_fault_max_yaw_step_rad = LaunchConfiguration("ov_fault_max_yaw_step_rad")
-    motion_guard_enabled = LaunchConfiguration("motion_guard_enabled")
-    motion_guard_soft_dwell_s = LaunchConfiguration("motion_guard_soft_dwell_s")
-    motion_guard_pose_gap_reset_s = LaunchConfiguration("motion_guard_pose_gap_reset_s")
-    motion_guard_soft_xy_mps = LaunchConfiguration("motion_guard_soft_xy_mps")
-    motion_guard_soft_z_mps = LaunchConfiguration("motion_guard_soft_z_mps")
-    motion_guard_soft_yaw_radps = LaunchConfiguration("motion_guard_soft_yaw_radps")
-    motion_guard_hard_xy_mps = LaunchConfiguration("motion_guard_hard_xy_mps")
-    motion_guard_hard_z_mps = LaunchConfiguration("motion_guard_hard_z_mps")
-    motion_guard_hard_yaw_radps = LaunchConfiguration("motion_guard_hard_yaw_radps")
-    motion_guard_feedback_hard_xy_mps = LaunchConfiguration("motion_guard_feedback_hard_xy_mps")
-    motion_guard_feedback_hard_z_mps = LaunchConfiguration("motion_guard_feedback_hard_z_mps")
-    motion_guard_pose_soft_xy_step_m = LaunchConfiguration("motion_guard_pose_soft_xy_step_m")
-    motion_guard_pose_soft_z_step_m = LaunchConfiguration("motion_guard_pose_soft_z_step_m")
-    motion_guard_pose_soft_yaw_step_rad = LaunchConfiguration("motion_guard_pose_soft_yaw_step_rad")
-    motion_guard_pose_hard_xy_step_m = LaunchConfiguration("motion_guard_pose_hard_xy_step_m")
-    motion_guard_pose_hard_z_step_m = LaunchConfiguration("motion_guard_pose_hard_z_step_m")
-    motion_guard_pose_hard_yaw_step_rad = LaunchConfiguration("motion_guard_pose_hard_yaw_step_rad")
 
     start_mono_camera = LaunchConfiguration("start_mono_camera")
     camera_backend = LaunchConfiguration("camera_backend")
@@ -183,45 +144,6 @@ def generate_launch_description():
             "position_command_frame_id": position_command_frame_id,
             "px4_timestamp_source": px4_timestamp_source,
             "timesync_status_topic": timesync_status_topic,
-            "ov_hold_kp_xy": ov_hold_kp_xy,
-            "ov_hold_ki_xy": ov_hold_ki_xy,
-            "ov_hold_kd_xy": ov_hold_kd_xy,
-            "ov_hold_kp_z": ov_hold_kp_z,
-            "ov_hold_ki_z": ov_hold_ki_z,
-            "ov_hold_kd_z": ov_hold_kd_z,
-            "ov_hold_kp_yaw": ov_hold_kp_yaw,
-            "ov_hold_ki_yaw": ov_hold_ki_yaw,
-            "ov_hold_kd_yaw": ov_hold_kd_yaw,
-            "ov_hold_max_vxy": ov_hold_max_vxy,
-            "ov_hold_max_vz": ov_hold_max_vz,
-            "ov_hold_max_yaw_rate": ov_hold_max_yaw_rate,
-            "ov_hold_max_integral_vxy": ov_hold_max_integral_vxy,
-            "ov_hold_max_integral_vz": ov_hold_max_integral_vz,
-            "ov_hold_max_integral_yaw_rate": ov_hold_max_integral_yaw_rate,
-            "ov_target_xy_tolerance_m": ov_target_xy_tolerance_m,
-            "ov_target_z_tolerance_m": ov_target_z_tolerance_m,
-            "ov_target_yaw_tolerance_rad": ov_target_yaw_tolerance_rad,
-            "ov_fault_pose_timeout_s": ov_fault_pose_timeout_s,
-            "ov_fault_max_xy_step_m": ov_fault_max_xy_step_m,
-            "ov_fault_max_z_step_m": ov_fault_max_z_step_m,
-            "ov_fault_max_yaw_step_rad": ov_fault_max_yaw_step_rad,
-            "motion_guard_enabled": motion_guard_enabled,
-            "motion_guard_soft_dwell_s": motion_guard_soft_dwell_s,
-            "motion_guard_pose_gap_reset_s": motion_guard_pose_gap_reset_s,
-            "motion_guard_soft_xy_mps": motion_guard_soft_xy_mps,
-            "motion_guard_soft_z_mps": motion_guard_soft_z_mps,
-            "motion_guard_soft_yaw_radps": motion_guard_soft_yaw_radps,
-            "motion_guard_hard_xy_mps": motion_guard_hard_xy_mps,
-            "motion_guard_hard_z_mps": motion_guard_hard_z_mps,
-            "motion_guard_hard_yaw_radps": motion_guard_hard_yaw_radps,
-            "motion_guard_feedback_hard_xy_mps": motion_guard_feedback_hard_xy_mps,
-            "motion_guard_feedback_hard_z_mps": motion_guard_feedback_hard_z_mps,
-            "motion_guard_pose_soft_xy_step_m": motion_guard_pose_soft_xy_step_m,
-            "motion_guard_pose_soft_z_step_m": motion_guard_pose_soft_z_step_m,
-            "motion_guard_pose_soft_yaw_step_rad": motion_guard_pose_soft_yaw_step_rad,
-            "motion_guard_pose_hard_xy_step_m": motion_guard_pose_hard_xy_step_m,
-            "motion_guard_pose_hard_z_step_m": motion_guard_pose_hard_z_step_m,
-            "motion_guard_pose_hard_yaw_step_rad": motion_guard_pose_hard_yaw_step_rad,
             "start_mono_camera": start_mono_camera,
             "camera_backend": camera_backend,
             "camera_device": camera_device,
@@ -365,45 +287,6 @@ def generate_launch_description():
         DeclareLaunchArgument("position_command_frame_id", default_value="uav_odom"),
         DeclareLaunchArgument("px4_timestamp_source", default_value="px4_timesync"),
         DeclareLaunchArgument("timesync_status_topic", default_value="/fmu/out/timesync_status"),
-        DeclareLaunchArgument("ov_hold_kp_xy", default_value="1.00"),
-        DeclareLaunchArgument("ov_hold_ki_xy", default_value="0.08"),
-        DeclareLaunchArgument("ov_hold_kd_xy", default_value="0.35"),
-        DeclareLaunchArgument("ov_hold_kp_z", default_value="1.00"),
-        DeclareLaunchArgument("ov_hold_ki_z", default_value="0.10"),
-        DeclareLaunchArgument("ov_hold_kd_z", default_value="0.30"),
-        DeclareLaunchArgument("ov_hold_kp_yaw", default_value="1.20"),
-        DeclareLaunchArgument("ov_hold_ki_yaw", default_value="0.03"),
-        DeclareLaunchArgument("ov_hold_kd_yaw", default_value="0.20"),
-        DeclareLaunchArgument("ov_hold_max_vxy", default_value="0.20"),
-        DeclareLaunchArgument("ov_hold_max_vz", default_value="0.15"),
-        DeclareLaunchArgument("ov_hold_max_yaw_rate", default_value="0.20"),
-        DeclareLaunchArgument("ov_hold_max_integral_vxy", default_value="0.06"),
-        DeclareLaunchArgument("ov_hold_max_integral_vz", default_value="0.05"),
-        DeclareLaunchArgument("ov_hold_max_integral_yaw_rate", default_value="0.04"),
-        DeclareLaunchArgument("ov_target_xy_tolerance_m", default_value="0.02"),
-        DeclareLaunchArgument("ov_target_z_tolerance_m", default_value="0.03"),
-        DeclareLaunchArgument("ov_target_yaw_tolerance_rad", default_value="0.04"),
-        DeclareLaunchArgument("ov_fault_pose_timeout_s", default_value="0.20"),
-        DeclareLaunchArgument("ov_fault_max_xy_step_m", default_value="0.30"),
-        DeclareLaunchArgument("ov_fault_max_z_step_m", default_value="0.20"),
-        DeclareLaunchArgument("ov_fault_max_yaw_step_rad", default_value="0.35"),
-        DeclareLaunchArgument("motion_guard_enabled", default_value="false"),
-        DeclareLaunchArgument("motion_guard_soft_dwell_s", default_value="2.0"),
-        DeclareLaunchArgument("motion_guard_pose_gap_reset_s", default_value="0.40"),
-        DeclareLaunchArgument("motion_guard_soft_xy_mps", default_value="0.40"),
-        DeclareLaunchArgument("motion_guard_soft_z_mps", default_value="0.25"),
-        DeclareLaunchArgument("motion_guard_soft_yaw_radps", default_value="0.60"),
-        DeclareLaunchArgument("motion_guard_hard_xy_mps", default_value="0.55"),
-        DeclareLaunchArgument("motion_guard_hard_z_mps", default_value="0.35"),
-        DeclareLaunchArgument("motion_guard_hard_yaw_radps", default_value="0.90"),
-        DeclareLaunchArgument("motion_guard_feedback_hard_xy_mps", default_value="0.65"),
-        DeclareLaunchArgument("motion_guard_feedback_hard_z_mps", default_value="0.45"),
-        DeclareLaunchArgument("motion_guard_pose_soft_xy_step_m", default_value="0.25"),
-        DeclareLaunchArgument("motion_guard_pose_soft_z_step_m", default_value="0.12"),
-        DeclareLaunchArgument("motion_guard_pose_soft_yaw_step_rad", default_value="0.35"),
-        DeclareLaunchArgument("motion_guard_pose_hard_xy_step_m", default_value="0.50"),
-        DeclareLaunchArgument("motion_guard_pose_hard_z_step_m", default_value="0.25"),
-        DeclareLaunchArgument("motion_guard_pose_hard_yaw_step_rad", default_value="0.70"),
         DeclareLaunchArgument("start_mono_camera", default_value="true"),
         DeclareLaunchArgument("camera_backend", default_value="legacy"),
         DeclareLaunchArgument("camera_device", default_value="/dev/video1"),

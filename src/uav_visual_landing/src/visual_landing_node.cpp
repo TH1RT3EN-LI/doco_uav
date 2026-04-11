@@ -16,6 +16,7 @@
 #include <px4_msgs/msg/vehicle_status.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/range.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <std_srvs/srv/trigger.hpp>
 
 #include <uav_visual_landing/msg/landing_controller_state.hpp>
@@ -57,6 +58,7 @@ public:
     this->declare_parameter<std::string>(
       "vehicle_local_position_topic", "/fmu/out/vehicle_local_position");
     this->declare_parameter<std::string>("vehicle_status_topic", "/fmu/out/vehicle_status");
+    this->declare_parameter<std::string>("ov_health_topic", "/uav/ov/bridge/health_ok");
     this->declare_parameter<std::string>("start_service", "/uav/visual_landing/command/start");
     this->declare_parameter<std::string>("stop_service", "/uav/visual_landing/command/stop");
 
@@ -158,6 +160,7 @@ public:
     vehicle_local_position_topic_ =
       this->get_parameter("vehicle_local_position_topic").as_string();
     vehicle_status_topic_ = this->get_parameter("vehicle_status_topic").as_string();
+    ov_health_topic_ = this->get_parameter("ov_health_topic").as_string();
     start_service_name_ = this->get_parameter("start_service").as_string();
     stop_service_name_ = this->get_parameter("stop_service").as_string();
 
@@ -311,6 +314,14 @@ public:
         }
       });
 
+    const auto status_qos = rclcpp::QoS(1).reliable().transient_local();
+    ov_health_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+      ov_health_topic_, status_qos,
+      [this](const std_msgs::msg::Bool::SharedPtr msg)
+      {
+        handleOvHealth(msg->data);
+      });
+
     vehicle_land_detected_sub_ = this->create_subscription<px4_msgs::msg::VehicleLandDetected>(
       vehicle_land_detected_topic_, rclcpp::SensorDataQoS(),
       [this](const px4_msgs::msg::VehicleLandDetected::SharedPtr msg)
@@ -374,7 +385,7 @@ public:
       this->get_logger(),
       "visual_landing_node: observation=%s state=%s velocity_body=%s hold=%s position_mode=%s disarm=%s "
       "height_transport=%s height_topic=%s range_topic=%s vehicle_land_detected_topic=%s "
-      "vehicle_local_position_topic=%s "
+      "vehicle_local_position_topic=%s ov_health_topic=%s "
       "start=%s stop=%s",
       target_observation_topic_.c_str(), state_topic_.c_str(), velocity_body_topic_.c_str(),
       hold_service_.c_str(), position_mode_service_.c_str(), disarm_service_.c_str(),
@@ -382,6 +393,7 @@ public:
       height_measurement_topic_.c_str(), range_topic_.c_str(),
       vehicle_land_detected_topic_.c_str(),
       vehicle_local_position_topic_.c_str(),
+      ov_health_topic_.c_str(),
       start_service_name_.c_str(), stop_service_name_.c_str());
   }
 
@@ -469,6 +481,10 @@ private:
 
   bool start(std::string & message)
   {
+    if (ov_fault_latched_) {
+      message = "OV fault latched; visual landing disabled until restart";
+      return false;
+    }
     active_ = true;
     resetDisarmRequestState();
     land_phase_armed_seen_ = false;
@@ -495,6 +511,28 @@ private:
     transitionTo(ControllerPhase::Ready, true);
     message = "visual landing stopped";
     return true;
+  }
+
+  void stopForOvFault()
+  {
+    active_ = false;
+    resetDisarmRequestState();
+    land_phase_armed_seen_ = false;
+    land_disarm_condition_since_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+    initial_search_completed_ = false;
+    clearObservationTrackingState();
+    clearVisionTrackingState();
+    clearTargetMemory();
+    align_hold_started_ = false;
+    terminal_trigger_source_ = "OV_GUARD_UNHEALTHY";
+    height_measurement_sample_fresh_ = false;
+    height_measurement_receive_fresh_ = false;
+    xy_control_mode_ = "ov_fault_latched";
+    transitionTo(ControllerPhase::Ready, false);
+    requestPositionMode();
+    RCLCPP_ERROR(
+      this->get_logger(),
+      "OV guard unhealthy; stopping visual landing and requesting PX4 Position mode");
   }
 
   void clearVisionTrackingState()
@@ -688,6 +726,17 @@ private:
     land_disarm_condition_since_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
     xy_control_mode_ = "idle";
     phase_ = ControllerPhase::Ready;
+  }
+
+  void handleOvHealth(bool health_ok)
+  {
+    ov_health_ok_ = health_ok;
+    if (health_ok || ov_fault_latched_) {
+      return;
+    }
+
+    ov_fault_latched_ = true;
+    stopForOvFault();
   }
 
   void handleDisarmResponse(uint64_t request_id, rclcpp::Client<Trigger>::SharedFuture future)
@@ -1393,6 +1442,7 @@ private:
   std::string vehicle_land_detected_topic_;
   std::string vehicle_local_position_topic_;
   std::string vehicle_status_topic_;
+  std::string ov_health_topic_;
   std::string start_service_name_;
   std::string stop_service_name_;
   HeightConfig height_config_{};
@@ -1448,6 +1498,8 @@ private:
   bool has_state_{false};
   bool has_vehicle_status_{false};
   bool has_vehicle_land_detected_{false};
+  bool ov_health_ok_{true};
+  bool ov_fault_latched_{false};
   bool is_armed_{false};
   bool land_phase_armed_seen_{false};
   bool ground_contact_{false};
@@ -1509,6 +1561,7 @@ private:
   rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr
     vehicle_local_position_height_sub_;
   rclcpp::Subscription<px4_msgs::msg::VehicleStatus>::SharedPtr vehicle_status_sub_;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr ov_health_sub_;
   rclcpp::Client<Trigger>::SharedPtr hold_client_;
   rclcpp::Client<Trigger>::SharedPtr position_mode_client_;
   rclcpp::Client<Trigger>::SharedPtr disarm_client_;

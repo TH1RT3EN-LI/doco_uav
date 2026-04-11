@@ -48,6 +48,15 @@ ament_target_dependencies(${PROJECT_NAME}_sim_vio_odometry_logic
   tf2
 )
 
+add_library(${PROJECT_NAME}_openvins_ev_guard
+  src/openvins_ev_guard.cpp
+)
+target_compile_features(${PROJECT_NAME}_openvins_ev_guard PUBLIC cxx_std_17)
+target_include_directories(${PROJECT_NAME}_openvins_ev_guard PUBLIC include)
+ament_target_dependencies(${PROJECT_NAME}_openvins_ev_guard
+  px4_msgs
+)
+
 add_executable(mono_camera_source_node
   src/mono_camera_source_node.cpp
 )
@@ -192,9 +201,13 @@ ament_target_dependencies(openvins_px4_vision_bridge_node
   std_msgs
   tf2
 )
+target_link_libraries(openvins_px4_vision_bridge_node
+  ${PROJECT_NAME}_openvins_ev_guard
+)
 
 install(TARGETS
   ${PROJECT_NAME}_px4_odom_adapter_logic
+  ${PROJECT_NAME}_openvins_ev_guard
   ${PROJECT_NAME}_sim_vio_odometry_logic
   mono_camera_source_node
   mono_video_recorder_node
@@ -225,6 +238,14 @@ if(BUILD_TESTING)
   if(TARGET test_sim_vio_odometry_logic)
     target_link_libraries(test_sim_vio_odometry_logic ${PROJECT_NAME}_sim_vio_odometry_logic)
     ament_target_dependencies(test_sim_vio_odometry_logic tf2)
+  endif()
+
+  ament_add_gtest(test_openvins_ev_guard
+    test/test_openvins_ev_guard.cpp
+  )
+  if(TARGET test_openvins_ev_guard)
+    target_link_libraries(test_openvins_ev_guard ${PROJECT_NAME}_openvins_ev_guard)
+    ament_target_dependencies(test_openvins_ev_guard px4_msgs)
   endif()
 endif()
 

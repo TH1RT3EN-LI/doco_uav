@@ -1,11 +1,15 @@
 # `uav_bridge` 与 PX4 连接说明
 
-> 注意：当前主执行链已切换到 `uav_state_bridge_node` 与 `uav_control_node`。本文其余内容若提到 `offboard_bridge_node` 或旧 planner 链路，均视为历史说明。
+> 当前真机/默认控制链请优先看 `src/uav_bringup/docs/control_stack.txt`。
+> 当前主执行链为：
+> ` /ov_msckf/odomimu -> openvins_px4_vision_bridge_node -> /fmu/in/vehicle_visual_odometry `
+> ` /fmu/out/vehicle_odometry + /fmu/out/vehicle_local_position -> uav_state_bridge_node -> /uav/state/odometry_px4 `
+> ` /uav/control/position_yaw | /uav/control/position_keep_yaw | /uav/control/setpoint/velocity_body `
+> ` + /uav/control/command/* -> uav_control_node -> /fmu/in/* `
 
-> 注意：本文大部分章节描述的是旧 `offboard_bridge_node` / `/uav/odom` 链路。
-> 当前工作区主状态与控制链已经切换到 `uav_state_bridge_node`、`uav_control_node`、`/uav/state/odometry`。
+> 本文其余大部分关于 `offboard_bridge_node`、`/uav/odom`、旧 planner/manual 接口的描述，仅作历史实现参考，不再代表当前默认控制链。
 
-本文档说明当前工程里 `uav_bridge` 包，尤其是 `offboard_bridge_node`，在整套 UAV 仿真/控制链路中的作用。
+本文档主要保留 `uav_bridge` 包里旧 `offboard_bridge_node` 链路的实现背景，并补充当前 `uav_state_bridge_node` / `uav_control_node` 的实际入口。
 
 重点回答 4 个问题：
 
@@ -277,102 +281,100 @@ offset = px4_local_ned - planner_odom_converted_to_ned
 - `VEHICLE_CMD_NAV_LAND`
   - 进入 PX4 自动降落
 
-## 5. 手动控制功能是怎么实现的
+## 5. 当前手动控制接口
 
-这是本节点现在新加的能力。
+下面这组接口对应当前实际在用的 `uav_control_node`，不是旧 `offboard_bridge_node` 的接口。
 
 ### 5.1 `takeoff`
 
 调用：
 
 ```bash
-ros2 service call /uav/control/takeoff std_srvs/srv/Trigger "{}"
+ros2 service call /uav/control/command/takeoff std_srvs/srv/Trigger "{}"
 ```
 
 逻辑：
 
-- 读取当前 `/uav/odom`
-- 保持当前 `x/y/yaw`
+- 读取当前 `/uav/state/odometry_px4`
+- 锁存当前 `x/y/yaw`
 - 目标 `z += takeoff_height_m`
-- 如果配置了 `pre_takeoff_reset_service`，会先异步调用该 `Trigger` 服务，等 reset 完成后收到 reset 之后的新 `/uav/state/odometry` 和 PX4 local position，再进入原有起飞 warmup / arm 流程
+- 持续向 PX4 发送位置 setpoint，达到高度并稳定后自动转入 `hold`
 
-注意：
-
-- 这是“相对当前高度抬升”
-- 不是固定飞到绝对高度
-
-### 5.2 `hover`
+### 5.2 `hold`
 
 调用：
 
 ```bash
-ros2 service call /uav/control/hover std_srvs/srv/Trigger "{}"
+ros2 service call /uav/control/command/hold std_srvs/srv/Trigger "{}"
 ```
 
 逻辑：
 
-- 锁存当前 `/uav/odom`
+- 锁存当前 `/uav/state/odometry_px4`
 - 后续持续向 PX4 发送同一个位置 setpoint
 
-### 5.3 `pose`
+### 5.3 `position_yaw`
 
 调用示例：
 
 ```bash
-ros2 topic pub --once /uav/control/pose geometry_msgs/msg/PoseStamped \
-'{pose: {position: {x: 1.0, y: 0.0, z: 1.2}, orientation: {w: 1.0}}}'
+ros2 topic pub --once /uav/control/position_yaw geometry_msgs/msg/PoseStamped \
+'{header: {frame_id: "uav_odom"}, pose: {position: {x: 1.0, y: 0.0, z: 1.2}, orientation: {w: 1.0}}}'
 ```
 
 逻辑：
 
-- 直接切到手动目标控制
-- 将这个绝对 ENU 位姿当作保持目标
+- 输入为本地 ENU 位置 + yaw 目标
+- 默认 `frame_id` 需要是 `uav_odom`
+- `uav_control_node` 只消费姿态里的 yaw，然后转换成 PX4 本地 NED setpoint
 
-### 5.4 `nudge`
+### 5.4 `position_keep_yaw`
 
 调用示例：
 
 ```bash
-ros2 topic pub --once /uav/control/nudge geometry_msgs/msg/Twist \
-'{linear: {x: 0.2, y: 0.0, z: 0.0}, angular: {z: 0.0}}'
-```
-
-默认行为：
-
-- `linear.x`：机体前方增量
-- `linear.y`：机体左方增量
-- `linear.z`：向上增量
-- `angular.z`：偏航增量
-
-如果参数 `nudge_body_frame=false`，则会按世界系直接加到目标点。
-
-### 5.5 `land`
-
-调用：
-
-```bash
-ros2 service call /uav/control/land std_srvs/srv/Trigger "{}"
+ros2 topic pub --once /uav/control/position_keep_yaw geometry_msgs/msg/PointStamped \
+'{header: {frame_id: "uav_odom"}, point: {x: 1.0, y: 0.0, z: 1.2}}'
 ```
 
 逻辑：
 
-- 发送 `VEHICLE_CMD_NAV_LAND`
-- 切换到 `Landing` 控制源
-- 在 PX4 还没真正进入 `AUTO_LAND` 之前，继续发送当前位置保持 setpoint
-- 同时停止那套“不断重新拉起 OFFBOARD + ARM”的逻辑，避免和降落状态机打架
+- 输入为本地 ENU 位置目标
+- 收到命令时锁存当前融合 yaw
+- 后续保持该 yaw，仅更新位置目标
 
-### 5.6 `resume_auto`
+### 5.5 `velocity_body`
 
-调用：
+调用示例：
 
 ```bash
-ros2 service call /uav/control/resume_auto std_srvs/srv/Trigger "{}"
+ros2 topic pub --once /uav/control/setpoint/velocity_body geometry_msgs/msg/TwistStamped \
+'{header: {frame_id: "uav_base_link"}, twist: {linear: {x: 0.2, y: 0.0, z: 0.0}, angular: {z: 0.0}}}'
 ```
 
 逻辑：
 
-- 放弃内部手动目标
-- 切回 `/uav/planning/position_cmd`
+- 输入为机体系 FLU 线速度和 ENU yaw rate
+- `uav_control_node` 使用当前融合姿态把机体系速度旋转到世界系，再转换成 PX4 NED 速度 setpoint
+- 若命令超时，会自动下发零速度保持
+
+### 5.6 `land / abort / disarm`
+
+调用：
+
+```bash
+ros2 service call /uav/control/command/land std_srvs/srv/Trigger "{}"
+ros2 service call /uav/control/command/abort std_srvs/srv/Trigger "{}"
+ros2 service call /uav/control/command/disarm std_srvs/srv/Trigger "{}"
+```
+
+逻辑：
+
+- `land`：发送 PX4 `VEHICLE_CMD_NAV_LAND`
+- `abort`：强制切到 PX4 Stabilized，便于人工接管
+- `disarm`：发送 PX4 disarm，并清空当前 offboard 目标
+
+> 注意：以下第 6 节及之后的大部分内容主要针对旧 `offboard_bridge_node` / `/uav/odom` 链路，仅用于理解历史实现，不是当前默认运行面。当前运行面以本文件第 5 节和 `src/uav_bringup/docs/control_stack.txt` 为准。
 
 ## 6. 当前工程里，这个节点和上层规划器的关系
 
