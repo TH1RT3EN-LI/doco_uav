@@ -40,7 +40,6 @@ def next_bag_run_id(base_dir: Path, prefix: str) -> int:
 
 def generate_launch_description():
     bringup_share = get_package_share_directory("uav_bringup")
-    openvins_share = get_package_share_directory("ov_msckf")
 
     start_orbbec_camera = LaunchConfiguration("start_orbbec_camera")
     start_openvins = LaunchConfiguration("start_openvins")
@@ -55,6 +54,7 @@ def generate_launch_description():
     openvins_config_path = LaunchConfiguration("openvins_config_path")
     openvins_verbosity = LaunchConfiguration("openvins_verbosity")
     openvins_use_stereo = LaunchConfiguration("openvins_use_stereo")
+    openvins_use_mask = LaunchConfiguration("openvins_use_mask")
     openvins_max_cameras = LaunchConfiguration("openvins_max_cameras")
     openvins_save_total_state = LaunchConfiguration("openvins_save_total_state")
     openvins_yaml_left_ir_topic = LaunchConfiguration("openvins_yaml_left_ir_topic")
@@ -227,20 +227,19 @@ def generate_launch_description():
             SetRemap(src=openvins_yaml_left_ir_topic, dst=actual_left_ir_topic),
             SetRemap(src=openvins_yaml_right_ir_topic, dst=actual_right_ir_topic),
             SetRemap(src=openvins_yaml_imu_topic, dst=actual_imu_topic),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(openvins_share, "launch", "subscribe.launch.py")
-                ),
-                launch_arguments={
-                    "namespace": openvins_namespace,
-                    "ov_enable": "true",
-                    "rviz_enable": "false",
-                    "config_path": openvins_config_path,
-                    "verbosity": openvins_verbosity,
-                    "use_stereo": openvins_use_stereo,
-                    "max_cameras": openvins_max_cameras,
-                    "save_total_state": openvins_save_total_state,
-                }.items(),
+            Node(
+                package="ov_msckf",
+                executable="run_subscribe_msckf",
+                namespace=openvins_namespace,
+                output="screen",
+                parameters=[
+                    {"verbosity": openvins_verbosity},
+                    {"use_stereo": openvins_use_stereo},
+                    {"use_mask": openvins_use_mask},
+                    {"max_cameras": openvins_max_cameras},
+                    {"save_total_state": openvins_save_total_state},
+                    {"config_path": openvins_config_path},
+                ],
             ),
         ],
     )
@@ -364,6 +363,7 @@ def generate_launch_description():
             DeclareLaunchArgument("openvins_config_path", default_value=default_openvins_config),
             DeclareLaunchArgument("openvins_verbosity", default_value="INFO"),
             DeclareLaunchArgument("openvins_use_stereo", default_value="true"),
+            DeclareLaunchArgument("openvins_use_mask", default_value="true"),
             DeclareLaunchArgument("openvins_max_cameras", default_value="2"),
             DeclareLaunchArgument("openvins_save_total_state", default_value="false"),
             DeclareLaunchArgument(

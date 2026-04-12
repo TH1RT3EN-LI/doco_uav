@@ -6,7 +6,6 @@ import threading
 import time
 import tkinter as tk
 from dataclasses import dataclass, field
-from math import ceil
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import rclpy
@@ -433,8 +432,8 @@ class PositionMonitorGui:
         self.status_frame_by_key: Dict[str, tk.LabelFrame] = {}
         self.position_grid: Optional[tk.Frame] = None
         self.status_grid: Optional[tk.Frame] = None
-        self.position_row_frames: List[tk.Frame] = []
-        self.status_row_frames: List[tk.Frame] = []
+        self.position_empty_label: Optional[tk.Label] = None
+        self.status_empty_label: Optional[tk.Label] = None
         self.body_canvas: Optional[tk.Canvas] = None
         self.body_window_id: Optional[int] = None
         self._layout_after_id: Optional[str] = None
@@ -559,14 +558,37 @@ class PositionMonitorGui:
             self._build_section_title(body, "位置链路")
             self.position_grid = tk.Frame(body, bg="#eef3f8")
             self.position_grid.pack(fill="x", expand=True)
+            self.position_empty_label = tk.Label(
+                self.position_grid,
+                text="当前没有启用的位置卡片。",
+                font=("Sans", 11),
+                fg="#64748b",
+                bg="#eef3f8",
+                anchor="w",
+                justify="left",
+                padx=8,
+                pady=8,
+            )
             self._build_position_grid(self.position_grid)
 
         if self.status_states:
             self._build_section_title(body, "状态链路")
             self.status_grid = tk.Frame(body, bg="#eef3f8")
             self.status_grid.pack(fill="x", expand=True)
+            self.status_empty_label = tk.Label(
+                self.status_grid,
+                text="当前没有启用的状态卡片。",
+                font=("Sans", 11),
+                fg="#64748b",
+                bg="#eef3f8",
+                anchor="w",
+                justify="left",
+                padx=8,
+                pady=8,
+            )
             self._build_status_grid(self.status_grid)
 
+        self._relayout_cards()
         self.root.after_idle(self._relayout_cards)
 
     def _build_section_title(self, parent: tk.Widget, title: str):
@@ -866,7 +888,7 @@ class PositionMonitorGui:
     def _toggle_source_subscription(self, source_key: str):
         enabled = self.source_enabled_vars[source_key].get()
         self.monitor_node.set_source_enabled(source_key, enabled)
-        self._schedule_relayout()
+        self._relayout_cards()
 
     @staticmethod
     def _update_wraplength(widget: tk.Label, width: int):
@@ -896,18 +918,16 @@ class PositionMonitorGui:
 
         if self.position_grid is not None and self.position_frames:
             position_columns = 2 if available_width >= 1380 else 1
-            for frame in self.position_frames:
-                frame.pack_forget()
             visible_position_frames = [
                 frame
                 for state in self.position_states
                 if self.source_enabled_vars[state.spec.key].get()
                 for frame in [self.position_frame_by_key[state.spec.key]]
             ]
-            self.position_row_frames = self._relayout_frame_rows(
+            self._relayout_frame_grid(
                 container=self.position_grid,
                 frames=visible_position_frames,
-                existing_rows=self.position_row_frames,
+                empty_label=self.position_empty_label,
                 column_count=position_columns,
             )
 
@@ -918,47 +938,52 @@ class PositionMonitorGui:
                 status_columns = 2
             else:
                 status_columns = 1
-            for frame in self.status_frames:
-                frame.pack_forget()
             visible_status_frames = [
                 frame
                 for state in self.status_states
                 if self.source_enabled_vars[state.spec.key].get()
                 for frame in [self.status_frame_by_key[state.spec.key]]
             ]
-            self.status_row_frames = self._relayout_frame_rows(
+            self._relayout_frame_grid(
                 container=self.status_grid,
                 frames=visible_status_frames,
-                existing_rows=self.status_row_frames,
+                empty_label=self.status_empty_label,
                 column_count=status_columns,
             )
 
-    def _relayout_frame_rows(
+    def _relayout_frame_grid(
         self,
         container: tk.Frame,
         frames: List[tk.LabelFrame],
-        existing_rows: List[tk.Frame],
+        empty_label: Optional[tk.Label],
         column_count: int,
-    ) -> List[tk.Frame]:
+    ):
         column_count = max(1, column_count)
-        for frame in frames:
-            frame.pack_forget()
-        for row in existing_rows:
-            row.destroy()
+        managed_children = list(container.grid_slaves())
+        for child in managed_children:
+            child.grid_forget()
 
         if not frames:
-            return []
+            if empty_label is not None:
+                empty_label.grid(row=0, column=0, sticky="w", padx=8, pady=8)
+            return
 
-        row_frames: List[tk.Frame] = []
-        row_count = ceil(len(frames) / column_count)
-        for row_index in range(row_count):
-            row_frame = tk.Frame(container, bg="#eef3f8")
-            row_frame.pack(fill="x", expand=True)
-            row_frames.append(row_frame)
-            row_items = frames[row_index * column_count : (row_index + 1) * column_count]
-            for frame in row_items:
-                frame.pack(in_=row_frame, side="left", fill="both", expand=True, padx=8, pady=8)
-        return row_frames
+        if empty_label is not None:
+            empty_label.grid_forget()
+
+        for column_index in range(max(column_count, 1)):
+            container.grid_columnconfigure(column_index, weight=1)
+
+        for frame_index, frame in enumerate(frames):
+            row_index = frame_index // column_count
+            column_index = frame_index % column_count
+            frame.grid(
+                row=row_index,
+                column=column_index,
+                sticky="nsew",
+                padx=8,
+                pady=8,
+            )
 
     def _on_mousewheel(self, event: tk.Event):
         if self.body_canvas is None:
@@ -1912,7 +1937,7 @@ def main():
     spin_thread.start()
 
     root = tk.Tk()
-    PositionMonitorGui(
+    gui = PositionMonitorGui(
         root=root,
         monitor_node=node,
         position_states=position_states,
@@ -1929,6 +1954,7 @@ def main():
     try:
         root.mainloop()
     finally:
+        del gui
         executor.shutdown()
         node.destroy_node()
         if rclpy.ok():
