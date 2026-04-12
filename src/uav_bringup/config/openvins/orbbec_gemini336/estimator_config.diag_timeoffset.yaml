@@ -1,4 +1,4 @@
-%YAML:1.0 # Legacy compatibility alias; keep in sync with estimator_config.flight.yaml.
+%YAML:1.0 # Diagnostic profile 1: only enable online camera-IMU time offset estimation.
 
 verbosity: "INFO" # ALL, DEBUG, INFO, WARNING, ERROR, SILENT
 
@@ -7,9 +7,9 @@ integration: "rk4" # discrete, rk4, analytical (if rk4 or analytical used then a
 use_stereo: true # if we have more than 1 camera, if we should try to track stereo constraints between pairs
 max_cameras: 2 # how many cameras we have 1 = mono, 2 = stereo, >2 = binocular (all mono tracking)
 
-calib_cam_extrinsics: false # keep offline camera-IMU extrinsics fixed during flight
-calib_cam_intrinsics: false # keep offline camera intrinsics fixed during flight
-calib_cam_timeoffset: false # keep offline camera-IMU time offset fixed during flight
+calib_cam_extrinsics: false # keep offline extrinsics fixed in first-stage diagnostics
+calib_cam_intrinsics: false # do not expand state with camera intrinsics during flight diagnostics
+calib_cam_timeoffset: true # first diagnostic toggle for drift investigations
 calib_imu_intrinsics: false # if imu intrinsics should be calibrated (rotation and skew-scale matrix)
 calib_imu_g_sensitivity: false # if gyroscope gravity sensitivity (Tg) should be calibrated
 
@@ -42,7 +42,7 @@ init_imu_thresh: 1.5 # threshold for variance of the accelerometer to detect a "
 init_max_disparity: 10.0 # max disparity to consider the platform stationary (dependent on resolution)
 init_max_features: 50 # how many features to track during initialization (saves on computation)
 
-init_dyn_use: false # static initialization is the default when the vehicle can stay still
+init_dyn_use: false # keep static initialization unchanged while diagnosing in-flight drift
 init_dyn_mle_opt_calib: false # if we should optimize calibration during intialization (not recommended)
 init_dyn_mle_max_iter: 50 # how many iterations the MLE refinement should use (zero to skip the MLE)
 init_dyn_mle_max_time: 0.05 # how many seconds the MLE should be completed in

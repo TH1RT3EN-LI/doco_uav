@@ -1,4 +1,4 @@
-%YAML:1.0 # Legacy compatibility alias; keep in sync with estimator_config.flight.yaml.
+%YAML:1.0 # Default flight profile: trust offline Kalibr, keep static init.
 
 verbosity: "INFO" # ALL, DEBUG, INFO, WARNING, ERROR, SILENT
 

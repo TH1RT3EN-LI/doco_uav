@@ -41,6 +41,14 @@ DEFAULT_ORBBEC_IR_EXPOSURE = {
     "brightness": "-1",
 }
 
+DEFAULT_ORBBEC_IR_EXPOSURE_LOW_BLUR = {
+    "enable_auto_exposure": "false",
+    "exposure": "3000",
+    "gain": "16",
+    "ae_max_exposure": "3000",
+    "brightness": "-1",
+}
+
 DEFAULT_ORBBEC_STANDALONE_PROFILE = {
     "enable_depth": "true",
     "enable_color": "false",

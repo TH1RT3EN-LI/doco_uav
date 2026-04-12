@@ -342,7 +342,7 @@ def generate_launch_description():
     )
 
     default_openvins_config = os.path.join(
-        bringup_share, "config", "openvins", "orbbec_gemini336", "estimator_config.yaml"
+        bringup_share, "config", "openvins", "orbbec_gemini336", "estimator_config.flight.yaml"
     )
     default_rviz_config = os.path.join(
         bringup_share, "config", "rviz", "openvins_orbbec.rviz"
