@@ -83,6 +83,7 @@ def generate_launch_description():
     px4_bridge_timesync_status_topic = LaunchConfiguration(
         "px4_bridge_timesync_status_topic"
     )
+    px4_bridge_timesync_timeout_s = LaunchConfiguration("px4_bridge_timesync_timeout_s")
     px4_bridge_log_debug = LaunchConfiguration("px4_bridge_log_debug")
     state_bridge_vehicle_local_position_topic = LaunchConfiguration(
         "state_bridge_vehicle_local_position_topic"
@@ -97,6 +98,7 @@ def generate_launch_description():
     state_bridge_timesync_status_topic = LaunchConfiguration(
         "state_bridge_timesync_status_topic"
     )
+    state_bridge_timesync_timeout_s = LaunchConfiguration("state_bridge_timesync_timeout_s")
     state_bridge_publish_tf = LaunchConfiguration("state_bridge_publish_tf")
     state_bridge_publish_map_to_odom_tf = LaunchConfiguration(
         "state_bridge_publish_map_to_odom_tf"
@@ -264,6 +266,7 @@ def generate_launch_description():
             {"sensor_yaw_in_body_rad": px4_bridge_sensor_yaw_in_body_rad},
             {"px4_timestamp_source": px4_bridge_timestamp_source},
             {"timesync_status_topic": px4_bridge_timesync_status_topic},
+            {"timesync_timeout_s": px4_bridge_timesync_timeout_s},
             {"log_debug": px4_bridge_log_debug},
             {"health_ok_topic": "/uav/ov/bridge/health_ok"},
             {"fault_reason_topic": "/uav/ov/bridge/fault_reason"},
@@ -295,6 +298,7 @@ def generate_launch_description():
             {"base_frame_id": base_frame_id},
             {"px4_timestamp_source": state_bridge_timestamp_source},
             {"timesync_status_topic": state_bridge_timesync_status_topic},
+            {"timesync_timeout_s": state_bridge_timesync_timeout_s},
             {"publish_tf": state_bridge_publish_tf},
             {"publish_map_to_odom_tf": state_bridge_publish_map_to_odom_tf},
             {"log_state": state_bridge_log_state},
@@ -413,6 +417,9 @@ def generate_launch_description():
                 "px4_bridge_timesync_status_topic",
                 default_value="/fmu/out/timesync_status",
             ),
+            DeclareLaunchArgument(
+                "px4_bridge_timesync_timeout_s", default_value="2.0"
+            ),
             DeclareLaunchArgument("px4_bridge_log_debug", default_value="false"),
             DeclareLaunchArgument(
                 "state_bridge_vehicle_local_position_topic",
@@ -432,6 +439,9 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "state_bridge_timesync_status_topic",
                 default_value="/fmu/out/timesync_status",
+            ),
+            DeclareLaunchArgument(
+                "state_bridge_timesync_timeout_s", default_value="2.0"
             ),
             DeclareLaunchArgument("state_bridge_publish_tf", default_value="false"),
             DeclareLaunchArgument(
