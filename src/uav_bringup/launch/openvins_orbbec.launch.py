@@ -174,6 +174,7 @@ def generate_launch_description():
         actual_ov_odom_topic,
         "/tf",
         "/tf_static",
+        "/ov_msckf/trackhist",
     ]
 
     orbbec_depth_camera = IncludeLaunchDescription(
