@@ -71,6 +71,7 @@ class PositionSourceView:
     spec: PositionSourceSpec
     first_sample: Optional[PositionSample]
     latest_sample: Optional[PositionSample]
+    receive_count: int
     sample_count: int
     started_at_wall_s: float
     last_receive_wall_s: Optional[float]
@@ -88,12 +89,14 @@ class StatusChannelSpec:
     qos_profile: QoSProfile
     slow_after_s: float
     stale_after_s: float
+    expect_continuous_updates: bool = True
 
 
 @dataclass(frozen=True)
 class StatusChannelSnapshot:
     spec: StatusChannelSpec
     payload: Any
+    receive_count: int
     sample_count: int
     started_at_wall_s: float
     last_receive_wall_s: Optional[float]
@@ -129,6 +132,7 @@ class PositionWidgets:
     status_var: tk.StringVar
     topic_var: tk.StringVar
     frame_var: tk.StringVar
+    receive_count_var: tk.StringVar
     sample_count_var: tk.StringVar
     rate_var: tk.StringVar
     freshness_var: tk.StringVar
@@ -148,6 +152,7 @@ class StatusWidgets:
     summary_var: tk.StringVar
     topic_var: tk.StringVar
     freshness_var: tk.StringVar
+    receive_count_var: tk.StringVar
     sample_count_var: tk.StringVar
     details_var: tk.StringVar
     badge_label: tk.Label
@@ -158,6 +163,7 @@ class PositionSourceState:
         self.spec = spec
         self.first_sample: Optional[PositionSample] = None
         self.latest_sample: Optional[PositionSample] = None
+        self.receive_count = 0
         self.sample_count = 0
         self.started_at_wall_s = time.monotonic()
         self.last_receive_wall_s: Optional[float] = None
@@ -165,25 +171,31 @@ class PositionSourceState:
         self.last_error: Optional[str] = None
         self.lock = threading.Lock()
 
-    def update(self, sample: PositionSample):
+    def _record_receive_locked(self, now: float):
+        if self.last_receive_wall_s is not None:
+            interval_s = now - self.last_receive_wall_s
+            if interval_s > 1e-6:
+                instant_rate_hz = 1.0 / interval_s
+                if self.estimated_rate_hz is None:
+                    self.estimated_rate_hz = instant_rate_hz
+                else:
+                    self.estimated_rate_hz = (
+                        0.25 * instant_rate_hz + 0.75 * self.estimated_rate_hz
+                    )
+        self.receive_count += 1
+        self.last_receive_wall_s = now
+
+    def record_receive(self):
         now = time.monotonic()
         with self.lock:
-            if self.last_receive_wall_s is not None:
-                interval_s = now - self.last_receive_wall_s
-                if interval_s > 1e-6:
-                    instant_rate_hz = 1.0 / interval_s
-                    if self.estimated_rate_hz is None:
-                        self.estimated_rate_hz = instant_rate_hz
-                    else:
-                        self.estimated_rate_hz = (
-                            0.25 * instant_rate_hz + 0.75 * self.estimated_rate_hz
-                        )
+            self._record_receive_locked(now)
 
+    def accept_sample(self, sample: PositionSample):
+        with self.lock:
             self.latest_sample = sample
             if self.first_sample is None:
                 self.first_sample = sample
             self.sample_count += 1
-            self.last_receive_wall_s = now
             self.last_error = None
 
     def record_error(self, error_message: str):
@@ -196,6 +208,7 @@ class PositionSourceState:
                 spec=self.spec,
                 first_sample=self.first_sample,
                 latest_sample=self.latest_sample,
+                receive_count=self.receive_count,
                 sample_count=self.sample_count,
                 started_at_wall_s=self.started_at_wall_s,
                 last_receive_wall_s=self.last_receive_wall_s,
@@ -213,6 +226,7 @@ class StatusChannelState:
     def __init__(self, spec: StatusChannelSpec):
         self.spec = spec
         self.payload: Any = None
+        self.receive_count = 0
         self.sample_count = 0
         self.started_at_wall_s = time.monotonic()
         self.last_receive_wall_s: Optional[float] = None
@@ -221,26 +235,32 @@ class StatusChannelState:
         self.last_error: Optional[str] = None
         self.lock = threading.Lock()
 
-    def update(self, payload: Any):
+    def _record_receive_locked(self, now: float):
+        if self.last_receive_wall_s is not None:
+            interval_s = now - self.last_receive_wall_s
+            if interval_s > 1e-6:
+                instant_rate_hz = 1.0 / interval_s
+                if self.estimated_rate_hz is None:
+                    self.estimated_rate_hz = instant_rate_hz
+                else:
+                    self.estimated_rate_hz = (
+                        0.25 * instant_rate_hz + 0.75 * self.estimated_rate_hz
+                    )
+        self.receive_count += 1
+        self.last_receive_wall_s = now
+
+    def record_receive(self):
         now = time.monotonic()
         with self.lock:
-            if self.last_receive_wall_s is not None:
-                interval_s = now - self.last_receive_wall_s
-                if interval_s > 1e-6:
-                    instant_rate_hz = 1.0 / interval_s
-                    if self.estimated_rate_hz is None:
-                        self.estimated_rate_hz = instant_rate_hz
-                    else:
-                        self.estimated_rate_hz = (
-                            0.25 * instant_rate_hz + 0.75 * self.estimated_rate_hz
-                        )
+            self._record_receive_locked(now)
 
+    def accept_payload(self, payload: Any):
+        now = time.monotonic()
+        with self.lock:
             if self.sample_count == 0 or payload != self.payload:
                 self.last_change_wall_s = now
-
             self.payload = payload
             self.sample_count += 1
-            self.last_receive_wall_s = now
             self.last_error = None
 
     def record_error(self, error_message: str):
@@ -252,6 +272,7 @@ class StatusChannelState:
             return StatusChannelSnapshot(
                 spec=self.spec,
                 payload=self.payload,
+                receive_count=self.receive_count,
                 sample_count=self.sample_count,
                 started_at_wall_s=self.started_at_wall_s,
                 last_receive_wall_s=self.last_receive_wall_s,
@@ -287,33 +308,76 @@ class TopicMonitorNode(Node):
         status_states: List[StatusSourceState],
     ):
         super().__init__("monitor_topic_position_gui")
-        self._subscriptions = []
+        self._position_states = {
+            state.spec.key: state for state in position_states
+        }
+        self._status_states = {
+            state.spec.key: state for state in status_states
+        }
+        self._subscriptions_by_source: Dict[str, List[Any]] = {}
+        self._enabled_sources = set()
+        self._subscription_lock = threading.Lock()
 
-        for state in position_states:
-            subscription = self.create_subscription(
-                state.spec.message_type,
-                state.spec.topic_name,
-                self._make_position_callback(state),
-                state.spec.qos_profile,
-            )
-            self._subscriptions.append(subscription)
+        for source_key in list(self._position_states.keys()) + list(self._status_states.keys()):
+            self.set_source_enabled(source_key, True)
 
-        for status_state in status_states:
-            for channel_key, channel_state in status_state.channel_states.items():
-                subscription = self.create_subscription(
-                    channel_state.spec.message_type,
-                    channel_state.spec.topic_name,
-                    self._make_status_callback(status_state.spec.key, channel_key, channel_state),
-                    channel_state.spec.qos_profile,
-                )
-                self._subscriptions.append(subscription)
+    def set_source_enabled(self, source_key: str, enabled: bool):
+        with self._subscription_lock:
+            already_enabled = source_key in self._enabled_sources
+            if enabled == already_enabled:
+                return
+
+            if enabled:
+                subscriptions: List[Any] = []
+                position_state = self._position_states.get(source_key)
+                if position_state is not None:
+                    subscriptions.append(
+                        self.create_subscription(
+                            position_state.spec.message_type,
+                            position_state.spec.topic_name,
+                            self._make_position_callback(position_state),
+                            position_state.spec.qos_profile,
+                        )
+                    )
+
+                status_state = self._status_states.get(source_key)
+                if status_state is not None:
+                    for channel_key, channel_state in status_state.channel_states.items():
+                        subscriptions.append(
+                            self.create_subscription(
+                                channel_state.spec.message_type,
+                                channel_state.spec.topic_name,
+                                self._make_status_callback(
+                                    status_state.spec.key,
+                                    channel_key,
+                                    channel_state,
+                                ),
+                                channel_state.spec.qos_profile,
+                            )
+                        )
+
+                if not subscriptions:
+                    raise KeyError(f"unknown source key: {source_key}")
+                self._subscriptions_by_source[source_key] = subscriptions
+                self._enabled_sources.add(source_key)
+                return
+
+            subscriptions = self._subscriptions_by_source.pop(source_key, [])
+            for subscription in subscriptions:
+                self.destroy_subscription(subscription)
+            self._enabled_sources.discard(source_key)
+
+    def is_source_enabled(self, source_key: str) -> bool:
+        with self._subscription_lock:
+            return source_key in self._enabled_sources
 
     def _make_position_callback(self, state: PositionSourceState):
         def callback(msg: Any):
+            state.record_receive()
             try:
                 sample = state.spec.extractor(msg)
                 if self._is_finite_position(sample):
-                    state.update(sample)
+                    state.accept_sample(sample)
                 else:
                     state.record_error("收到非有限位置值，已忽略。")
             except Exception as exc:
@@ -328,9 +392,10 @@ class TopicMonitorNode(Node):
         channel_state: StatusChannelState,
     ):
         def callback(msg: Any):
+            channel_state.record_receive()
             try:
                 payload = channel_state.spec.extractor(msg)
-                channel_state.update(payload)
+                channel_state.accept_payload(payload)
             except Exception as exc:
                 channel_state.record_error(
                     f"{source_key}/{channel_key} {type(exc).__name__}: {exc}"
@@ -347,12 +412,14 @@ class PositionMonitorGui:
     def __init__(
         self,
         root: tk.Tk,
+        monitor_node: TopicMonitorNode,
         position_states: List[PositionSourceState],
         status_states: List[StatusSourceState],
         refresh_hz: float,
         show_relative: bool,
     ):
         self.root = root
+        self.monitor_node = monitor_node
         self.position_states = position_states
         self.status_states = status_states
         self.show_relative = show_relative
@@ -360,13 +427,26 @@ class PositionMonitorGui:
 
         self.position_widgets: Dict[str, PositionWidgets] = {}
         self.status_widgets: Dict[str, StatusWidgets] = {}
+        self.position_frames: List[tk.LabelFrame] = []
+        self.status_frames: List[tk.LabelFrame] = []
+        self.position_frame_by_key: Dict[str, tk.LabelFrame] = {}
+        self.status_frame_by_key: Dict[str, tk.LabelFrame] = {}
+        self.position_grid: Optional[tk.Frame] = None
+        self.status_grid: Optional[tk.Frame] = None
+        self.position_row_frames: List[tk.Frame] = []
+        self.status_row_frames: List[tk.Frame] = []
+        self.body_canvas: Optional[tk.Canvas] = None
+        self.body_window_id: Optional[int] = None
+        self._layout_after_id: Optional[str] = None
+        self.source_enabled_vars: Dict[str, tk.BooleanVar] = {}
 
         self._build_window()
         self._schedule_refresh()
 
     def _build_window(self):
         self.root.title("OV / PX4 低开销状态监视器")
-        self.root.geometry("1720x980")
+        self.root.geometry("1560x960")
+        self.root.minsize(960, 640)
         self.root.configure(bg="#eef3f8")
 
         header = tk.Frame(self.root, bg="#0f172a", padx=16, pady=12)
@@ -413,20 +493,81 @@ class PositionMonitorGui:
             command=self.root.quit,
         ).pack(side="left", padx=(10, 0))
 
-        body = tk.Frame(self.root, bg="#eef3f8", padx=12, pady=4)
-        body.pack(fill="both", expand=True)
+        source_controls = tk.LabelFrame(
+            controls,
+            text="订阅源",
+            font=("Sans", 11, "bold"),
+            bg="#eef3f8",
+            fg="#0f172a",
+            padx=10,
+            pady=6,
+        )
+        source_controls.pack(side="left", fill="x", expand=True, padx=(18, 0))
+        source_controls.grid_columnconfigure(0, weight=1)
+        source_order = [state.spec.key for state in self.position_states] + [
+            state.spec.key for state in self.status_states
+        ]
+        source_labels = {
+            **{state.spec.key: state.spec.source_label for state in self.position_states},
+            **{state.spec.key: state.spec.source_label for state in self.status_states},
+        }
+        for index, source_key in enumerate(source_order):
+            enabled_var = tk.BooleanVar(value=self.monitor_node.is_source_enabled(source_key))
+            self.source_enabled_vars[source_key] = enabled_var
+            tk.Checkbutton(
+                source_controls,
+                text=source_labels[source_key],
+                variable=enabled_var,
+                onvalue=True,
+                offvalue=False,
+                command=lambda key=source_key: self._toggle_source_subscription(key),
+                anchor="w",
+                bg="#eef3f8",
+                fg="#0f172a",
+                selectcolor="#ffffff",
+                activebackground="#eef3f8",
+            ).grid(
+                row=index // 4,
+                column=index % 4,
+                sticky="w",
+                padx=(0, 18),
+                pady=2,
+            )
+
+        body_shell = tk.Frame(self.root, bg="#eef3f8")
+        body_shell.pack(fill="both", expand=True)
+        self.body_canvas = tk.Canvas(
+            body_shell,
+            bg="#eef3f8",
+            highlightthickness=0,
+            bd=0,
+        )
+        scrollbar = tk.Scrollbar(body_shell, orient="vertical", command=self.body_canvas.yview)
+        self.body_canvas.configure(yscrollcommand=scrollbar.set)
+        self.body_canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        body = tk.Frame(self.body_canvas, bg="#eef3f8", padx=12, pady=4)
+        self.body_window_id = self.body_canvas.create_window((0, 0), window=body, anchor="nw")
+        body.bind("<Configure>", self._on_body_configure)
+        self.body_canvas.bind("<Configure>", self._on_canvas_configure)
+        self.body_canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.body_canvas.bind_all("<Button-4>", self._on_mousewheel_linux_up)
+        self.body_canvas.bind_all("<Button-5>", self._on_mousewheel_linux_down)
 
         if self.position_states:
             self._build_section_title(body, "位置链路")
-            position_grid = tk.Frame(body, bg="#eef3f8")
-            position_grid.pack(fill="both", expand=True)
-            self._build_position_grid(position_grid)
+            self.position_grid = tk.Frame(body, bg="#eef3f8")
+            self.position_grid.pack(fill="x", expand=True)
+            self._build_position_grid(self.position_grid)
 
         if self.status_states:
             self._build_section_title(body, "状态链路")
-            status_grid = tk.Frame(body, bg="#eef3f8")
-            status_grid.pack(fill="both", expand=True)
-            self._build_status_grid(status_grid)
+            self.status_grid = tk.Frame(body, bg="#eef3f8")
+            self.status_grid.pack(fill="x", expand=True)
+            self._build_status_grid(self.status_grid)
+
+        self.root.after_idle(self._relayout_cards)
 
     def _build_section_title(self, parent: tk.Widget, title: str):
         tk.Label(
@@ -439,34 +580,20 @@ class PositionMonitorGui:
         ).pack(anchor="w")
 
     def _build_position_grid(self, parent: tk.Widget):
-        column_count = min(2, max(1, len(self.position_states)))
-        row_count = max(1, ceil(len(self.position_states) / column_count))
-
-        for row in range(row_count):
-            parent.grid_rowconfigure(row, weight=1)
-        for column in range(column_count):
-            parent.grid_columnconfigure(column, weight=1)
-
-        for index, state in enumerate(self.position_states):
+        self.position_frames = []
+        self.position_frame_by_key = {}
+        for state in self.position_states:
             frame = self._create_position_frame(parent, state)
-            row = index // column_count
-            column = index % column_count
-            frame.grid(row=row, column=column, sticky="nsew", padx=8, pady=8)
+            self.position_frames.append(frame)
+            self.position_frame_by_key[state.spec.key] = frame
 
     def _build_status_grid(self, parent: tk.Widget):
-        column_count = min(3, max(1, len(self.status_states)))
-        row_count = max(1, ceil(len(self.status_states) / column_count))
-
-        for row in range(row_count):
-            parent.grid_rowconfigure(row, weight=1)
-        for column in range(column_count):
-            parent.grid_columnconfigure(column, weight=1)
-
-        for index, state in enumerate(self.status_states):
+        self.status_frames = []
+        self.status_frame_by_key = {}
+        for state in self.status_states:
             frame = self._create_status_frame(parent, state)
-            row = index // column_count
-            column = index % column_count
-            frame.grid(row=row, column=column, sticky="nsew", padx=8, pady=8)
+            self.status_frames.append(frame)
+            self.status_frame_by_key[state.spec.key] = frame
 
     def _create_position_frame(
         self,
@@ -476,22 +603,26 @@ class PositionMonitorGui:
         frame = tk.LabelFrame(
             parent,
             text=state.spec.source_label,
-            font=("Sans", 14, "bold"),
+            font=("Sans", 13, "bold"),
             bg="#ffffff",
             fg="#111827",
             bd=2,
             padx=14,
             pady=12,
         )
+        frame.grid_columnconfigure(0, weight=1)
 
-        left = tk.Frame(frame, bg="#ffffff")
-        left.pack(side="left", fill="both", expand=True, padx=(0, 16))
-        right = tk.Frame(frame, bg="#f8fafc", bd=1, relief="solid")
-        right.pack(side="right", fill="y", ipadx=8, ipady=8)
+        details = tk.Frame(frame, bg="#ffffff")
+        details.pack(fill="x", expand=True)
+        details.grid_columnconfigure(1, weight=1)
+
+        metrics = tk.Frame(frame, bg="#ffffff")
+        metrics.pack(fill="x", expand=True, pady=(8, 0))
 
         status_var = tk.StringVar(value="等待数据")
         topic_var = tk.StringVar(value=state.spec.topic_name)
         frame_var = tk.StringVar(value="--")
+        receive_count_var = tk.StringVar(value="0")
         sample_count_var = tk.StringVar(value="0")
         rate_var = tk.StringVar(value="--")
         freshness_var = tk.StringVar(value="等待数据")
@@ -505,7 +636,7 @@ class PositionMonitorGui:
         distance_var = tk.StringVar(value="-- m")
 
         badge_label = tk.Label(
-            left,
+            details,
             textvariable=status_var,
             font=("Sans", 11, "bold"),
             padx=10,
@@ -516,7 +647,7 @@ class PositionMonitorGui:
         self._set_badge_style(badge_label, "wait")
 
         tk.Label(
-            left,
+            details,
             text="状态",
             anchor="w",
             font=("Sans", 11, "bold"),
@@ -529,6 +660,7 @@ class PositionMonitorGui:
             status_var=status_var,
             topic_var=topic_var,
             frame_var=frame_var,
+            receive_count_var=receive_count_var,
             sample_count_var=sample_count_var,
             rate_var=rate_var,
             freshness_var=freshness_var,
@@ -543,15 +675,16 @@ class PositionMonitorGui:
             badge_label=badge_label,
         )
 
-        self._add_info_row(left, 1, "话题", topic_var, bg="#ffffff", wraplength=480)
-        self._add_info_row(left, 2, "坐标系", frame_var, bg="#ffffff", wraplength=480)
-        self._add_info_row(left, 3, "已收样本", sample_count_var, bg="#ffffff")
-        self._add_info_row(left, 4, "估计接收率", rate_var, bg="#ffffff")
-        self._add_info_row(left, 5, "最新消息距今", freshness_var, bg="#ffffff")
-        self._add_info_row(left, 6, "消息时间戳", stamp_var, bg="#ffffff")
+        self._add_info_row(details, 1, "话题", topic_var, bg="#ffffff")
+        self._add_info_row(details, 2, "坐标系", frame_var, bg="#ffffff")
+        self._add_info_row(details, 3, "收到消息", receive_count_var, bg="#ffffff")
+        self._add_info_row(details, 4, "有效样本", sample_count_var, bg="#ffffff")
+        self._add_info_row(details, 5, "估计接收率", rate_var, bg="#ffffff")
+        self._add_info_row(details, 6, "接收距今", freshness_var, bg="#ffffff")
+        self._add_info_row(details, 7, "源时间戳", stamp_var, bg="#ffffff")
 
         current_box = tk.LabelFrame(
-            right,
+            metrics,
             text="当前位置",
             font=("Sans", 12, "bold"),
             bg="#f8fafc",
@@ -559,13 +692,13 @@ class PositionMonitorGui:
             padx=12,
             pady=10,
         )
-        current_box.pack(fill="x", padx=10, pady=(8, 6))
+        current_box.pack(fill="x", pady=(0, 8))
         self._add_big_value_row(current_box, 0, "X", current_x_var)
         self._add_big_value_row(current_box, 1, "Y", current_y_var)
         self._add_big_value_row(current_box, 2, "Z", current_z_var)
 
         relative_box = tk.LabelFrame(
-            right,
+            metrics,
             text="相对起点",
             font=("Sans", 12, "bold"),
             bg="#f8fafc",
@@ -573,20 +706,20 @@ class PositionMonitorGui:
             padx=12,
             pady=10,
         )
-        relative_box.pack(fill="x", padx=10, pady=(6, 8))
+        relative_box.pack(fill="x", pady=(0, 8))
         self._add_big_value_row(relative_box, 0, "ΔX", delta_x_var)
         self._add_big_value_row(relative_box, 1, "ΔY", delta_y_var)
         self._add_big_value_row(relative_box, 2, "ΔZ", delta_z_var)
         self._add_big_value_row(relative_box, 3, "总位移", distance_var)
 
         tk.Button(
-            right,
+            metrics,
             text="将当前点设为起点",
             font=("Sans", 11, "bold"),
             padx=12,
             pady=8,
             command=state.reset_origin,
-        ).pack(fill="x", padx=10, pady=(0, 8))
+        ).pack(fill="x")
 
         return frame
 
@@ -598,19 +731,21 @@ class PositionMonitorGui:
         frame = tk.LabelFrame(
             parent,
             text=state.spec.source_label,
-            font=("Sans", 14, "bold"),
+            font=("Sans", 13, "bold"),
             bg="#ffffff",
             fg="#111827",
             bd=2,
             padx=14,
             pady=12,
         )
+        frame.grid_columnconfigure(1, weight=1)
 
         summary_var = tk.StringVar(value="等待数据")
         topic_var = tk.StringVar(
             value="\n".join(channel.topic_name for channel in state.spec.channels)
         )
         freshness_var = tk.StringVar(value="等待数据")
+        receive_count_var = tk.StringVar(value="0")
         sample_count_var = tk.StringVar(value="0")
         details_var = tk.StringVar(value="等待数据")
 
@@ -636,14 +771,24 @@ class PositionMonitorGui:
         ).grid(row=0, column=0, sticky="nw", pady=5)
 
         self._add_info_row(frame, 1, "话题", topic_var, bg="#ffffff", wraplength=520)
-        self._add_info_row(frame, 2, "最新消息距今", freshness_var, bg="#ffffff", wraplength=520)
-        self._add_info_row(frame, 3, "已收样本", sample_count_var, bg="#ffffff", wraplength=520)
-        self._add_info_row(frame, 4, "详情", details_var, bg="#ffffff", wraplength=520, font=("Consolas", 10))
+        self._add_info_row(frame, 2, "接收距今", freshness_var, bg="#ffffff", wraplength=520)
+        self._add_info_row(frame, 3, "收到消息", receive_count_var, bg="#ffffff", wraplength=520)
+        self._add_info_row(frame, 4, "有效解析", sample_count_var, bg="#ffffff", wraplength=520)
+        self._add_info_row(
+            frame,
+            5,
+            "详情",
+            details_var,
+            bg="#ffffff",
+            wraplength=520,
+            font=("Consolas", 10),
+        )
 
         self.status_widgets[state.spec.key] = StatusWidgets(
             summary_var=summary_var,
             topic_var=topic_var,
             freshness_var=freshness_var,
+            receive_count_var=receive_count_var,
             sample_count_var=sample_count_var,
             details_var=details_var,
             badge_label=badge_label,
@@ -658,9 +803,10 @@ class PositionMonitorGui:
         label: str,
         variable: tk.StringVar,
         bg: str,
-        wraplength: int = 420,
+        wraplength: int = 480,
         font: Tuple[str, int] = ("Sans", 11),
     ):
+        parent.grid_columnconfigure(1, weight=1)
         tk.Label(
             parent,
             text=label,
@@ -670,7 +816,7 @@ class PositionMonitorGui:
             fg="#374151",
             width=10,
         ).grid(row=row, column=0, sticky="nw", pady=5)
-        tk.Label(
+        value_label = tk.Label(
             parent,
             textvariable=variable,
             justify="left",
@@ -679,7 +825,12 @@ class PositionMonitorGui:
             font=font,
             bg=bg,
             fg="#111827",
-        ).grid(row=row, column=1, sticky="nw", pady=5, padx=(8, 0))
+        )
+        value_label.grid(row=row, column=1, sticky="nsew", pady=5, padx=(8, 0))
+        value_label.bind(
+            "<Configure>",
+            lambda event, widget=value_label: self._update_wraplength(widget, event.width),
+        )
 
     def _add_big_value_row(
         self,
@@ -688,6 +839,7 @@ class PositionMonitorGui:
         label: str,
         variable: tk.StringVar,
     ):
+        parent.grid_columnconfigure(1, weight=1)
         tk.Label(
             parent,
             text=label,
@@ -701,15 +853,129 @@ class PositionMonitorGui:
             parent,
             textvariable=variable,
             anchor="e",
-            font=("Consolas", 18, "bold"),
+            justify="right",
+            font=("Consolas", 16, "bold"),
             bg="#f8fafc",
             fg="#0f172a",
-            width=14,
-        ).grid(row=row, column=1, sticky="e", pady=4, padx=(10, 0))
+        ).grid(row=row, column=1, sticky="ew", pady=4, padx=(10, 0))
 
     def _set_badge_style(self, widget: tk.Label, level: str):
         style = LEVEL_STYLES.get(level, LEVEL_STYLES["wait"])
         widget.configure(bg=style["bg"], fg=style["fg"])
+
+    def _toggle_source_subscription(self, source_key: str):
+        enabled = self.source_enabled_vars[source_key].get()
+        self.monitor_node.set_source_enabled(source_key, enabled)
+        self._schedule_relayout()
+
+    @staticmethod
+    def _update_wraplength(widget: tk.Label, width: int):
+        target = max(int(width), 160)
+        if int(float(widget.cget("wraplength"))) != target:
+            widget.configure(wraplength=target)
+
+    def _on_body_configure(self, _event: tk.Event):
+        if self.body_canvas is not None:
+            self.body_canvas.configure(scrollregion=self.body_canvas.bbox("all"))
+
+    def _on_canvas_configure(self, event: tk.Event):
+        if self.body_canvas is not None and self.body_window_id is not None:
+            self.body_canvas.itemconfigure(self.body_window_id, width=event.width)
+        self._schedule_relayout()
+
+    def _schedule_relayout(self):
+        if self._layout_after_id is not None:
+            self.root.after_cancel(self._layout_after_id)
+        self._layout_after_id = self.root.after(40, self._relayout_cards)
+
+    def _relayout_cards(self):
+        self._layout_after_id = None
+        available_width = 0
+        if self.body_canvas is not None:
+            available_width = max(self.body_canvas.winfo_width() - 32, 0)
+
+        if self.position_grid is not None and self.position_frames:
+            position_columns = 2 if available_width >= 1380 else 1
+            for frame in self.position_frames:
+                frame.pack_forget()
+            visible_position_frames = [
+                frame
+                for state in self.position_states
+                if self.source_enabled_vars[state.spec.key].get()
+                for frame in [self.position_frame_by_key[state.spec.key]]
+            ]
+            self.position_row_frames = self._relayout_frame_rows(
+                container=self.position_grid,
+                frames=visible_position_frames,
+                existing_rows=self.position_row_frames,
+                column_count=position_columns,
+            )
+
+        if self.status_grid is not None and self.status_frames:
+            if available_width >= 1680:
+                status_columns = 3
+            elif available_width >= 1120:
+                status_columns = 2
+            else:
+                status_columns = 1
+            for frame in self.status_frames:
+                frame.pack_forget()
+            visible_status_frames = [
+                frame
+                for state in self.status_states
+                if self.source_enabled_vars[state.spec.key].get()
+                for frame in [self.status_frame_by_key[state.spec.key]]
+            ]
+            self.status_row_frames = self._relayout_frame_rows(
+                container=self.status_grid,
+                frames=visible_status_frames,
+                existing_rows=self.status_row_frames,
+                column_count=status_columns,
+            )
+
+    def _relayout_frame_rows(
+        self,
+        container: tk.Frame,
+        frames: List[tk.LabelFrame],
+        existing_rows: List[tk.Frame],
+        column_count: int,
+    ) -> List[tk.Frame]:
+        column_count = max(1, column_count)
+        for frame in frames:
+            frame.pack_forget()
+        for row in existing_rows:
+            row.destroy()
+
+        if not frames:
+            return []
+
+        row_frames: List[tk.Frame] = []
+        row_count = ceil(len(frames) / column_count)
+        for row_index in range(row_count):
+            row_frame = tk.Frame(container, bg="#eef3f8")
+            row_frame.pack(fill="x", expand=True)
+            row_frames.append(row_frame)
+            row_items = frames[row_index * column_count : (row_index + 1) * column_count]
+            for frame in row_items:
+                frame.pack(in_=row_frame, side="left", fill="both", expand=True, padx=8, pady=8)
+        return row_frames
+
+    def _on_mousewheel(self, event: tk.Event):
+        if self.body_canvas is None:
+            return
+        delta = 0
+        if hasattr(event, "delta") and event.delta:
+            delta = -1 * int(event.delta / 120)
+        if delta != 0:
+            self.body_canvas.yview_scroll(delta, "units")
+
+    def _on_mousewheel_linux_up(self, _event: tk.Event):
+        if self.body_canvas is not None:
+            self.body_canvas.yview_scroll(-1, "units")
+
+    def _on_mousewheel_linux_down(self, _event: tk.Event):
+        if self.body_canvas is not None:
+            self.body_canvas.yview_scroll(1, "units")
 
     def _reset_all_origins(self):
         for state in self.position_states:
@@ -729,6 +995,7 @@ class PositionMonitorGui:
     def _refresh_position_card(self, snapshot: PositionSourceView, now: float):
         widgets = self.position_widgets[snapshot.spec.key]
         widgets.topic_var.set(snapshot.spec.topic_name)
+        widgets.receive_count_var.set(str(snapshot.receive_count))
         widgets.sample_count_var.set(str(snapshot.sample_count))
         widgets.rate_var.set(format_rate(snapshot.estimated_rate_hz))
 
@@ -745,15 +1012,27 @@ class PositionMonitorGui:
         self._set_badge_style(widgets.badge_label, level)
 
         if snapshot.latest_sample is None:
-            waited_s = max(now - snapshot.started_at_wall_s, 0.0)
-            widgets.frame_var.set("--")
-            widgets.freshness_var.set(f"等待 {format_age(waited_s)}")
+            if snapshot.receive_count > 0:
+                widgets.frame_var.set("最近没有有效位置样本")
+                widgets.freshness_var.set(
+                    format_freshness(
+                        age_s,
+                        snapshot.spec.slow_after_s,
+                        snapshot.spec.stale_after_s,
+                    )
+                )
+            else:
+                waited_s = max(now - snapshot.started_at_wall_s, 0.0)
+                widgets.frame_var.set("--")
+                widgets.freshness_var.set(f"等待 {format_age(waited_s)}")
             widgets.stamp_var.set("--")
             self._set_position_vars(widgets, None, None)
             return
 
         widgets.frame_var.set(snapshot.latest_sample.frame_label)
-        widgets.freshness_var.set(format_freshness(age_s, snapshot.spec.slow_after_s, snapshot.spec.stale_after_s))
+        widgets.freshness_var.set(
+            format_freshness(age_s, snapshot.spec.slow_after_s, snapshot.spec.stale_after_s)
+        )
         widgets.stamp_var.set(format_timestamp(snapshot.latest_sample.stamp_s))
         self._set_position_vars(widgets, snapshot.latest_sample, snapshot.first_sample)
 
@@ -763,6 +1042,7 @@ class PositionMonitorGui:
         self._set_badge_style(widgets.badge_label, view.render.level)
         widgets.topic_var.set("\n".join(channel.spec.topic_name for channel in view.channels.values()))
         widgets.freshness_var.set(format_status_freshness(view.channels, now))
+        widgets.receive_count_var.set(format_status_receive_counts(view.channels))
         widgets.sample_count_var.set(format_status_sample_counts(view.channels))
         widgets.details_var.set(format_detail_rows(view.render.detail_rows))
 
@@ -976,13 +1256,7 @@ def format_status_freshness(
 ) -> str:
     parts = []
     for channel in channels.values():
-        age_s = age_since(channel.last_receive_wall_s, now_wall_s)
-        if age_s is None:
-            parts.append(f"{channel.spec.label}=等待数据")
-            continue
-        parts.append(
-            f"{channel.spec.label}={format_freshness(age_s, channel.spec.slow_after_s, channel.spec.stale_after_s)}"
-        )
+        parts.append(f"{channel.spec.label}={format_channel_freshness(channel, now_wall_s)}")
     return " | ".join(parts)
 
 
@@ -992,6 +1266,25 @@ def format_status_sample_counts(channels: Dict[str, StatusChannelSnapshot]) -> s
         rate_part = format_rate(channel.estimated_rate_hz)
         parts.append(f"{channel.spec.label}={channel.sample_count} ({rate_part})")
     return " | ".join(parts)
+
+
+def format_status_receive_counts(channels: Dict[str, StatusChannelSnapshot]) -> str:
+    parts = []
+    for channel in channels.values():
+        parts.append(f"{channel.spec.label}={channel.receive_count}")
+    return " | ".join(parts)
+
+
+def format_channel_freshness(
+    channel: StatusChannelSnapshot,
+    now_wall_s: float,
+) -> str:
+    age_s = age_since(channel.last_receive_wall_s, now_wall_s)
+    if age_s is None:
+        return "等待数据"
+    if not channel.spec.expect_continuous_updates:
+        return f"latched / {format_age(age_s)}"
+    return format_freshness(age_s, channel.spec.slow_after_s, channel.spec.stale_after_s)
 
 
 def describe_ros_odometry_frame(frame_id: str, child_frame_id: str) -> str:
@@ -1122,9 +1415,6 @@ def make_ov_guard_status_spec(health_topic: str, fault_topic: str) -> StatusSour
         elif not health_value:
             level = "error"
             summary = "OV GUARD UNHEALTHY"
-        elif health_age_s is not None and health_age_s >= health_channel.spec.stale_after_s:
-            level = "warn"
-            summary = "OV GUARD OK / 状态陈旧"
         else:
             level = "ok"
             summary = "OV GUARD HEALTHY"
@@ -1138,19 +1428,11 @@ def make_ov_guard_status_spec(health_topic: str, fault_topic: str) -> StatusSour
             ),
             (
                 "health_freshness",
-                format_freshness(
-                    health_age_s,
-                    health_channel.spec.slow_after_s,
-                    health_channel.spec.stale_after_s,
-                ),
+                format_channel_freshness(health_channel, now_wall_s),
             ),
             (
                 "fault_freshness",
-                format_freshness(
-                    fault_age_s,
-                    fault_channel.spec.slow_after_s,
-                    fault_channel.spec.stale_after_s,
-                ),
+                format_channel_freshness(fault_channel, now_wall_s),
             ),
         ]
 
@@ -1174,6 +1456,7 @@ def make_ov_guard_status_spec(health_topic: str, fault_topic: str) -> StatusSour
                 qos_profile=STATUS_LATCHED_QOS,
                 slow_after_s=1.0,
                 stale_after_s=15.0,
+                expect_continuous_updates=False,
             ),
             StatusChannelSpec(
                 key="fault_reason",
@@ -1184,6 +1467,7 @@ def make_ov_guard_status_spec(health_topic: str, fault_topic: str) -> StatusSour
                 qos_profile=STATUS_LATCHED_QOS,
                 slow_after_s=1.0,
                 stale_after_s=15.0,
+                expect_continuous_updates=False,
             ),
         ],
         renderer=render,
@@ -1630,6 +1914,7 @@ def main():
     root = tk.Tk()
     PositionMonitorGui(
         root=root,
+        monitor_node=node,
         position_states=position_states,
         status_states=status_states,
         refresh_hz=args.refresh_hz,
