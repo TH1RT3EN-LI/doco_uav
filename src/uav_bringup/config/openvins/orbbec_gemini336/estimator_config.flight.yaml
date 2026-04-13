@@ -1,4 +1,4 @@
-%YAML:1.0 # Default flight profile: trust offline Kalibr, keep static init.
+%YAML:1.0 # Default Orbbec Gemini336 flight profile: Jetson-tuned baseline promoted from the phase-3 sweep winner.
 
 verbosity: "INFO" # ALL, DEBUG, INFO, WARNING, ERROR, SILENT
 
@@ -9,15 +9,15 @@ max_cameras: 2 # how many cameras we have 1 = mono, 2 = stereo, >2 = binocular (
 
 calib_cam_extrinsics: false # keep offline camera-IMU extrinsics fixed during flight
 calib_cam_intrinsics: false # keep offline camera intrinsics fixed during flight
-calib_cam_timeoffset: false # keep offline camera-IMU time offset fixed during flight
+calib_cam_timeoffset: true # keep online camera-IMU time-offset estimation enabled; this was the most reliable calibration lever
 calib_imu_intrinsics: false # if imu intrinsics should be calibrated (rotation and skew-scale matrix)
 calib_imu_g_sensitivity: false # if gyroscope gravity sensitivity (Tg) should be calibrated
 
-max_clones: 11 # how many clones in the sliding window
-max_slam: 50 # number of features in our state vector
-max_slam_in_update: 25 # update can be split into sequential updates of batches, how many in a batch
-max_msckf_in_update: 40 # how many MSCKF features to use in the update
-dt_slam_delay: 1 # delay before initializing (helps with stability from bad initialization...)
+max_clones: 12 # best Jetson sweep state family kept a little more temporal context than the older compact default
+max_slam: 60 # moderate SLAM pool that stayed within Jetson timing budget
+max_slam_in_update: 30 # moderate SLAM update batch from the winning state family
+max_msckf_in_update: 45 # moderate MSCKF batch from the winning state family
+dt_slam_delay: 1.25 # slightly delay SLAM activation to match the winning Jetson baseline
 
 gravity_mag: 9.81 # magnitude of gravity in this location
 
@@ -29,20 +29,20 @@ feat_rep_aruco: "ANCHORED_MSCKF_INVERSE_DEPTH"
 # we support either IMU-based or disparity detection.
 try_zupt: true
 zupt_chi2_multipler: 1
-zupt_max_velocity: 0.05
-zupt_noise_multiplier: 80
-zupt_max_disparity: 0.75 # tolerate small rotor-induced image jitter without being overly permissive
+zupt_max_velocity: 0.03 # stricter begin-only ZUPT remained friendlier to Jetson than the older default
+zupt_noise_multiplier: 60
+zupt_max_disparity: 0.5
 zupt_only_at_beginning: true
 
 # ==================================================================
 # ==================================================================
 
 init_window_time: 2.0 # how many seconds to collect initialization information
-init_imu_thresh: 1.5 # threshold for variance of the accelerometer to detect a "jerk" in motion
-init_max_disparity: 10.0 # max disparity to consider the platform stationary (dependent on resolution)
+init_imu_thresh: 0.3 # keep the controlled static-start gate that matched the tuned Jetson baseline
+init_max_disparity: 2.0 # max disparity to consider the platform stationary (dependent on resolution)
 init_max_features: 50 # how many features to track during initialization (saves on computation)
 
-init_dyn_use: false # static initialization is the default when the vehicle can stay still
+init_dyn_use: false # dynamic init was not the dominant lever in the Jetson sweeps
 init_dyn_mle_opt_calib: false # if we should optimize calibration during intialization (not recommended)
 init_dyn_mle_max_iter: 50 # how many iterations the MLE refinement should use (zero to skip the MLE)
 init_dyn_mle_max_time: 0.05 # how many seconds the MLE should be completed in
@@ -78,14 +78,14 @@ filepath_gt: "/tmp/ov_groundtruth.txt"
 # our front-end feature tracking parameters
 # we have a KLT and descriptor based (KLT is better implemented...)
 use_klt: true # if true we will use KLT, otherwise use a ORB descriptor + robust matching
-num_pts: 200 # number of points (per camera) we will extract and try to track
-fast_threshold: 30 # threshold for fast extraction (warning: lower threshs can be expensive)
+num_pts: 200 # Jetson-friendly feature budget from the winning sweep family
+fast_threshold: 30 # winning Jetson baseline favored a tighter FAST threshold than the older default
 grid_x: 5 # extraction sub-grid count for horizontal direction (uniform tracking)
 grid_y: 5 # extraction sub-grid count for vertical direction (uniform tracking)
-min_px_dist: 15 # distance between features (features near each other provide less information)
+min_px_dist: 16 # final phase-3 winner: slightly denser spacing improved the score without blowing the timing budget
 knn_ratio: 0.70 # descriptor knn threshold for the top two descriptor matches
-track_frequency: 30.0 # frequency we will perform feature tracking at (in frames per second / hertz)
-downsample_cameras: false # will downsample image in half if true
+track_frequency: 25.0 # keep the Jetson work rate that brought timing back into a controllable regime
+downsample_cameras: false # keep full image resolution
 num_opencv_threads: 4 # -1: auto, 0-1: serial, >1: number of threads
 histogram_method: "HISTOGRAM" # NONE, HISTOGRAM, CLAHE
 
@@ -99,9 +99,9 @@ downsize_aruco: true
 # ==================================================================
 
 # camera noises and chi-squared threshold multipliers
-up_msckf_sigma_px: 1
+up_msckf_sigma_px: 1.5
 up_msckf_chi2_multipler: 1
-up_slam_sigma_px: 1
+up_slam_sigma_px: 1.5
 up_slam_chi2_multipler: 1
 up_aruco_sigma_px: 1
 up_aruco_chi2_multipler: 1

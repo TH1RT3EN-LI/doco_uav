@@ -34,10 +34,10 @@ DEFAULT_ORBBEC_IR_STREAM_720P = {
 }
 
 DEFAULT_ORBBEC_IR_EXPOSURE = {
-    "enable_auto_exposure": "true",
-    "exposure": "-1",
-    "gain": "-1",
-    "ae_max_exposure": "-1",
+    "enable_auto_exposure": "false",
+    "exposure": "9000",
+    "gain": "80",
+    "ae_max_exposure": "9000",
     "brightness": "-1",
 }
 
