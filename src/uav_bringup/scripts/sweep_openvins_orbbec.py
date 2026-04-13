@@ -22,6 +22,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 DEFAULT_PHASE1_BASE_RELATIVE = Path("config/openvins/orbbec_gemini336/estimator_config.diag_timeoffset.yaml")
 DEFAULT_PHASE2_BASE_RELATIVE = Path("config/openvins/orbbec_gemini336/estimator_config.phase2_seed.yaml")
+DEFAULT_PHASE3_BASE_RELATIVE = Path("config/openvins/orbbec_gemini336/estimator_config.phase3_jetson_seed.yaml")
 DEFAULT_LEFT_TOPIC = "/uav_depth_camera/left_ir/image_raw"
 DEFAULT_RIGHT_TOPIC = "/uav_depth_camera/right_ir/image_raw"
 DEFAULT_IMU_TOPIC = "/uav_depth_camera/gyro_accel/sample"
@@ -827,11 +828,219 @@ def generate_phase2_presets(base: Dict[str, Any], count: int) -> List[Preset]:
     return [Preset(index=i, name=p.name, family=p.family, description=p.description, overrides=p.overrides) for i, p in enumerate(presets[:count])]
 
 
+def build_phase3_option_groups(base: Dict[str, Any]) -> Dict[str, List[SemanticOption]]:
+    sigma_px = float(base.get("up_msckf_sigma_px", 1.5))
+    groups = {
+        "state": [
+            SemanticOption(
+                "phase3_seed_state",
+                "current best Jetson state baseline from the previous sweep",
+                {
+                    "max_clones": int(base.get("max_clones", 12)),
+                    "max_slam": int(base.get("max_slam", 60)),
+                    "max_slam_in_update": int(base.get("max_slam_in_update", 30)),
+                    "max_msckf_in_update": int(base.get("max_msckf_in_update", 45)),
+                    "dt_slam_delay": float(base.get("dt_slam_delay", 1.25)),
+                },
+            ),
+            SemanticOption(
+                "slightly_lighter_state",
+                "pull state size back a notch to create latency headroom without returning to the old compact seed",
+                {
+                    "max_clones": 11,
+                    "max_slam": 55,
+                    "max_slam_in_update": 28,
+                    "max_msckf_in_update": 42,
+                    "dt_slam_delay": 1.1,
+                },
+            ),
+            SemanticOption(
+                "slightly_heavier_state",
+                "push context one step wider to test whether the current best is still slightly under-contextualized",
+                {
+                    "max_clones": 13,
+                    "max_slam": 65,
+                    "max_slam_in_update": 32,
+                    "max_msckf_in_update": 48,
+                    "dt_slam_delay": 1.4,
+                },
+            ),
+        ],
+        "frontend": [
+            SemanticOption(
+                "phase3_seed_frontend",
+                "current best Jetson front-end baseline from the previous sweep",
+                {
+                    "num_pts": int(base.get("num_pts", 200)),
+                    "fast_threshold": int(base.get("fast_threshold", 30)),
+                    "min_px_dist": int(base.get("min_px_dist", 18)),
+                },
+            ),
+            SemanticOption(
+                "pts180_fast30_dist18",
+                "reduce feature count only, keeping the current acceptance threshold and spacing",
+                {"num_pts": 180, "fast_threshold": 30, "min_px_dist": 18},
+            ),
+            SemanticOption(
+                "pts220_fast30_dist18",
+                "restore a little more feature redundancy without changing the current quality gate",
+                {"num_pts": 220, "fast_threshold": 30, "min_px_dist": 18},
+            ),
+            SemanticOption(
+                "pts200_fast28_dist18",
+                "slightly relax FAST to test whether the current threshold is leaving useful corners on the table",
+                {"num_pts": 200, "fast_threshold": 28, "min_px_dist": 18},
+            ),
+            SemanticOption(
+                "pts200_fast32_dist18",
+                "slightly tighten FAST to reduce weak-corner churn while keeping the same point budget",
+                {"num_pts": 200, "fast_threshold": 32, "min_px_dist": 18},
+            ),
+            SemanticOption(
+                "pts200_fast30_dist16",
+                "reduce spacing to test whether the current point spread is too conservative",
+                {"num_pts": 200, "fast_threshold": 30, "min_px_dist": 16},
+            ),
+            SemanticOption(
+                "pts200_fast30_dist20",
+                "increase spacing to test whether better spatial separation beats raw count on Jetson",
+                {"num_pts": 200, "fast_threshold": 30, "min_px_dist": 20},
+            ),
+        ],
+        "visual": [
+            SemanticOption(
+                "seed_visual",
+                "current visual residual weighting",
+                {"up_msckf_sigma_px": sigma_px, "up_slam_sigma_px": sigma_px},
+            ),
+            SemanticOption(
+                "slightly_tighter_visual",
+                "slightly increase visual trust if the new front-end mix is cleaner",
+                {"up_msckf_sigma_px": max(1.0, sigma_px - 0.25), "up_slam_sigma_px": max(1.0, sigma_px - 0.25)},
+            ),
+            SemanticOption(
+                "slightly_looser_visual",
+                "slightly reduce visual trust if the front-end variants get noisier",
+                {"up_msckf_sigma_px": min(3.0, sigma_px + 0.25), "up_slam_sigma_px": min(3.0, sigma_px + 0.25)},
+            ),
+        ],
+    }
+    return groups
+
+
+def generate_phase3_presets(base: Dict[str, Any], count: int) -> List[Preset]:
+    groups = build_phase3_option_groups(base)
+    presets: List[Preset] = []
+    seen: set[str] = set()
+
+    def add_candidate(name: str, family: str, description: str, overrides: Dict[str, Any]) -> None:
+        key = canonical_overrides(overrides)
+        if key in seen:
+            return
+        seen.add(key)
+        presets.append(
+            Preset(
+                index=len(presets),
+                name=sanitize_name(name),
+                family=family,
+                description=description,
+                overrides=dict(overrides),
+            )
+        )
+
+    add_candidate(
+        "phase3_seed_baseline",
+        "baseline",
+        "best Jetson sweep result promoted to a dedicated narrow-search baseline",
+        {},
+    )
+
+    for family in ("state", "frontend", "visual"):
+        for option in groups[family][1:]:
+            add_candidate(
+                f"single_{family}_{option.name}",
+                f"single/{family}",
+                option.description,
+                option.overrides,
+            )
+
+    for state_option in groups["state"][1:]:
+        for frontend_option in groups["frontend"][1:]:
+            merged = dict(state_option.overrides)
+            merged.update(frontend_option.overrides)
+            add_candidate(
+                f"{state_option.name}__{frontend_option.name}",
+                "pair/state_frontend",
+                f"{state_option.description}; {frontend_option.description}",
+                merged,
+            )
+
+    focused_variants = [
+        (
+            "focused_latency_guard",
+            {
+                "max_clones": 11,
+                "max_slam": 55,
+                "max_slam_in_update": 28,
+                "max_msckf_in_update": 42,
+                "dt_slam_delay": 1.1,
+                "num_pts": 180,
+                "fast_threshold": 32,
+                "min_px_dist": 20,
+            },
+            "combine the lighter state with the most conservative front-end around the new baseline",
+        ),
+        (
+            "focused_keep_count_raise_fast",
+            {
+                "num_pts": 200,
+                "fast_threshold": 32,
+                "min_px_dist": 20,
+            },
+            "keep the current point budget but raise quality and spacing together",
+        ),
+        (
+            "focused_add_points_relax_fast",
+            {
+                "num_pts": 220,
+                "fast_threshold": 28,
+                "min_px_dist": 18,
+            },
+            "trade slightly more points for a slightly looser detector around the new baseline",
+        ),
+    ]
+    for name, overrides, description in focused_variants:
+        add_candidate(name, "focused", description, overrides)
+
+    if len(presets) < count:
+        for visual_option in groups["visual"][1:]:
+            for frontend_option in groups["frontend"][1:]:
+                merged = dict(frontend_option.overrides)
+                merged.update(visual_option.overrides)
+                add_candidate(
+                    f"{frontend_option.name}__{visual_option.name}",
+                    "pair/frontend_visual",
+                    f"{frontend_option.description}; {visual_option.description}",
+                    merged,
+                )
+                if len(presets) >= count:
+                    break
+            if len(presets) >= count:
+                break
+
+    if len(presets) < count:
+        raise RuntimeError(f"Only generated {len(presets)} phase-3 presets, fewer than requested {count}")
+
+    return [Preset(index=i, name=p.name, family=p.family, description=p.description, overrides=p.overrides) for i, p in enumerate(presets[:count])]
+
+
 def generate_presets(base: Dict[str, Any], count: int, phase: str) -> List[Preset]:
     if phase == "phase1":
         return generate_phase1_presets(base, count)
     if phase == "phase2":
         return generate_phase2_presets(base, count)
+    if phase == "phase3":
+        return generate_phase3_presets(base, count)
     raise ValueError(f"Unsupported phase: {phase}")
 
 
@@ -1497,9 +1706,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--phase",
-        choices=("phase1", "phase2"),
+        choices=("phase1", "phase2", "phase3"),
         default="phase1",
-        help="Search phase: phase1 does broad semantic exploration; phase2 does local refinement around a stronger seed",
+        help="Search phase: phase1 does broad semantic exploration; phase2 does local refinement; phase3 does a narrow Jetson search around the current best baseline",
     )
     parser.add_argument("--bag", type=Path, help="Path to a rosbag2 directory containing raw left/right IR and IMU topics")
     parser.add_argument("--base-config", type=Path, help="Baseline estimator_config YAML to mutate")
@@ -1522,7 +1731,12 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     share_dir = find_package_share()
-    default_base = DEFAULT_PHASE1_BASE_RELATIVE if args.phase == "phase1" else DEFAULT_PHASE2_BASE_RELATIVE
+    if args.phase == "phase1":
+        default_base = DEFAULT_PHASE1_BASE_RELATIVE
+    elif args.phase == "phase2":
+        default_base = DEFAULT_PHASE2_BASE_RELATIVE
+    else:
+        default_base = DEFAULT_PHASE3_BASE_RELATIVE
     if args.base_config:
         base_config = args.base_config.resolve()
     else:
