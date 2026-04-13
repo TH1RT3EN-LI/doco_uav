@@ -84,9 +84,9 @@ grid_x: 5 # extraction sub-grid count for horizontal direction (uniform tracking
 grid_y: 5 # extraction sub-grid count for vertical direction (uniform tracking)
 min_px_dist: 12 # allow denser feature packing while still enforcing some spread
 knn_ratio: 0.70 # descriptor knn threshold for the top two descriptor matches
-track_frequency: 30.0 # frequency we will perform feature tracking at (in frames per second / hertz)
+track_frequency: 25.0 # lower Jetson workload first so phase-2 comparisons stay inside a controllable realtime budget
 downsample_cameras: false # will downsample image in half if true
-num_opencv_threads: 2 # Jetson-oriented setting: lower thread count often improves p95 latency
+num_opencv_threads: 4 # restored after the 2-thread probe; current priority is isolating track-rate impact
 histogram_method: "HISTOGRAM" # NONE, HISTOGRAM, CLAHE
 
 # aruco tag tracker for the system
