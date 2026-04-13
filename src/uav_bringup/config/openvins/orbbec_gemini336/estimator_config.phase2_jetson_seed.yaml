@@ -78,14 +78,14 @@ filepath_gt: "/tmp/ov_groundtruth.txt"
 # our front-end feature tracking parameters
 # we have a KLT and descriptor based (KLT is better implemented...)
 use_klt: true # if true we will use KLT, otherwise use a ORB descriptor + robust matching
-num_pts: 250 # reacquire-biased feature budget that was friendlier to Jetson than dense desktop settings
+num_pts: 200 # trim per-frame feature budget first; keep the same front-end style while reducing tracking load on Jetson
 fast_threshold: 25 # slightly less aggressive than dense recovery to reduce weak-corner churn
 grid_x: 5 # extraction sub-grid count for horizontal direction (uniform tracking)
 grid_y: 5 # extraction sub-grid count for vertical direction (uniform tracking)
 min_px_dist: 15 # restore more spread to reduce front-end churn and update load
 knn_ratio: 0.70 # descriptor knn threshold for the top two descriptor matches
 track_frequency: 25.0 # lower work rate first so rankings are made in a controllable realtime regime
-downsample_cameras: true # halve image width/height inside OpenVINS to cut KLT/front-end cost on Jetson
+downsample_cameras: false # keep full image resolution; the next round will target front-end load without changing image scale
 num_opencv_threads: 4 # keep current thread setting; the next question is per-frame work, not thread starvation
 histogram_method: "HISTOGRAM" # NONE, HISTOGRAM, CLAHE
 
