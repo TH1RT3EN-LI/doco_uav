@@ -15,6 +15,7 @@ install(DIRECTORY
 
 install(PROGRAMS
   scripts/monitor_topic_position.py
+  scripts/sweep_openvins_orbbec.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
