@@ -160,6 +160,18 @@ def mean(values: Sequence[float]) -> Optional[float]:
     return statistics.fmean(values)
 
 
+def read_log_tail(path: Path, max_lines: int = 30) -> Optional[str]:
+    if not path.exists():
+        return None
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except Exception:
+        return None
+    if not lines:
+        return None
+    return "\n".join(lines[-max_lines:])
+
+
 def stddev(values: Sequence[float]) -> Optional[float]:
     if len(values) < 2:
         return 0.0 if values else None
@@ -1349,6 +1361,7 @@ def run_case(
                 "preset_name": preset.name,
                 "status": "launch_failed",
                 "score": score,
+                "launch_log_tail": read_log_tail(paths["launch_log"]),
                 **run_status,
                 **metrics,
             }
@@ -1435,6 +1448,7 @@ def run_case(
         "description": preset.description,
         "status": status,
         "score": score,
+        "launch_log_tail": read_log_tail(paths["launch_log"]) if status == "launch_failed" else None,
         **run_status,
         **metrics,
     }
@@ -1600,6 +1614,10 @@ def main() -> int:
             f"msckf_p95={result.get('timing_msckf_p95_s')} "
             f"marg_p95={result.get('timing_marg_p95_s')}"
         )
+        if result["status"] == "launch_failed" and result.get("launch_log_tail"):
+            debug("     launch tail:")
+            for line in str(result["launch_log_tail"]).splitlines():
+                debug(f"       {line}")
 
     summary_csv = output_root / "summary.csv"
     summary_json = output_root / "summary.json"
