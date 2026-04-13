@@ -906,14 +906,25 @@ def build_config_text(
 
 
 def load_timing_summary(path: Path) -> Dict[str, Optional[float]]:
+    empty = {
+        "timing_rows": 0,
+        "timing_track_mean_s": None,
+        "timing_track_p95_s": None,
+        "timing_prop_mean_s": None,
+        "timing_prop_p95_s": None,
+        "timing_msckf_mean_s": None,
+        "timing_msckf_p95_s": None,
+        "timing_slam_update_mean_s": None,
+        "timing_slam_update_p95_s": None,
+        "timing_slam_delay_mean_s": None,
+        "timing_slam_delay_p95_s": None,
+        "timing_marg_mean_s": None,
+        "timing_marg_p95_s": None,
+        "timing_total_mean_s": None,
+        "timing_total_p95_s": None,
+    }
     if not path.exists():
-        return {
-            "timing_rows": 0,
-            "timing_total_mean_s": None,
-            "timing_total_p95_s": None,
-            "timing_track_mean_s": None,
-            "timing_track_p95_s": None,
-        }
+        return empty
     rows: List[List[float]] = []
     with path.open("r", encoding="utf-8") as handle:
         for line in handle:
@@ -925,21 +936,36 @@ def load_timing_summary(path: Path) -> Dict[str, Optional[float]]:
             except ValueError:
                 continue
     if not rows:
-        return {
-            "timing_rows": 0,
-            "timing_total_mean_s": None,
-            "timing_total_p95_s": None,
-            "timing_track_mean_s": None,
-            "timing_track_p95_s": None,
-        }
-    totals = [row[-1] for row in rows]
+        return empty
+
     tracks = [row[1] for row in rows if len(row) > 1]
+    props = [row[2] for row in rows if len(row) > 2]
+    msckfs = [row[3] for row in rows if len(row) > 3]
+    slam_updates = [row[4] for row in rows if len(row) >= 8]
+    slam_delays = [row[5] for row in rows if len(row) >= 8]
+    if rows and len(rows[0]) >= 8:
+        margs = [row[6] for row in rows if len(row) > 6]
+        totals = [row[7] for row in rows if len(row) > 7]
+    else:
+        margs = [row[4] for row in rows if len(row) > 4]
+        totals = [row[5] for row in rows if len(row) > 5]
+
     return {
         "timing_rows": len(rows),
-        "timing_total_mean_s": mean(totals),
-        "timing_total_p95_s": percentile(totals, 95.0),
         "timing_track_mean_s": mean(tracks),
         "timing_track_p95_s": percentile(tracks, 95.0),
+        "timing_prop_mean_s": mean(props),
+        "timing_prop_p95_s": percentile(props, 95.0),
+        "timing_msckf_mean_s": mean(msckfs),
+        "timing_msckf_p95_s": percentile(msckfs, 95.0),
+        "timing_slam_update_mean_s": mean(slam_updates),
+        "timing_slam_update_p95_s": percentile(slam_updates, 95.0),
+        "timing_slam_delay_mean_s": mean(slam_delays),
+        "timing_slam_delay_p95_s": percentile(slam_delays, 95.0),
+        "timing_marg_mean_s": mean(margs),
+        "timing_marg_p95_s": percentile(margs, 95.0),
+        "timing_total_mean_s": mean(totals),
+        "timing_total_p95_s": percentile(totals, 95.0),
     }
 
 
@@ -1444,7 +1470,10 @@ def print_top_results(results: List[Dict[str, Any]], top_n: int) -> None:
             + f"coverage={result.get('coverage_ratio', 0.0):.3f} "
             + f"init_delay={result.get('init_delay_s')} "
             + f"msckf_mean={result.get('points_msckf_mean')} "
-            + f"timing_p95={result.get('timing_total_p95_s')}"
+            + f"timing_total_p95={result.get('timing_total_p95_s')} "
+            + f"track_p95={result.get('timing_track_p95_s')} "
+            + f"msckf_p95={result.get('timing_msckf_p95_s')} "
+            + f"marg_p95={result.get('timing_marg_p95_s')}"
         )
 
 
@@ -1566,7 +1595,10 @@ def main() -> int:
         debug(
             f"  -> status={result['status']} score={result['score']:.2f} "
             f"coverage={result.get('coverage_ratio')} msckf_mean={result.get('points_msckf_mean')} "
-            f"timing_p95={result.get('timing_total_p95_s')}"
+            f"timing_total_p95={result.get('timing_total_p95_s')} "
+            f"track_p95={result.get('timing_track_p95_s')} "
+            f"msckf_p95={result.get('timing_msckf_p95_s')} "
+            f"marg_p95={result.get('timing_marg_p95_s')}"
         )
 
     summary_csv = output_root / "summary.csv"
