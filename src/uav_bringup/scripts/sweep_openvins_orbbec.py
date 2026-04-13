@@ -875,9 +875,41 @@ def stage_support_file(source: Optional[Path], case_root: Path) -> Optional[str]
     return source.name
 
 
+def stage_mask_file(source: Optional[Path], case_root: Path, downsample: bool) -> Optional[str]:
+    if source is None:
+        return None
+    if not source.exists():
+        raise FileNotFoundError(f"Support file not found: {source}")
+    if not downsample:
+        return stage_support_file(source, case_root)
+
+    try:
+        import cv2
+    except Exception as exc:
+        raise RuntimeError(f"OpenCV is required to generate downsampled masks: {exc}") from exc
+
+    mask = cv2.imread(str(source), cv2.IMREAD_GRAYSCALE)
+    if mask is None:
+        raise RuntimeError(f"Failed to read mask for downsampling: {source}")
+    if mask.shape[0] < 2 or mask.shape[1] < 2:
+        raise RuntimeError(f"Mask too small to downsample: {source} shape={mask.shape}")
+
+    target = case_root / f"{source.stem}_half{source.suffix}"
+    resized = cv2.resize(mask, (mask.shape[1] // 2, mask.shape[0] // 2), interpolation=cv2.INTER_NEAREST)
+    if not cv2.imwrite(str(target), resized):
+        raise RuntimeError(f"Failed to write downsampled mask: {target}")
+    return target.name
+
+
 def stage_support_files(config: Dict[str, Any], baseline_dir: Path, case_root: Path) -> None:
-    for key in ("relative_config_imu", "relative_config_imucam", "mask0", "mask1"):
+    for key in ("relative_config_imu", "relative_config_imucam"):
         staged_name = stage_support_file(resolve_support_file(config.get(key), baseline_dir), case_root)
+        if staged_name is not None:
+            config[key] = staged_name
+
+    downsample = bool(config.get("downsample_cameras", False))
+    for key in ("mask0", "mask1"):
+        staged_name = stage_mask_file(resolve_support_file(config.get(key), baseline_dir), case_root, downsample)
         if staged_name is not None:
             config[key] = staged_name
 
