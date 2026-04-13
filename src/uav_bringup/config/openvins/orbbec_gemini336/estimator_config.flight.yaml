@@ -29,17 +29,17 @@ feat_rep_aruco: "ANCHORED_MSCKF_INVERSE_DEPTH"
 # we support either IMU-based or disparity detection.
 try_zupt: true
 zupt_chi2_multipler: 1
-zupt_max_velocity: 0.03 # stricter begin-only ZUPT remained friendlier to Jetson than the older default
+zupt_max_velocity: 0.03 # keep the current begin-only ZUPT velocity gate; relax only the visual gate for now
 zupt_noise_multiplier: 60
-zupt_max_disparity: 0.5
+zupt_max_disparity: 0.6 # slightly relax begin-only ZUPT to tolerate small rotor/camera jitter
 zupt_only_at_beginning: true
 
 # ==================================================================
 # ==================================================================
 
 init_window_time: 2.0 # how many seconds to collect initialization information
-init_imu_thresh: 0.3 # keep the controlled static-start gate that matched the tuned Jetson baseline
-init_max_disparity: 2.0 # max disparity to consider the platform stationary (dependent on resolution)
+init_imu_thresh: 0.35 # slightly relax the static-start IMU excitation gate
+init_max_disparity: 2.5 # slightly relax the visual stationarity gate (raw-pixel disparity, resolution dependent)
 init_max_features: 50 # how many features to track during initialization (saves on computation)
 
 init_dyn_use: false # dynamic init was not the dominant lever in the Jetson sweeps
