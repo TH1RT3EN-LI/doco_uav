@@ -32,6 +32,9 @@ def generate_launch_description():
     execution_state_topic = LaunchConfiguration("execution_state_topic")
     position_topic = LaunchConfiguration("position_topic")
     position_keep_yaw_topic = LaunchConfiguration("position_keep_yaw_topic")
+    start_position_delta_node = LaunchConfiguration("start_position_delta_node")
+    position_delta_topic = LaunchConfiguration("position_delta_topic")
+    position_delta_service = LaunchConfiguration("position_delta_service")
     position_command_frame_id = LaunchConfiguration("position_command_frame_id")
     px4_timestamp_source = LaunchConfiguration("px4_timestamp_source")
     timesync_status_topic = LaunchConfiguration("timesync_status_topic")
@@ -241,6 +244,21 @@ def generate_launch_description():
         ],
     )
 
+    position_delta = Node(
+        package="uav_bridge",
+        executable="position_delta_node",
+        name="position_delta",
+        output="screen",
+        condition=IfCondition(start_position_delta_node),
+        parameters=[
+            {"state_topic": control_state_topic},
+            {"input_delta_topic": position_delta_topic},
+            {"delta_service": position_delta_service},
+            {"output_position_topic": position_keep_yaw_topic},
+            {"odom_frame_id": position_command_frame_id},
+        ],
+    )
+
     trajectory_path_publisher = Node(
         package="uav_bridge",
         executable="trajectory_path_publisher_node",
@@ -295,6 +313,11 @@ def generate_launch_description():
         DeclareLaunchArgument("position_topic", default_value="/uav/control/position_yaw"),
         DeclareLaunchArgument(
             "position_keep_yaw_topic", default_value="/uav/control/position_keep_yaw"
+        ),
+        DeclareLaunchArgument("start_position_delta_node", default_value="true"),
+        DeclareLaunchArgument("position_delta_topic", default_value="/uav/control/position_delta"),
+        DeclareLaunchArgument(
+            "position_delta_service", default_value="/uav/control/command/position_delta"
         ),
         DeclareLaunchArgument("position_command_frame_id", default_value="uav_odom"),
         DeclareLaunchArgument("px4_timestamp_source", default_value="px4_timesync"),
@@ -376,6 +399,7 @@ def generate_launch_description():
         orbbec_depth_camera_launch,
         uav_state_bridge,
         uav_control,
+        position_delta,
         rc_safety_mux,
         trajectory_path_publisher,
         mono_video_recorder,

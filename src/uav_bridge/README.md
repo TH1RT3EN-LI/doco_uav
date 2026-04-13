@@ -4,8 +4,9 @@
 > 当前主执行链为：
 > ` /ov_msckf/odomimu -> openvins_px4_vision_bridge_node -> /fmu/in/vehicle_visual_odometry `
 > ` /fmu/out/vehicle_odometry + /fmu/out/vehicle_local_position -> uav_state_bridge_node -> /uav/state/odometry_px4 `
+> ` /uav/control/position_delta | /uav/control/command/position_delta -> position_delta_node -> /uav/control/position_keep_yaw `
 > ` /uav/control/position_yaw | /uav/control/position_keep_yaw | /uav/control/setpoint/velocity_body `
-> ` + /uav/control/command/* -> uav_control_node -> /fmu/in/* `
+> ` + /uav/control/command/takeoff|hold|position_mode|land|abort|disarm -> uav_control_node -> /fmu/in/* `
 
 > 本文其余大部分关于 `offboard_bridge_node`、`/uav/odom`、旧 planner/manual 接口的描述，仅作历史实现参考，不再代表当前默认控制链。
 
@@ -343,7 +344,34 @@ ros2 topic pub --once /uav/control/position_keep_yaw geometry_msgs/msg/PointStam
 - 收到命令时锁存当前融合 yaw
 - 后续保持该 yaw，仅更新位置目标
 
-### 5.5 `velocity_body`
+### 5.5 `position_delta`
+
+调用示例：
+
+```bash
+ros2 service call /uav/control/command/position_delta uav_bridge/srv/BodyPositionDelta \
+'{x: 0.5, y: 0.0, z: 0.0}'
+```
+
+逻辑：
+
+- 推荐入口是 service，请求成功时会同步返回绝对目标
+- 也保留了 topic 入口：
+
+```bash
+ros2 topic pub --once /uav/control/position_delta geometry_msgs/msg/Vector3 \
+'{x: 0.5, y: 0.0, z: 0.0}'
+```
+
+- 输入为机体系相对位移，不直接发给 PX4
+- `position_delta_node` 先读取当前 `/uav/state/odometry_px4`
+- 语义固定为 body FLU：
+  `x` 向机头前方，`y` 向机体左方，`z` 向正上方
+- 节点仅用当前融合 yaw 把该增量旋转到本地 ENU
+- 转换后发布为绝对 `/uav/control/position_keep_yaw` 目标，因此默认保持当前 yaw
+- 相比 topic，一次性 service 更适合离散步进控制，因为调用端能立即知道命令是否被接受
+
+### 5.6 `velocity_body`
 
 调用示例：
 
@@ -358,7 +386,7 @@ ros2 topic pub --once /uav/control/setpoint/velocity_body geometry_msgs/msg/Twis
 - `uav_control_node` 使用当前融合姿态把机体系速度旋转到世界系，再转换成 PX4 NED 速度 setpoint
 - 若命令超时，会自动下发零速度保持
 
-### 5.6 `land / abort / disarm`
+### 5.7 `land / abort / disarm`
 
 调用：
 

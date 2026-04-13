@@ -17,7 +17,17 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(quadrotor_msgs REQUIRED)
 find_package(px4_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(rosidl_typesupport_cpp REQUIRED)
 find_package(OpenCV REQUIRED COMPONENTS core imgproc video videoio)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "srv/BodyPositionDelta.srv"
+)
+
+ament_export_dependencies(rosidl_default_runtime)
+
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 add_library(${PROJECT_NAME}_px4_odom_adapter_logic
   src/px4_odom_adapter_logic.cpp
@@ -138,6 +148,28 @@ ament_target_dependencies(trajectory_path_publisher_node
   rclcpp
 )
 
+add_executable(position_delta_node
+  src/position_delta_node.cpp
+  src/math_utils.cpp
+)
+target_compile_features(position_delta_node PUBLIC cxx_std_17)
+target_include_directories(position_delta_node PRIVATE include)
+target_include_directories(position_delta_node PRIVATE
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp>"
+)
+add_dependencies(position_delta_node
+  ${PROJECT_NAME}
+)
+ament_target_dependencies(position_delta_node
+  geometry_msgs
+  nav_msgs
+  rclcpp
+  std_srvs
+)
+target_link_libraries(position_delta_node
+  "${cpp_typesupport_target}"
+)
+
 add_executable(uav_control_node
   src/uav_control_node.cpp
   src/math_utils.cpp
@@ -215,6 +247,7 @@ install(TARGETS
   px4_odom_adapter_node
   uav_state_bridge_node
   trajectory_path_publisher_node
+  position_delta_node
   uav_control_node
   height_measurement_bridge_node
   rc_safety_mux_node

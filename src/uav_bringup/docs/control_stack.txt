@@ -22,6 +22,7 @@ The active control path is now PX4-native:
   This is the authoritative control state for Jetson-side logic.
 
 - Jetson command inputs:
+  `/uav/control/position_delta`
   `/uav/control/position_yaw`
   `/uav/control/position_keep_yaw`
   `/uav/control/setpoint/velocity_body`
@@ -58,6 +59,14 @@ Public Service Surface
   Capture the current PX4 fused local pose and keep publishing that pose
   as a PX4 position setpoint.
 
+- `/uav/control/command/position_delta`
+  Body-relative position-step request.
+  Input is `uav_bridge/srv/BodyPositionDelta` with fixed body FLU semantics:
+  `x` forward, `y` left, `z` up.
+  `position_delta_node` snapshots the current PX4 fused pose, rotates the
+  body-relative delta into local ENU using the current fused yaw, then publishes
+  the resulting absolute target through `/uav/control/position_keep_yaw`.
+
 - `/uav/control/position_yaw`
   Direct PX4 local position plus yaw target.
   Default frame is `uav_odom`.
@@ -66,6 +75,15 @@ Public Service Surface
   Orientation is required; commands without a valid quaternion are rejected.
   Only yaw is consumed from the quaternion; roll and pitch are ignored by the
   PX4 position-setpoint path.
+
+- `/uav/control/position_delta`
+  Relative local-position target helper.
+  Input is `geometry_msgs/Vector3`.
+  Semantics are fixed to body FLU:
+  `x` forward, `y` left, `z` up.
+  `position_delta_node` rotates the delta into local ENU using the current
+  fused yaw, then converts it into an absolute
+  `/uav/control/position_keep_yaw` target.
 
 - `/uav/control/position_keep_yaw`
   Direct PX4 local position target while keeping the current fused yaw.
