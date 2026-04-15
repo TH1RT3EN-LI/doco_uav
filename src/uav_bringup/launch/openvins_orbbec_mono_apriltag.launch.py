@@ -125,6 +125,7 @@ def generate_launch_description():
     tag_detection_topic = LaunchConfiguration("tag_detection_topic")
     tag_pose_topic = LaunchConfiguration("tag_pose_topic")
     tag_marker_topic = LaunchConfiguration("tag_marker_topic")
+    tag_output_frame_mode = LaunchConfiguration("tag_output_frame_mode")
     target_marker_id = LaunchConfiguration("target_marker_id")
     tag_family = LaunchConfiguration("tag_family")
     tag_size_m = LaunchConfiguration("tag_size_m")
@@ -258,6 +259,7 @@ def generate_launch_description():
             "tag_detection_topic": tag_detection_topic,
             "tag_pose_topic": tag_pose_topic,
             "tag_marker_topic": tag_marker_topic,
+            "tag_output_frame_mode": tag_output_frame_mode,
             "controller_state_topic": "",
             "target_marker_id": target_marker_id,
             "tag_family": tag_family,
@@ -401,6 +403,7 @@ def generate_launch_description():
         DeclareLaunchArgument("tag_detection_topic", default_value="/uav/visual_landing/apriltag_detection"),
         DeclareLaunchArgument("tag_pose_topic", default_value="/uav/visual_landing/apriltag_pose"),
         DeclareLaunchArgument("tag_marker_topic", default_value="/uav/visual_landing/apriltag_marker"),
+        DeclareLaunchArgument("tag_output_frame_mode", default_value="base"),
         DeclareLaunchArgument("target_marker_id", default_value="0"),
         DeclareLaunchArgument("tag_family", default_value="36h11"),
         DeclareLaunchArgument("tag_size_m", default_value="0.20"),

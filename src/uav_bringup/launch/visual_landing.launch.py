@@ -122,6 +122,7 @@ def generate_launch_description():
     tag_detection_topic = LaunchConfiguration("tag_detection_topic")
     tag_pose_topic = LaunchConfiguration("tag_pose_topic")
     tag_marker_topic = LaunchConfiguration("tag_marker_topic")
+    tag_output_frame_mode = LaunchConfiguration("tag_output_frame_mode")
     tag_odometry_topic = LaunchConfiguration("tag_odometry_topic")
     tag_odometry_timeout_s = LaunchConfiguration("tag_odometry_timeout_s")
     mono_dx = LaunchConfiguration("mono_dx")
@@ -270,6 +271,7 @@ def generate_launch_description():
             {"tag_detection_topic": tag_detection_topic},
             {"tag_pose_topic": tag_pose_topic},
             {"tag_marker_topic": tag_marker_topic},
+            {"tag_output_frame_mode": tag_output_frame_mode},
             {"odometry_topic": tag_odometry_topic},
             {"odometry_timeout_s": tag_odometry_timeout_s},
             {"mono_in_ov_x_m": mono_dx},
@@ -414,6 +416,7 @@ def generate_launch_description():
             "tag_marker_topic",
             default_value="/uav/visual_landing/apriltag_marker",
         ),
+        DeclareLaunchArgument("tag_output_frame_mode", default_value="base"),
         DeclareLaunchArgument("tag_odometry_topic", default_value="/ov_msckf/odomimu"),
         DeclareLaunchArgument("tag_odometry_timeout_s", default_value="0.20"),
         DeclareLaunchArgument("mono_dx", default_value="0.0"),

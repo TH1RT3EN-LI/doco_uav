@@ -60,6 +60,7 @@ public:
     this->declare_parameter<std::string>(
       "tag_marker_topic",
       "/uav/visual_landing/apriltag_marker");
+    this->declare_parameter<std::string>("tag_output_frame_mode", "base");
     this->declare_parameter<std::string>(
       "controller_state_topic",
       "/uav/visual_landing/controller_state");
@@ -90,6 +91,8 @@ public:
     tag_detection_topic_ = this->get_parameter("tag_detection_topic").as_string();
     tag_pose_topic_ = this->get_parameter("tag_pose_topic").as_string();
     tag_marker_topic_ = this->get_parameter("tag_marker_topic").as_string();
+    tag_output_frame_mode_ = normalizeOutputFrameMode(
+      this->get_parameter("tag_output_frame_mode").as_string());
     controller_state_topic_ = this->get_parameter("controller_state_topic").as_string();
     debug_image_topic_ = this->get_parameter("debug_image_topic").as_string();
     configured_camera_frame_id_ = this->get_parameter("camera_frame_id").as_string();
@@ -197,7 +200,7 @@ public:
     RCLCPP_INFO(
       this->get_logger(),
       "aruco_detector_node: image=%s camera_info=%s target_observation=%s tag_detection=%s "
-      "tag_pose=%s tag_marker=%s debug_image=%s marker_id=%d family=%s tag_size=%.3f "
+      "tag_pose=%s tag_marker=%s output_frame=%s debug_image=%s marker_id=%d family=%s tag_size=%.3f "
       "odom=%s mono_in_ov=(xyz=%.3f, %.3f, %.3f rpy=%.3f, %.3f, %.3f) "
       "tag_tf(base=%s odom=%s prefix=%s)",
       image_topic_.c_str(),
@@ -206,6 +209,7 @@ public:
       tag_detection_topic_.c_str(),
       tag_pose_topic_.c_str(),
       tag_marker_topic_.c_str(),
+      tag_output_frame_mode_.c_str(),
       debug_image_topic_.c_str(),
       target_marker_id_,
       tag_family_.c_str(),
@@ -365,6 +369,21 @@ private:
     throw std::runtime_error(
             "unsupported AprilTag family '" + family +
             "' (supported: 16h5, 25h9, 36h10, 36h11)");
+  }
+
+  static std::string normalizeOutputFrameMode(const std::string & mode)
+  {
+    std::string normalized;
+    normalized.reserve(mode.size());
+    for (const unsigned char ch : mode) {
+      if (std::isalnum(ch)) {
+        normalized.push_back(static_cast<char>(std::tolower(ch)));
+      }
+    }
+    if (normalized == "base" || normalized == "odom" || normalized == "camera") {
+      return normalized;
+    }
+    return "base";
   }
 
   std::vector<cv::Point3f> buildMarkerObjectPoints() const
@@ -633,19 +652,68 @@ private:
     }
   }
 
+  bool resolveOutputPose(
+    const uav_visual_landing::msg::AprilTagDetection & detection,
+    const ResolvedTagPose & resolved_pose,
+    std::string & frame_id,
+    tf2::Transform & frame_from_tag) const
+  {
+    const auto try_mode = [&](const std::string & mode) -> bool {
+        if (mode == "base") {
+          if (resolved_pose.base_valid && !detection.base_frame_id.empty()) {
+            frame_id = detection.base_frame_id;
+            frame_from_tag = resolved_pose.base_from_tag;
+            return true;
+          }
+          return false;
+        }
+        if (mode == "odom") {
+          if (resolved_pose.odom_valid && !detection.odom_frame_id.empty()) {
+            frame_id = detection.odom_frame_id;
+            frame_from_tag = resolved_pose.odom_from_tag;
+            return true;
+          }
+          return false;
+        }
+        if (mode == "camera") {
+          if (resolved_pose.camera_valid && !detection.camera_frame_id.empty()) {
+            frame_id = detection.camera_frame_id;
+            frame_from_tag = resolved_pose.camera_from_tag;
+            return true;
+          }
+          return false;
+        }
+        return false;
+      };
+
+    if (try_mode(tag_output_frame_mode_)) {
+      return true;
+    }
+
+    if (tag_output_frame_mode_ == "base") {
+      return try_mode("odom") || try_mode("camera");
+    }
+    if (tag_output_frame_mode_ == "odom") {
+      return try_mode("base") || try_mode("camera");
+    }
+    return try_mode("base") || try_mode("odom");
+  }
+
   void publishPoseAndMarker(
     const uav_visual_landing::msg::AprilTagDetection & detection,
     const ResolvedTagPose & resolved_pose)
   {
-    if (!resolved_pose.odom_valid || detection.odom_frame_id.empty()) {
+    std::string output_frame_id;
+    tf2::Transform output_from_tag;
+    if (!resolveOutputPose(detection, resolved_pose, output_frame_id, output_from_tag)) {
       publishDeleteMarker(detection.header.stamp);
       return;
     }
 
     geometry_msgs::msg::PoseStamped pose;
     pose.header = detection.header;
-    pose.header.frame_id = detection.odom_frame_id;
-    pose.pose = poseToMsg(resolved_pose.odom_from_tag);
+    pose.header.frame_id = output_frame_id;
+    pose.pose = poseToMsg(output_from_tag);
     tag_pose_pub_->publish(pose);
 
     visualization_msgs::msg::Marker marker;
@@ -1206,6 +1274,7 @@ private:
   std::string tag_detection_topic_;
   std::string tag_pose_topic_;
   std::string tag_marker_topic_;
+  std::string tag_output_frame_mode_;
   std::string controller_state_topic_;
   std::string debug_image_topic_;
   std::string configured_camera_frame_id_;
