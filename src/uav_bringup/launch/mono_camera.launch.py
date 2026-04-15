@@ -115,7 +115,7 @@ def generate_launch_description():
             DeclareLaunchArgument("camera_x", default_value=DEFAULT_CAMERA_TO_BODY["x"]),
             DeclareLaunchArgument("camera_y", default_value=DEFAULT_CAMERA_TO_BODY["y"]),
             DeclareLaunchArgument("camera_z", default_value=DEFAULT_CAMERA_TO_BODY["z"]),
-            DeclareLaunchArgument("camera_roll", default_value=str(-math.pi / 2.0)),
+            DeclareLaunchArgument("camera_roll", default_value=str(math.pi)),
             DeclareLaunchArgument("camera_pitch", default_value="0.0"),
             DeclareLaunchArgument("camera_yaw", default_value=str(-math.pi / 2.0)),
             DeclareLaunchArgument("fx", default_value=DEFAULT_CAMERA_INTRINSICS["fx"]),
