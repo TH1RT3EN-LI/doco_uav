@@ -116,7 +116,20 @@ def generate_launch_description():
     max_vxy = LaunchConfiguration("max_vxy")
     align_enter_lateral_m = LaunchConfiguration("align_enter_lateral_m")
     align_exit_lateral_m = LaunchConfiguration("align_exit_lateral_m")
+    target_marker_id = LaunchConfiguration("target_marker_id")
+    tag_family = LaunchConfiguration("tag_family")
     tag_size_m = LaunchConfiguration("tag_size_m")
+    tag_detection_topic = LaunchConfiguration("tag_detection_topic")
+    tag_pose_topic = LaunchConfiguration("tag_pose_topic")
+    tag_marker_topic = LaunchConfiguration("tag_marker_topic")
+    tag_odometry_topic = LaunchConfiguration("tag_odometry_topic")
+    tag_odometry_timeout_s = LaunchConfiguration("tag_odometry_timeout_s")
+    mono_dx = LaunchConfiguration("mono_dx")
+    mono_dy = LaunchConfiguration("mono_dy")
+    mono_dz = LaunchConfiguration("mono_dz")
+    publish_tag_base_tf = LaunchConfiguration("publish_tag_base_tf")
+    publish_tag_odom_tf = LaunchConfiguration("publish_tag_odom_tf")
+    tag_tf_frame_prefix = LaunchConfiguration("tag_tf_frame_prefix")
     height_measurement_transport = LaunchConfiguration("height_measurement_transport")
     height_measurement_topic = LaunchConfiguration("height_measurement_topic")
     height_measurement_mode = LaunchConfiguration("height_measurement_mode")
@@ -246,7 +259,22 @@ def generate_launch_description():
             {"use_sim_time": use_sim_time},
             {"image_topic": image_topic},
             {"camera_info_topic": camera_info_topic},
+            {"camera_frame_id": camera_frame_id},
+            {"base_frame_id": base_frame_id},
+            {"target_marker_id": target_marker_id},
+            {"tag_family": tag_family},
             {"tag_size_m": tag_size_m},
+            {"tag_detection_topic": tag_detection_topic},
+            {"tag_pose_topic": tag_pose_topic},
+            {"tag_marker_topic": tag_marker_topic},
+            {"odometry_topic": tag_odometry_topic},
+            {"odometry_timeout_s": tag_odometry_timeout_s},
+            {"mono_in_ov_x_m": mono_dx},
+            {"mono_in_ov_y_m": mono_dy},
+            {"mono_in_ov_z_m": mono_dz},
+            {"publish_tag_base_tf": publish_tag_base_tf},
+            {"publish_tag_odom_tf": publish_tag_odom_tf},
+            {"tag_tf_frame_prefix": tag_tf_frame_prefix},
         ],
     )
 
@@ -365,7 +393,29 @@ def generate_launch_description():
         DeclareLaunchArgument("max_vxy", default_value="0.10"),
         DeclareLaunchArgument("align_enter_lateral_m", default_value="0.08"),
         DeclareLaunchArgument("align_exit_lateral_m", default_value="0.05"),
+        DeclareLaunchArgument("target_marker_id", default_value="0"),
+        DeclareLaunchArgument("tag_family", default_value="36h11"),
         DeclareLaunchArgument("tag_size_m", default_value="0.20"),
+        DeclareLaunchArgument(
+            "tag_detection_topic",
+            default_value="/uav/visual_landing/apriltag_detection",
+        ),
+        DeclareLaunchArgument(
+            "tag_pose_topic",
+            default_value="/uav/visual_landing/apriltag_pose",
+        ),
+        DeclareLaunchArgument(
+            "tag_marker_topic",
+            default_value="/uav/visual_landing/apriltag_marker",
+        ),
+        DeclareLaunchArgument("tag_odometry_topic", default_value="/ov_msckf/odomimu"),
+        DeclareLaunchArgument("tag_odometry_timeout_s", default_value="0.20"),
+        DeclareLaunchArgument("mono_dx", default_value="0.0"),
+        DeclareLaunchArgument("mono_dy", default_value="0.0"),
+        DeclareLaunchArgument("mono_dz", default_value="0.0"),
+        DeclareLaunchArgument("publish_tag_base_tf", default_value="true"),
+        DeclareLaunchArgument("publish_tag_odom_tf", default_value="true"),
+        DeclareLaunchArgument("tag_tf_frame_prefix", default_value="apriltag"),
         DeclareLaunchArgument("height_measurement_transport", default_value="stamped_range"),
         DeclareLaunchArgument("height_measurement_topic", default_value="/uav/sensors/downward_range"),
         DeclareLaunchArgument("height_measurement_mode", default_value=""),

@@ -10,19 +10,23 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(px4_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(rosidl_typesupport_cpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(OpenCV REQUIRED COMPONENTS core imgproc calib3d aruco)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/AprilTagDetection.msg"
   "msg/TargetObservation.msg"
   "msg/LandingControllerState.msg"
-  DEPENDENCIES std_msgs
+  DEPENDENCIES geometry_msgs std_msgs
 )
 
 ament_export_dependencies(rosidl_default_runtime)
@@ -38,7 +42,11 @@ ament_target_dependencies(aruco_detector_node
   rclcpp
   sensor_msgs
   geometry_msgs
+  nav_msgs
   std_msgs
+  tf2
+  tf2_ros
+  visualization_msgs
   cv_bridge
   image_transport
 )

@@ -421,13 +421,23 @@ private:
       static_cast<float>(position_enu.y()),
       static_cast<float>(position_enu.z()));
 
-    const std::array<float, 3> velocity_enu = {
+    const std::array<float, 3> velocity_sensor = {
       static_cast<float>(msg.twist.twist.linear.x),
       static_cast<float>(msg.twist.twist.linear.y),
       static_cast<float>(msg.twist.twist.linear.z)};
-    if (isFiniteVector(velocity_enu)) {
-      out.velocity = enuPositionToNed(velocity_enu[0], velocity_enu[1], velocity_enu[2]);
-      out.velocity_frame = px4_msgs::msg::VehicleOdometry::VELOCITY_FRAME_NED;
+    if (isFiniteVector(velocity_sensor)) {
+      const tf2::Matrix3x3 body_to_sensor(sensor_rotation_in_body_);
+      const tf2::Matrix3x3 sensor_to_body = body_to_sensor.transpose();
+      const tf2::Vector3 velocity_sensor_tf(
+        static_cast<double>(velocity_sensor[0]),
+        static_cast<double>(velocity_sensor[1]),
+        static_cast<double>(velocity_sensor[2]));
+      const tf2::Vector3 velocity_body_flu = sensor_to_body * velocity_sensor_tf;
+      out.velocity = {
+        static_cast<float>(velocity_body_flu.x()),
+        static_cast<float>(-velocity_body_flu.y()),
+        static_cast<float>(-velocity_body_flu.z())};
+      out.velocity_frame = px4_msgs::msg::VehicleOdometry::VELOCITY_FRAME_BODY_FRD;
     }
 
     out.position_variance = {

@@ -4,7 +4,6 @@
 #include <string>
 
 #include <geometry_msgs/msg/point_stamped.hpp>
-#include <geometry_msgs/msg/vector3.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
 
@@ -23,7 +22,6 @@ public:
   : Node("position_delta_node")
   {
     this->declare_parameter<std::string>("state_topic", "/uav/state/odometry_px4");
-    this->declare_parameter<std::string>("input_delta_topic", "/uav/control/position_delta");
     this->declare_parameter<std::string>(
       "delta_service", "/uav/control/command/position_delta");
     this->declare_parameter<std::string>("output_position_topic", "/uav/control/position_keep_yaw");
@@ -31,7 +29,6 @@ public:
     this->declare_parameter<double>("state_timeout_s", 0.20);
 
     state_topic_ = this->get_parameter("state_topic").as_string();
-    input_delta_topic_ = this->get_parameter("input_delta_topic").as_string();
     delta_service_ = this->get_parameter("delta_service").as_string();
     output_position_topic_ = this->get_parameter("output_position_topic").as_string();
     odom_frame_id_ = this->get_parameter("odom_frame_id").as_string();
@@ -42,13 +39,6 @@ public:
       [this](const nav_msgs::msg::Odometry::SharedPtr msg)
       {
         handleState(*msg);
-      });
-
-    delta_sub_ = this->create_subscription<geometry_msgs::msg::Vector3>(
-      input_delta_topic_, 10,
-      [this](const geometry_msgs::msg::Vector3::SharedPtr msg)
-      {
-        handleDeltaTopic(*msg);
       });
 
     output_pub_ = this->create_publisher<geometry_msgs::msg::PointStamped>(
@@ -64,8 +54,7 @@ public:
 
     RCLCPP_INFO(
       this->get_logger(),
-      "position_delta_node: topic=%s service=%s state=%s output=%s body_frame=FLU x-forward y-left z-up odom_frame=%s",
-      input_delta_topic_.c_str(),
+      "position_delta_node: service=%s state=%s output=%s body_frame=FLU x-forward y-left z-up odom_frame=%s",
       delta_service_.c_str(),
       state_topic_.c_str(),
       output_position_topic_.c_str(),
@@ -206,23 +195,8 @@ private:
       (msg.header.stamp.sec != 0) || (msg.header.stamp.nanosec != 0);
     current_position_enu_ = position_enu;
     current_yaw_enu_ = quaternionToYaw(msg.pose.pose.orientation);
-    current_state_frame_id_ = msg.header.frame_id;
     last_state_time_ = has_stamp ? rclcpp::Time(msg.header.stamp) : this->now();
     has_state_ = std::isfinite(current_yaw_enu_);
-  }
-
-  void handleDeltaTopic(const geometry_msgs::msg::Vector3 & msg)
-  {
-    const std::array<float, 3> raw_delta_body_flu = {
-      static_cast<float>(msg.x),
-      static_cast<float>(msg.y),
-      static_cast<float>(msg.z)};
-    std::array<float, 3> target_position_enu{};
-    std::string message;
-    if (!submitBodyDelta(raw_delta_body_flu, "topic", message, &target_position_enu)) {
-      return;
-    }
-    publishTarget(target_position_enu, "topic", raw_delta_body_flu);
   }
 
   void handleDeltaService(
@@ -249,7 +223,6 @@ private:
   }
 
   std::string state_topic_;
-  std::string input_delta_topic_;
   std::string delta_service_;
   std::string output_position_topic_;
   std::string odom_frame_id_;
@@ -257,10 +230,8 @@ private:
   bool has_state_{false};
   std::array<float, 3> current_position_enu_{0.0f, 0.0f, 0.0f};
   float current_yaw_enu_{0.0f};
-  std::string current_state_frame_id_;
   rclcpp::Time last_state_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_sub_;
-  rclcpp::Subscription<geometry_msgs::msg::Vector3>::SharedPtr delta_sub_;
   rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr output_pub_;
   rclcpp::Service<BodyPositionDelta>::SharedPtr delta_srv_;
 };

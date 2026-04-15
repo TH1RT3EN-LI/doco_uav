@@ -14,7 +14,23 @@ The active control path is now PX4-native:
   Produced by `openvins_px4_vision_bridge_node`.
   The bridge no longer applies EV position translation compensation.
   PX4-side lever-arm compensation should be configured with `EKF2_EV_POS_*`.
-  The bridge still converts ENU/FLU attitude into PX4 NED/FRD attitude.
+  The bridge converts OpenVINS IMU pose into body pose using the configured
+  sensor attitude offset, then converts ENU/FLU attitude into PX4 NED/FRD
+  attitude.
+  Axis mapping used by the bridge:
+  world position:
+  ENU `x=east, y=north, z=up` -> NED `x=north, y=east, z=down`
+  numeric mapping: `[x_ned, y_ned, z_ned] = [y_enu, x_enu, -z_enu]`
+  body velocity:
+  OpenVINS `odomimu.twist.linear` is IMU-local velocity, so the bridge first
+  removes the configured sensor-to-body rotation and then publishes PX4
+  `VELOCITY_FRAME_BODY_FRD`
+  body axes for attitude:
+  FLU `x=forward, y=left, z=up` -> FRD `x=forward, y=right, z=down`
+  numeric mapping: `[x_frd, y_frd, z_frd] = [x_flu, -y_flu, -z_flu]`
+  yaw mapping: `yaw_ned = pi/2 - yaw_enu`
+  If sensor rotation in body is configured, the bridge first removes that
+  sensor-to-body rotation before applying the frame conversion above.
 
 - PX4 fused local state output:
   `/uav/state/odometry_px4`
@@ -22,7 +38,6 @@ The active control path is now PX4-native:
   This is the authoritative control state for Jetson-side logic.
 
 - Jetson command inputs:
-  `/uav/control/position_delta`
   `/uav/control/position_yaw`
   `/uav/control/position_keep_yaw`
   `/uav/control/setpoint/velocity_body`
@@ -76,15 +91,6 @@ Public Service Surface
   Only yaw is consumed from the quaternion; roll and pitch are ignored by the
   PX4 position-setpoint path.
 
-- `/uav/control/position_delta`
-  Relative local-position target helper.
-  Input is `geometry_msgs/Vector3`.
-  Semantics are fixed to body FLU:
-  `x` forward, `y` left, `z` up.
-  `position_delta_node` rotates the delta into local ENU using the current
-  fused yaw, then converts it into an absolute
-  `/uav/control/position_keep_yaw` target.
-
 - `/uav/control/position_keep_yaw`
   Direct PX4 local position target while keeping the current fused yaw.
   Input is `geometry_msgs/PointStamped` in the same local ENU frame as
@@ -125,6 +131,11 @@ Launch Defaults
 - `launch/openvins_orbbec.launch.py`
   `start_px4_vision_bridge=true`
   PX4 EV bridge sensor translation defaults are `0.0`.
+  PX4 EV bridge sensor attitude defaults are
+  `roll=-1.571463229702609`, `pitch=-0.00518215815056702`,
+  `yaw=-1.5744915462193818` radians so `/ov_msckf/odomimu` IMU-pose output is
+  corrected into the UAV body frame before the bridge converts ENU/FLU to PX4
+  NED/FRD.
   Use PX4 `EKF2_EV_POS_*` for EV lever-arm compensation.
 
 Important Runtime Semantics

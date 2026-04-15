@@ -33,7 +33,6 @@ def generate_launch_description():
     position_topic = LaunchConfiguration("position_topic")
     position_keep_yaw_topic = LaunchConfiguration("position_keep_yaw_topic")
     start_position_delta_node = LaunchConfiguration("start_position_delta_node")
-    position_delta_topic = LaunchConfiguration("position_delta_topic")
     position_delta_service = LaunchConfiguration("position_delta_service")
     position_command_frame_id = LaunchConfiguration("position_command_frame_id")
     px4_timestamp_source = LaunchConfiguration("px4_timestamp_source")
@@ -252,7 +251,6 @@ def generate_launch_description():
         condition=IfCondition(start_position_delta_node),
         parameters=[
             {"state_topic": control_state_topic},
-            {"input_delta_topic": position_delta_topic},
             {"delta_service": position_delta_service},
             {"output_position_topic": position_keep_yaw_topic},
             {"odom_frame_id": position_command_frame_id},
@@ -315,7 +313,6 @@ def generate_launch_description():
             "position_keep_yaw_topic", default_value="/uav/control/position_keep_yaw"
         ),
         DeclareLaunchArgument("start_position_delta_node", default_value="true"),
-        DeclareLaunchArgument("position_delta_topic", default_value="/uav/control/position_delta"),
         DeclareLaunchArgument(
             "position_delta_service", default_value="/uav/control/command/position_delta"
         ),

@@ -403,13 +403,16 @@ def generate_launch_description():
                 default_value="0.0",
             ),
             DeclareLaunchArgument(
-                "px4_bridge_sensor_roll_in_body_rad", default_value="0.0"
+                "px4_bridge_sensor_roll_in_body_rad",
+                default_value="-1.571463229702609",
             ),
             DeclareLaunchArgument(
-                "px4_bridge_sensor_pitch_in_body_rad", default_value="0.0"
+                "px4_bridge_sensor_pitch_in_body_rad",
+                default_value="-0.00518215815056702",
             ),
             DeclareLaunchArgument(
-                "px4_bridge_sensor_yaw_in_body_rad", default_value="0.0"
+                "px4_bridge_sensor_yaw_in_body_rad",
+                default_value="-1.5744915462193818",
             ),
             DeclareLaunchArgument(
                 "px4_bridge_timestamp_source", default_value="px4_timesync"
