@@ -131,6 +131,9 @@ def generate_launch_description():
     mono_dx = LaunchConfiguration("mono_dx")
     mono_dy = LaunchConfiguration("mono_dy")
     mono_dz = LaunchConfiguration("mono_dz")
+    mono_droll = LaunchConfiguration("mono_droll")
+    mono_dpitch = LaunchConfiguration("mono_dpitch")
+    mono_dyaw = LaunchConfiguration("mono_dyaw")
     odometry_timeout_s = LaunchConfiguration("odometry_timeout_s")
     publish_tag_base_tf = LaunchConfiguration("publish_tag_base_tf")
     publish_tag_odom_tf = LaunchConfiguration("publish_tag_odom_tf")
@@ -264,6 +267,9 @@ def generate_launch_description():
             "mono_dx": mono_dx,
             "mono_dy": mono_dy,
             "mono_dz": mono_dz,
+            "mono_droll": mono_droll,
+            "mono_dpitch": mono_dpitch,
+            "mono_dyaw": mono_dyaw,
             "publish_tag_base_tf": publish_tag_base_tf,
             "publish_tag_odom_tf": publish_tag_odom_tf,
             "tag_tf_frame_prefix": tag_tf_frame_prefix,
@@ -371,7 +377,7 @@ def generate_launch_description():
         DeclareLaunchArgument("orbbec_enable_laser", default_value="false"),
         DeclareLaunchArgument("orbbec_enable_ldp", default_value="false"),
         DeclareLaunchArgument("backend", default_value="legacy"),
-        DeclareLaunchArgument("device", default_value="/dev/video1"),
+        DeclareLaunchArgument("device", default_value="/dev/video0"),
         DeclareLaunchArgument("fourcc", default_value="MJPG"),
         DeclareLaunchArgument("image_width", default_value="1280"),
         DeclareLaunchArgument("image_height", default_value="720"),
@@ -401,6 +407,9 @@ def generate_launch_description():
         DeclareLaunchArgument("mono_dx", default_value="0.0"),
         DeclareLaunchArgument("mono_dy", default_value="0.0"),
         DeclareLaunchArgument("mono_dz", default_value="0.0"),
+        DeclareLaunchArgument("mono_droll", default_value="0.0"),
+        DeclareLaunchArgument("mono_dpitch", default_value="0.0"),
+        DeclareLaunchArgument("mono_dyaw", default_value="0.0"),
         DeclareLaunchArgument("odometry_timeout_s", default_value="0.20"),
         DeclareLaunchArgument("publish_tag_base_tf", default_value="true"),
         DeclareLaunchArgument("publish_tag_odom_tf", default_value="true"),

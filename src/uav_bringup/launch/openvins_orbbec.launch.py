@@ -285,6 +285,32 @@ def generate_launch_description():
         ],
     )
 
+    openvins_child_frame_static_tf = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        name="uav_openvins_child_frame_static_tf",
+        output="screen",
+        condition=IfCondition(start_openvins),
+        arguments=[
+            "--x",
+            px4_bridge_sensor_x_in_body_m,
+            "--y",
+            px4_bridge_sensor_y_in_body_m,
+            "--z",
+            px4_bridge_sensor_z_in_body_m,
+            "--roll",
+            px4_bridge_sensor_roll_in_body_rad,
+            "--pitch",
+            px4_bridge_sensor_pitch_in_body_rad,
+            "--yaw",
+            px4_bridge_sensor_yaw_in_body_rad,
+            "--frame-id",
+            base_frame_id,
+            "--child-frame-id",
+            px4_bridge_expected_child_frame_id,
+        ],
+    )
+
     uav_state_bridge = Node(
         package="uav_bridge",
         executable="uav_state_bridge_node",
@@ -554,6 +580,7 @@ def generate_launch_description():
             orbbec_depth_camera,
             openvins,
             openvins_px4_vision_bridge,
+            openvins_child_frame_static_tf,
             uav_state_bridge,
             record_bag,
             rviz,

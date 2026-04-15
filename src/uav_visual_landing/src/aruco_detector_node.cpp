@@ -23,6 +23,7 @@
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/msg/image.hpp>
+#include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2/LinearMath/Vector3.h>
@@ -73,6 +74,9 @@ public:
     this->declare_parameter<double>("mono_in_ov_x_m", 0.0);
     this->declare_parameter<double>("mono_in_ov_y_m", 0.0);
     this->declare_parameter<double>("mono_in_ov_z_m", 0.0);
+    this->declare_parameter<double>("mono_in_ov_roll_rad", 0.0);
+    this->declare_parameter<double>("mono_in_ov_pitch_rad", 0.0);
+    this->declare_parameter<double>("mono_in_ov_yaw_rad", 0.0);
     this->declare_parameter<bool>("publish_tag_base_tf", true);
     this->declare_parameter<bool>("publish_tag_odom_tf", true);
     this->declare_parameter<std::string>("tag_tf_frame_prefix", "apriltag");
@@ -97,6 +101,9 @@ public:
     mono_in_ov_x_m_ = this->get_parameter("mono_in_ov_x_m").as_double();
     mono_in_ov_y_m_ = this->get_parameter("mono_in_ov_y_m").as_double();
     mono_in_ov_z_m_ = this->get_parameter("mono_in_ov_z_m").as_double();
+    mono_in_ov_roll_rad_ = this->get_parameter("mono_in_ov_roll_rad").as_double();
+    mono_in_ov_pitch_rad_ = this->get_parameter("mono_in_ov_pitch_rad").as_double();
+    mono_in_ov_yaw_rad_ = this->get_parameter("mono_in_ov_yaw_rad").as_double();
     publish_tag_base_tf_ = this->get_parameter("publish_tag_base_tf").as_bool();
     publish_tag_odom_tf_ = this->get_parameter("publish_tag_odom_tf").as_bool();
     tag_tf_frame_prefix_ = sanitizeFrameToken(
@@ -191,7 +198,8 @@ public:
       this->get_logger(),
       "aruco_detector_node: image=%s camera_info=%s target_observation=%s tag_detection=%s "
       "tag_pose=%s tag_marker=%s debug_image=%s marker_id=%d family=%s tag_size=%.3f "
-      "odom=%s mono_in_ov=(%.3f, %.3f, %.3f) tag_tf(base=%s odom=%s prefix=%s)",
+      "odom=%s mono_in_ov=(xyz=%.3f, %.3f, %.3f rpy=%.3f, %.3f, %.3f) "
+      "tag_tf(base=%s odom=%s prefix=%s)",
       image_topic_.c_str(),
       camera_info_topic_.c_str(),
       target_observation_topic_.c_str(),
@@ -206,6 +214,9 @@ public:
       mono_in_ov_x_m_,
       mono_in_ov_y_m_,
       mono_in_ov_z_m_,
+      mono_in_ov_roll_rad_,
+      mono_in_ov_pitch_rad_,
+      mono_in_ov_yaw_rad_,
       publish_tag_base_tf_ ? "on" : "off",
       publish_tag_odom_tf_ ? "on" : "off",
       tag_tf_frame_prefix_.c_str());
@@ -249,6 +260,16 @@ private:
     float z_target_height_m{0.0f};
     float z_error_m{0.0f};
     std::string xy_control_mode{"vision_pd_metric"};
+  };
+
+  struct ResolvedTagPose
+  {
+    bool camera_valid{false};
+    tf2::Transform camera_from_tag;
+    bool base_valid{false};
+    tf2::Transform base_from_tag;
+    bool odom_valid{false};
+    tf2::Transform odom_from_tag;
   };
 
   static float clamp01(float value)
@@ -420,6 +441,33 @@ private:
         transform.translation.z));
   }
 
+  static tf2::Transform transformFromCvPose(const cv::Vec3d & rvec, const cv::Vec3d & tvec)
+  {
+    cv::Mat rotation_matrix;
+    cv::Rodrigues(rvec, rotation_matrix);
+
+    const tf2::Matrix3x3 basis(
+      rotation_matrix.at<double>(0, 0),
+      rotation_matrix.at<double>(0, 1),
+      rotation_matrix.at<double>(0, 2),
+      rotation_matrix.at<double>(1, 0),
+      rotation_matrix.at<double>(1, 1),
+      rotation_matrix.at<double>(1, 2),
+      rotation_matrix.at<double>(2, 0),
+      rotation_matrix.at<double>(2, 1),
+      rotation_matrix.at<double>(2, 2));
+
+    tf2::Quaternion rotation;
+    basis.getRotation(rotation);
+    if (rotation.length2() <= 1.0e-12) {
+      rotation.setRPY(0.0, 0.0, 0.0);
+    } else {
+      rotation.normalize();
+    }
+
+    return tf2::Transform(rotation, tf2::Vector3(tvec[0], tvec[1], tvec[2]));
+  }
+
   static geometry_msgs::msg::Point pointToMsg(const tf2::Vector3 & point)
   {
     geometry_msgs::msg::Point msg;
@@ -429,30 +477,74 @@ private:
     return msg;
   }
 
-  bool rotateCameraPointIntoOvChildFallback(
-    const std::string & camera_frame,
-    const tf2::Vector3 & camera_point,
-    tf2::Vector3 & child_point)
+  static geometry_msgs::msg::Quaternion quaternionToMsg(const tf2::Quaternion & rotation)
   {
-    if (base_frame_id_.empty() || camera_frame.empty()) {
+    geometry_msgs::msg::Quaternion msg;
+    msg.x = rotation.x();
+    msg.y = rotation.y();
+    msg.z = rotation.z();
+    msg.w = rotation.w();
+    return msg;
+  }
+
+  static geometry_msgs::msg::Transform transformToMsg(const tf2::Transform & transform)
+  {
+    geometry_msgs::msg::Transform msg;
+    msg.translation.x = transform.getOrigin().x();
+    msg.translation.y = transform.getOrigin().y();
+    msg.translation.z = transform.getOrigin().z();
+    msg.rotation = quaternionToMsg(transform.getRotation());
+    return msg;
+  }
+
+  static geometry_msgs::msg::Pose poseToMsg(const tf2::Transform & transform)
+  {
+    geometry_msgs::msg::Pose msg;
+    msg.position = pointToMsg(transform.getOrigin());
+    msg.orientation = quaternionToMsg(transform.getRotation());
+    return msg;
+  }
+
+  tf2::Transform monoInOvFallbackTransform() const
+  {
+    tf2::Quaternion rotation;
+    rotation.setRPY(
+      mono_in_ov_roll_rad_,
+      mono_in_ov_pitch_rad_,
+      mono_in_ov_yaw_rad_);
+    rotation.normalize();
+    return tf2::Transform(
+      rotation,
+      tf2::Vector3(mono_in_ov_x_m_, mono_in_ov_y_m_, mono_in_ov_z_m_));
+  }
+
+  bool lookupFrameTransform(
+    const std::string & target_frame,
+    const std::string & source_frame,
+    tf2::Transform & target_from_source,
+    const char * context)
+  {
+    if (target_frame.empty() || source_frame.empty()) {
       return false;
+    }
+    if (target_frame == source_frame) {
+      target_from_source.setIdentity();
+      return true;
     }
 
     try {
       const auto transform = tf_buffer_->lookupTransform(
-        base_frame_id_, camera_frame, tf2::TimePointZero);
-      const tf2::Transform base_from_camera = transformFromMsg(transform.transform);
-      const tf2::Transform rotation_only(base_from_camera.getRotation());
-      child_point = rotation_only * camera_point;
-      child_point += tf2::Vector3(mono_in_ov_x_m_, mono_in_ov_y_m_, mono_in_ov_z_m_);
+        target_frame, source_frame, tf2::TimePointZero);
+      target_from_source = transformFromMsg(transform.transform);
       return true;
     } catch (const std::exception & e) {
       RCLCPP_WARN_THROTTLE(
         this->get_logger(),
         *this->get_clock(), 2000,
-        "failed to resolve fallback rotation %s <- %s for mono_in_ov translation: %s",
-        base_frame_id_.c_str(),
-        camera_frame.c_str(),
+        "failed to resolve %s transform %s <- %s: %s",
+        context,
+        target_frame.c_str(),
+        source_frame.c_str(),
         e.what());
       return false;
     }
@@ -490,7 +582,7 @@ private:
   void publishTagTransform(
     const builtin_interfaces::msg::Time & stamp,
     const std::string & parent_frame,
-    const geometry_msgs::msg::Point & position,
+    const tf2::Transform & parent_from_tag,
     int tag_id,
     const char * suffix)
   {
@@ -502,37 +594,38 @@ private:
     transform.header.stamp = stamp;
     transform.header.frame_id = parent_frame;
     transform.child_frame_id = makeTagTfFrameId(tag_id, suffix);
-    transform.transform.translation.x = position.x;
-    transform.transform.translation.y = position.y;
-    transform.transform.translation.z = position.z;
-    transform.transform.rotation.w = 1.0;
+    transform.transform = transformToMsg(parent_from_tag);
     tag_tf_broadcaster_->sendTransform(transform);
   }
 
-  void publishTagTransforms(const uav_visual_landing::msg::AprilTagDetection & detection)
+  void publishTagTransforms(
+    const uav_visual_landing::msg::AprilTagDetection & detection,
+    const ResolvedTagPose & resolved_pose)
   {
-    if (publish_tag_base_tf_ && detection.position_base_valid && !detection.base_frame_id.empty()) {
+    if (publish_tag_base_tf_ && resolved_pose.base_valid && !detection.base_frame_id.empty()) {
       publishTagTransform(
         detection.header.stamp,
         detection.base_frame_id,
-        detection.position_base_m,
+        resolved_pose.base_from_tag,
         detection.tag_id,
         "rel");
     }
 
-    if (publish_tag_odom_tf_ && detection.position_odom_valid && !detection.odom_frame_id.empty()) {
+    if (publish_tag_odom_tf_ && resolved_pose.odom_valid && !detection.odom_frame_id.empty()) {
       publishTagTransform(
         detection.header.stamp,
         detection.odom_frame_id,
-        detection.position_odom_m,
+        resolved_pose.odom_from_tag,
         detection.tag_id,
         "");
     }
   }
 
-  void publishPoseAndMarker(const uav_visual_landing::msg::AprilTagDetection & detection)
+  void publishPoseAndMarker(
+    const uav_visual_landing::msg::AprilTagDetection & detection,
+    const ResolvedTagPose & resolved_pose)
   {
-    if (!detection.position_odom_valid || detection.odom_frame_id.empty()) {
+    if (!resolved_pose.odom_valid || detection.odom_frame_id.empty()) {
       publishDeleteMarker(detection.header.stamp);
       return;
     }
@@ -540,10 +633,7 @@ private:
     geometry_msgs::msg::PoseStamped pose;
     pose.header = detection.header;
     pose.header.frame_id = detection.odom_frame_id;
-    pose.pose.position.x = detection.position_odom_m.x;
-    pose.pose.position.y = detection.position_odom_m.y;
-    pose.pose.position.z = detection.position_odom_m.z;
-    pose.pose.orientation.w = 1.0;
+    pose.pose = poseToMsg(resolved_pose.odom_from_tag);
     tag_pose_pub_->publish(pose);
 
     visualization_msgs::msg::Marker marker;
@@ -720,60 +810,33 @@ private:
     return target_marker_id_ >= 0 ? target_marker_id_ : -1;
   }
 
-  bool transformPoint(
-    const std::string & target_frame,
-    const std::string & source_frame,
-    const tf2::Vector3 & source_point,
-    tf2::Vector3 & target_point,
-    const char * context)
-  {
-    if (target_frame.empty() || source_frame.empty()) {
-      return false;
-    }
-    if (target_frame == source_frame) {
-      target_point = source_point;
-      return true;
-    }
-
-    try {
-      const auto transform = tf_buffer_->lookupTransform(
-        target_frame, source_frame, tf2::TimePointZero);
-      target_point = transformFromMsg(transform.transform) * source_point;
-      return true;
-    } catch (const std::exception & e) {
-      RCLCPP_WARN_THROTTLE(
-        this->get_logger(),
-        *this->get_clock(), 2000,
-        "failed to resolve %s transform %s <- %s: %s",
-        context,
-        target_frame.c_str(),
-        source_frame.c_str(),
-        e.what());
-      return false;
-    }
-  }
-
   bool fillDetectionTransforms(
     const sensor_msgs::msg::Image::SharedPtr & image_msg,
     const std::string & camera_frame,
+    const cv::Vec3d & camera_rvec,
     const cv::Vec3d & camera_tvec,
-    uav_visual_landing::msg::AprilTagDetection & detection)
+    uav_visual_landing::msg::AprilTagDetection & detection,
+    ResolvedTagPose & resolved_pose)
   {
     if (!detection.pose_valid) {
       return false;
     }
 
-    const tf2::Vector3 camera_point(camera_tvec[0], camera_tvec[1], camera_tvec[2]);
-    detection.position_camera_m = pointToMsg(camera_point);
+    resolved_pose = ResolvedTagPose{};
+    resolved_pose.camera_valid = true;
+    resolved_pose.camera_from_tag = transformFromCvPose(camera_rvec, camera_tvec);
+    detection.position_camera_m = pointToMsg(resolved_pose.camera_from_tag.getOrigin());
 
-    tf2::Vector3 base_point;
-    if (transformPoint(base_frame_id_, camera_frame, camera_point, base_point, "base")) {
+    tf2::Transform base_from_camera;
+    if (lookupFrameTransform(base_frame_id_, camera_frame, base_from_camera, "base")) {
+      resolved_pose.base_valid = true;
+      resolved_pose.base_from_tag = base_from_camera * resolved_pose.camera_from_tag;
       detection.position_base_valid = true;
-      detection.position_base_m = pointToMsg(base_point);
+      detection.position_base_m = pointToMsg(resolved_pose.base_from_tag.getOrigin());
     }
 
     if (!has_odometry_ || odometry_topic_.empty()) {
-      return detection.position_base_valid;
+      return resolved_pose.base_valid;
     }
 
     const rclcpp::Time image_stamp =
@@ -789,25 +852,31 @@ private:
     detection.odom_frame_id = last_odometry_.header.frame_id;
     detection.odom_child_frame_id = last_odometry_.child_frame_id;
     if (!std::isfinite(sample_age_s) || sample_age_s > odometry_timeout_s_) {
-      return detection.position_base_valid;
+      return resolved_pose.base_valid;
     }
     if (last_odometry_.header.frame_id.empty() || last_odometry_.child_frame_id.empty()) {
-      return detection.position_base_valid;
+      return resolved_pose.base_valid;
     }
 
-    tf2::Vector3 child_point;
-    if (!transformPoint(
-        last_odometry_.child_frame_id, camera_frame, camera_point, child_point, "odometry child"))
+    tf2::Transform child_from_camera;
+    if (!lookupFrameTransform(
+        last_odometry_.child_frame_id, camera_frame, child_from_camera, "odometry child"))
     {
-      if (!rotateCameraPointIntoOvChildFallback(camera_frame, camera_point, child_point)) {
-        return detection.position_base_valid;
-      }
+      child_from_camera = monoInOvFallbackTransform();
+      RCLCPP_WARN_THROTTLE(
+        this->get_logger(),
+        *this->get_clock(), 2000,
+        "using mono_in_ov fallback transform for %s <- %s",
+        last_odometry_.child_frame_id.c_str(),
+        camera_frame.empty() ? "<unset>" : camera_frame.c_str());
     }
 
     const tf2::Transform odom_from_child = transformFromPose(last_odometry_.pose.pose);
-    const tf2::Vector3 odom_point = odom_from_child * child_point;
+    resolved_pose.odom_valid = true;
+    resolved_pose.odom_from_tag =
+      odom_from_child * child_from_camera * resolved_pose.camera_from_tag;
     detection.position_odom_valid = true;
-    detection.position_odom_m = pointToMsg(odom_point);
+    detection.position_odom_m = pointToMsg(resolved_pose.odom_from_tag.getOrigin());
     return true;
   }
 
@@ -1020,6 +1089,7 @@ private:
     detection.base_frame_id = base_frame_id_;
 
     const int target_index = findTargetIndex(ids);
+    ResolvedTagPose resolved_pose;
     if (target_index < 0) {
       observation_pub_->publish(observation);
       tag_detection_pub_->publish(detection);
@@ -1066,7 +1136,13 @@ private:
           observation.reproj_err_px,
           observation.marker_span_px);
         detection.pose_valid = true;
-        fillDetectionTransforms(msg, camera_frame, candidates.front().tvec, detection);
+        fillDetectionTransforms(
+          msg,
+          camera_frame,
+          candidates.front().rvec,
+          candidates.front().tvec,
+          detection,
+          resolved_pose);
       } else {
         observation.pose_valid = false;
         observation.tag_depth_valid = false;
@@ -1093,8 +1169,8 @@ private:
 
     observation_pub_->publish(observation);
     tag_detection_pub_->publish(detection);
-    publishPoseAndMarker(detection);
-    publishTagTransforms(detection);
+    publishPoseAndMarker(detection, resolved_pose);
+    publishTagTransforms(detection, resolved_pose);
     publishDebugImage(msg, gray_frame, corners, ids, target_index, observation, detection);
   }
 
@@ -1121,6 +1197,9 @@ private:
   double mono_in_ov_x_m_{0.0};
   double mono_in_ov_y_m_{0.0};
   double mono_in_ov_z_m_{0.0};
+  double mono_in_ov_roll_rad_{0.0};
+  double mono_in_ov_pitch_rad_{0.0};
+  double mono_in_ov_yaw_rad_{0.0};
   bool publish_tag_base_tf_{true};
   bool publish_tag_odom_tf_{true};
   std::string tag_tf_frame_prefix_{"apriltag"};

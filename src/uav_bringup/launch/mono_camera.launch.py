@@ -96,7 +96,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "device",
-                default_value=EnvironmentVariable("UAV_MONO_CAMERA_DEVICE", default_value="/dev/video1"),
+                default_value=EnvironmentVariable("UAV_MONO_CAMERA_DEVICE", default_value="/dev/video0"),
                 description="Mono camera video device path, e.g. /dev/video0",
             ),
             DeclareLaunchArgument(

@@ -127,6 +127,9 @@ def generate_launch_description():
     mono_dx = LaunchConfiguration("mono_dx")
     mono_dy = LaunchConfiguration("mono_dy")
     mono_dz = LaunchConfiguration("mono_dz")
+    mono_droll = LaunchConfiguration("mono_droll")
+    mono_dpitch = LaunchConfiguration("mono_dpitch")
+    mono_dyaw = LaunchConfiguration("mono_dyaw")
     publish_tag_base_tf = LaunchConfiguration("publish_tag_base_tf")
     publish_tag_odom_tf = LaunchConfiguration("publish_tag_odom_tf")
     tag_tf_frame_prefix = LaunchConfiguration("tag_tf_frame_prefix")
@@ -272,6 +275,9 @@ def generate_launch_description():
             {"mono_in_ov_x_m": mono_dx},
             {"mono_in_ov_y_m": mono_dy},
             {"mono_in_ov_z_m": mono_dz},
+            {"mono_in_ov_roll_rad": mono_droll},
+            {"mono_in_ov_pitch_rad": mono_dpitch},
+            {"mono_in_ov_yaw_rad": mono_dyaw},
             {"publish_tag_base_tf": publish_tag_base_tf},
             {"publish_tag_odom_tf": publish_tag_odom_tf},
             {"tag_tf_frame_prefix": tag_tf_frame_prefix},
@@ -317,7 +323,7 @@ def generate_launch_description():
         DeclareLaunchArgument("timesync_status_topic", default_value="/fmu/out/timesync_status"),
         DeclareLaunchArgument("start_mono_camera", default_value="true"),
         DeclareLaunchArgument("camera_backend", default_value="legacy"),
-        DeclareLaunchArgument("camera_device", default_value="/dev/video1"),
+        DeclareLaunchArgument("camera_device", default_value="/dev/video0"),
         DeclareLaunchArgument("camera_fourcc", default_value="MJPG"),
         DeclareLaunchArgument("image_width", default_value="1280"),
         DeclareLaunchArgument("image_height", default_value="720"),
@@ -413,6 +419,9 @@ def generate_launch_description():
         DeclareLaunchArgument("mono_dx", default_value="0.0"),
         DeclareLaunchArgument("mono_dy", default_value="0.0"),
         DeclareLaunchArgument("mono_dz", default_value="0.0"),
+        DeclareLaunchArgument("mono_droll", default_value="0.0"),
+        DeclareLaunchArgument("mono_dpitch", default_value="0.0"),
+        DeclareLaunchArgument("mono_dyaw", default_value="0.0"),
         DeclareLaunchArgument("publish_tag_base_tf", default_value="true"),
         DeclareLaunchArgument("publish_tag_odom_tf", default_value="true"),
         DeclareLaunchArgument("tag_tf_frame_prefix", default_value="apriltag"),

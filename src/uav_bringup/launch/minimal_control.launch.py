@@ -322,7 +322,7 @@ def generate_launch_description():
         DeclareLaunchArgument("start_mono_camera", default_value="true"),
         DeclareLaunchArgument("start_orbbec_depth_camera", default_value="false"),
         DeclareLaunchArgument("camera_backend", default_value="legacy"),
-        DeclareLaunchArgument("camera_device", default_value="/dev/video1"),
+        DeclareLaunchArgument("camera_device", default_value="/dev/video0"),
         DeclareLaunchArgument("camera_fourcc", default_value="MJPG"),
         DeclareLaunchArgument("image_width", default_value="1280"),
         DeclareLaunchArgument("image_height", default_value="720"),
