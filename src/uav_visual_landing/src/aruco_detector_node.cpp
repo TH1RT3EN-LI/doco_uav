@@ -230,6 +230,7 @@ private:
     float yaw_rad{0.0f};
     float reproj_err_px{std::numeric_limits<float>::infinity()};
     float tag_depth_m{0.0f};
+    float normal_dot_view{std::numeric_limits<float>::infinity()};
   };
 
   struct ControllerTelemetry
@@ -383,6 +384,17 @@ private:
     return normalizeAngle(
       static_cast<float>(std::atan2(
         rotation_matrix.at<double>(1, 0), rotation_matrix.at<double>(0, 0))));
+  }
+
+  static float computeTagNormalDotView(const cv::Vec3d & rvec, const cv::Vec3d & tvec)
+  {
+    cv::Mat rotation_matrix;
+    cv::Rodrigues(rvec, rotation_matrix);
+    const cv::Vec3d normal_cam(
+      rotation_matrix.at<double>(0, 2),
+      rotation_matrix.at<double>(1, 2),
+      rotation_matrix.at<double>(2, 2));
+    return static_cast<float>(normal_cam.dot(tvec));
   }
 
   static float computeTagDepthFromTvec(const cv::Vec3d & tvec)
@@ -754,6 +766,7 @@ private:
       candidate.yaw_rad = computePoseYawRad(candidate.rvec);
       candidate.reproj_err_px = computeReprojectionErrorPx(object_points, corners, rvec, tvec);
       candidate.tag_depth_m = computeTagDepthFromTvec(candidate.tvec);
+      candidate.normal_dot_view = computeTagNormalDotView(candidate.rvec, candidate.tvec);
       candidates.push_back(candidate);
       return true;
     }
@@ -767,6 +780,7 @@ private:
         object_points, corners, candidate.rvec,
         candidate.tvec);
       candidate.tag_depth_m = computeTagDepthFromTvec(candidate.tvec);
+      candidate.normal_dot_view = computeTagNormalDotView(candidate.rvec, candidate.tvec);
       candidates.push_back(candidate);
     }
 
@@ -778,6 +792,18 @@ private:
         const bool rhs_valid = isPositiveFiniteDepth(rhs.tag_depth_m);
         if (lhs_valid != rhs_valid) {
           return lhs_valid > rhs_valid;
+        }
+        const bool lhs_facing_camera =
+          std::isfinite(lhs.normal_dot_view) && (lhs.normal_dot_view < 0.0f);
+        const bool rhs_facing_camera =
+          std::isfinite(rhs.normal_dot_view) && (rhs.normal_dot_view < 0.0f);
+        if (lhs_facing_camera != rhs_facing_camera) {
+          return lhs_facing_camera > rhs_facing_camera;
+        }
+        if (lhs_facing_camera && rhs_facing_camera) {
+          if (std::abs(lhs.normal_dot_view - rhs.normal_dot_view) > 1.0e-6f) {
+            return lhs.normal_dot_view < rhs.normal_dot_view;
+          }
         }
         return lhs.reproj_err_px < rhs.reproj_err_px;
       });
