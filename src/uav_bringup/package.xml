@@ -22,8 +22,11 @@
   <exec_depend>std_srvs</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>orbbec_camera</exec_depend>
+  <exec_depend>relative_position_fusion</exec_depend>
   <exec_depend>uav_bridge</exec_depend>
   <exec_depend>uav_visual_landing</exec_depend>
+
+  <test_depend>ament_cmake_pytest</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

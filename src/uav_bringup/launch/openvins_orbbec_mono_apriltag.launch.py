@@ -24,6 +24,8 @@ def generate_launch_description():
     start_openvins = LaunchConfiguration("start_openvins")
     start_px4_vision_bridge = LaunchConfiguration("start_px4_vision_bridge")
     start_uav_state_bridge = LaunchConfiguration("start_uav_state_bridge")
+    enable_relative_position_fusion = LaunchConfiguration("enable_relative_position_fusion")
+    enable_relative_tracking = LaunchConfiguration("enable_relative_tracking")
     openvins_namespace = LaunchConfiguration("openvins_namespace")
     openvins_config_path = LaunchConfiguration("openvins_config_path")
     openvins_verbosity = LaunchConfiguration("openvins_verbosity")
@@ -60,9 +62,17 @@ def generate_launch_description():
     state_bridge_publish_tf = LaunchConfiguration("state_bridge_publish_tf")
     state_bridge_publish_map_to_odom_tf = LaunchConfiguration("state_bridge_publish_map_to_odom_tf")
     state_bridge_log_state = LaunchConfiguration("state_bridge_log_state")
+    relative_position_fusion_config = LaunchConfiguration("relative_position_fusion_config")
+    global_frame = LaunchConfiguration("global_frame")
+    uav_map_frame = LaunchConfiguration("uav_map_frame")
+    uav_odom_frame = LaunchConfiguration("uav_odom_frame")
+    global_to_uav_map = LaunchConfiguration("global_to_uav_map")
+    publish_global_map_tf = LaunchConfiguration("publish_global_map_tf")
 
     orbbec_camera_name = LaunchConfiguration("orbbec_camera_name")
     base_frame_id = LaunchConfiguration("base_frame_id")
+    ov_body_frame_id = LaunchConfiguration("ov_body_frame_id")
+    publish_ov_body_tf = LaunchConfiguration("publish_ov_body_tf")
     orbbec_camera_frame_id = LaunchConfiguration("orbbec_camera_frame_id")
     orbbec_camera_x = LaunchConfiguration("orbbec_camera_x")
     orbbec_camera_y = LaunchConfiguration("orbbec_camera_y")
@@ -152,6 +162,8 @@ def generate_launch_description():
             "start_openvins": start_openvins,
             "start_px4_vision_bridge": start_px4_vision_bridge,
             "start_uav_state_bridge": start_uav_state_bridge,
+            "enable_relative_position_fusion": enable_relative_position_fusion,
+            "enable_relative_tracking": enable_relative_tracking,
             "use_rviz": "false",
             "use_record_bag": "false",
             "use_sim_time": use_sim_time,
@@ -187,8 +199,16 @@ def generate_launch_description():
             "state_bridge_publish_tf": state_bridge_publish_tf,
             "state_bridge_publish_map_to_odom_tf": state_bridge_publish_map_to_odom_tf,
             "state_bridge_log_state": state_bridge_log_state,
+            "relative_position_fusion_config": relative_position_fusion_config,
+            "global_frame": global_frame,
+            "uav_map_frame": uav_map_frame,
+            "uav_odom_frame": uav_odom_frame,
+            "global_to_uav_map": global_to_uav_map,
+            "publish_global_map_tf": publish_global_map_tf,
             "orbbec_camera_name": orbbec_camera_name,
             "base_frame_id": base_frame_id,
+            "ov_body_frame_id": ov_body_frame_id,
+            "publish_ov_body_tf": publish_ov_body_tf,
             "orbbec_camera_frame_id": orbbec_camera_frame_id,
             "orbbec_camera_x": orbbec_camera_x,
             "orbbec_camera_y": orbbec_camera_y,
@@ -242,7 +262,7 @@ def generate_launch_description():
             "camera_name": camera_name,
             "image_topic": image_topic,
             "camera_info_topic": camera_info_topic,
-            "base_frame_id": base_frame_id,
+            "base_frame_id": ov_body_frame_id,
             "camera_frame_id": camera_frame_id,
             "camera_x": camera_x,
             "camera_y": camera_y,
@@ -309,6 +329,8 @@ def generate_launch_description():
         DeclareLaunchArgument("start_openvins", default_value="true"),
         DeclareLaunchArgument("start_px4_vision_bridge", default_value="true"),
         DeclareLaunchArgument("start_uav_state_bridge", default_value="true"),
+        DeclareLaunchArgument("enable_relative_position_fusion", default_value="false"),
+        DeclareLaunchArgument("enable_relative_tracking", default_value="false"),
         DeclareLaunchArgument("openvins_namespace", default_value="ov_msckf"),
         DeclareLaunchArgument("openvins_config_path", default_value=default_openvins_config),
         DeclareLaunchArgument("openvins_verbosity", default_value="INFO"),
@@ -341,8 +363,16 @@ def generate_launch_description():
         DeclareLaunchArgument("state_bridge_publish_tf", default_value="false"),
         DeclareLaunchArgument("state_bridge_publish_map_to_odom_tf", default_value="false"),
         DeclareLaunchArgument("state_bridge_log_state", default_value="false"),
+        DeclareLaunchArgument("relative_position_fusion_config", default_value=""),
+        DeclareLaunchArgument("global_frame", default_value="global"),
+        DeclareLaunchArgument("uav_map_frame", default_value="uav_map"),
+        DeclareLaunchArgument("uav_odom_frame", default_value="uav_odom"),
+        DeclareLaunchArgument("global_to_uav_map", default_value="0,0,0,0,0,0"),
+        DeclareLaunchArgument("publish_global_map_tf", default_value="false"),
         DeclareLaunchArgument("orbbec_camera_name", default_value="uav_depth_camera"),
         DeclareLaunchArgument("base_frame_id", default_value="uav_base_link"),
+        DeclareLaunchArgument("ov_body_frame_id", default_value="uav_ov_body"),
+        DeclareLaunchArgument("publish_ov_body_tf", default_value="true"),
         DeclareLaunchArgument("orbbec_camera_frame_id", default_value="uav_stereo_camera_optical_frame"),
         DeclareLaunchArgument("orbbec_camera_x", default_value="0.0503"),
         DeclareLaunchArgument("orbbec_camera_y", default_value="0.0"),
@@ -387,7 +417,7 @@ def generate_launch_description():
         DeclareLaunchArgument("camera_name", default_value="uav_mono_camera"),
         DeclareLaunchArgument("image_topic", default_value="/uav/camera/image_raw"),
         DeclareLaunchArgument("camera_info_topic", default_value="/uav/camera/camera_info"),
-        DeclareLaunchArgument("camera_frame_id", default_value="uav_camera_optical_frame"),
+        DeclareLaunchArgument("camera_frame_id", default_value="uav_ov_mono_camera_optical_frame"),
         DeclareLaunchArgument("camera_x", default_value=DEFAULT_CAMERA_TO_BODY["x"]),
         DeclareLaunchArgument("camera_y", default_value=DEFAULT_CAMERA_TO_BODY["y"]),
         DeclareLaunchArgument("camera_z", default_value=DEFAULT_CAMERA_TO_BODY["z"]),

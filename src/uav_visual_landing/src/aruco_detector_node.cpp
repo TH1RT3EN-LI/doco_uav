@@ -200,7 +200,8 @@ public:
     RCLCPP_INFO(
       this->get_logger(),
       "aruco_detector_node: image=%s camera_info=%s target_observation=%s tag_detection=%s "
-      "tag_pose=%s tag_marker=%s output_frame=%s debug_image=%s marker_id=%d family=%s tag_size=%.3f "
+      "tag_pose=%s tag_marker=%s camera_frame=%s base_frame=%s output_frame=%s debug_image=%s "
+      "marker_id=%d family=%s tag_size=%.3f "
       "odom=%s mono_in_ov=(xyz=%.3f, %.3f, %.3f rpy=%.3f, %.3f, %.3f) "
       "tag_tf(base=%s odom=%s prefix=%s)",
       image_topic_.c_str(),
@@ -209,6 +210,8 @@ public:
       tag_detection_topic_.c_str(),
       tag_pose_topic_.c_str(),
       tag_marker_topic_.c_str(),
+      configured_camera_frame_id_.empty() ? "<auto>" : configured_camera_frame_id_.c_str(),
+      base_frame_id_.c_str(),
       tag_output_frame_mode_.c_str(),
       debug_image_topic_.c_str(),
       target_marker_id_,
@@ -639,7 +642,7 @@ private:
         detection.base_frame_id,
         resolved_pose.base_from_tag,
         detection.tag_id,
-        "rel");
+        "");
     }
 
     if (publish_tag_odom_tf_ && resolved_pose.odom_valid && !detection.odom_frame_id.empty()) {
@@ -648,7 +651,7 @@ private:
         detection.odom_frame_id,
         resolved_pose.odom_from_tag,
         detection.tag_id,
-        "");
+        "odom");
     }
   }
 

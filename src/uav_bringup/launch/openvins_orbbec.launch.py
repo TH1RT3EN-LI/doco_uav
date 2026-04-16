@@ -5,7 +5,13 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, GroupAction, IncludeLaunchDescription
+from launch.actions import (
+    DeclareLaunchArgument,
+    ExecuteProcess,
+    GroupAction,
+    IncludeLaunchDescription,
+    OpaqueFunction,
+)
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -38,13 +44,254 @@ def next_bag_run_id(base_dir: Path, prefix: str) -> int:
     return max_id + 1
 
 
+def _launch_bool(value: str) -> bool:
+    return value.strip().lower() in ("1", "true", "yes", "on")
+
+
+def _parse_six_dof(value: str, arg_name: str):
+    parts = [part.strip() for part in value.split(",")]
+    if len(parts) != 6:
+        raise RuntimeError(
+            f"{arg_name} must contain 6 comma-separated values: x,y,z,roll,pitch,yaw"
+        )
+
+    try:
+        return tuple(float(part) for part in parts)
+    except ValueError as exc:
+        raise RuntimeError(
+            f"{arg_name} must contain numeric values: x,y,z,roll,pitch,yaw"
+        ) from exc
+
+
+def _quat_from_rpy(roll: float, pitch: float, yaw: float):
+    half_roll = 0.5 * roll
+    half_pitch = 0.5 * pitch
+    half_yaw = 0.5 * yaw
+
+    cr = math.cos(half_roll)
+    sr = math.sin(half_roll)
+    cp = math.cos(half_pitch)
+    sp = math.sin(half_pitch)
+    cy = math.cos(half_yaw)
+    sy = math.sin(half_yaw)
+
+    return (
+        (sr * cp * cy) - (cr * sp * sy),
+        (cr * sp * cy) + (sr * cp * sy),
+        (cr * cp * sy) - (sr * sp * cy),
+        (cr * cp * cy) + (sr * sp * sy),
+    )
+
+
+def _rotation_matrix_from_rpy(roll: float, pitch: float, yaw: float):
+    cr = math.cos(roll)
+    sr = math.sin(roll)
+    cp = math.cos(pitch)
+    sp = math.sin(pitch)
+    cy = math.cos(yaw)
+    sy = math.sin(yaw)
+
+    return (
+        (
+            cy * cp,
+            (cy * sp * sr) - (sy * cr),
+            (cy * sp * cr) + (sy * sr),
+        ),
+        (
+            sy * cp,
+            (sy * sp * sr) + (cy * cr),
+            (sy * sp * cr) - (cy * sr),
+        ),
+        (
+            -sp,
+            cp * sr,
+            cp * cr,
+        ),
+    )
+
+
+def _build_openvins_ov_body_static_tf(context, *args, **kwargs):
+    start_openvins = LaunchConfiguration("start_openvins").perform(context)
+    if not _launch_bool(start_openvins):
+        return []
+
+    publish_ov_body_tf = LaunchConfiguration("publish_ov_body_tf").perform(context)
+    if not _launch_bool(publish_ov_body_tf):
+        return []
+
+    ov_body_frame_id = LaunchConfiguration("ov_body_frame_id").perform(context).strip()
+    child_frame_id = LaunchConfiguration("px4_bridge_expected_child_frame_id").perform(context)
+    if not ov_body_frame_id or not child_frame_id or ov_body_frame_id == child_frame_id:
+        return []
+
+    x = float(LaunchConfiguration("px4_bridge_sensor_x_in_body_m").perform(context))
+    y = float(LaunchConfiguration("px4_bridge_sensor_y_in_body_m").perform(context))
+    z = float(LaunchConfiguration("px4_bridge_sensor_z_in_body_m").perform(context))
+    roll = float(LaunchConfiguration("px4_bridge_sensor_roll_in_body_rad").perform(context))
+    pitch = float(LaunchConfiguration("px4_bridge_sensor_pitch_in_body_rad").perform(context))
+    yaw = float(LaunchConfiguration("px4_bridge_sensor_yaw_in_body_rad").perform(context))
+
+    # Bridge parameters encode body -> sensor, so derive sensor -> OV body here.
+    rotation_body_to_child = _rotation_matrix_from_rpy(roll, pitch, yaw)
+    rotation_child_to_body = tuple(zip(*rotation_body_to_child))
+
+    inverse_translation = tuple(
+        -sum(rotation_child_to_body[row][col] * value for col, value in enumerate((x, y, z)))
+        for row in range(3)
+    )
+    qx, qy, qz, qw = _quat_from_rpy(roll, pitch, yaw)
+    inverse_quaternion = (-qx, -qy, -qz, qw)
+
+    return [
+        Node(
+            package="tf2_ros",
+            executable="static_transform_publisher",
+            name="uav_openvins_ov_body_static_tf",
+            output="screen",
+            arguments=[
+                "--x",
+                f"{inverse_translation[0]:.15g}",
+                "--y",
+                f"{inverse_translation[1]:.15g}",
+                "--z",
+                f"{inverse_translation[2]:.15g}",
+                "--qx",
+                f"{inverse_quaternion[0]:.15g}",
+                "--qy",
+                f"{inverse_quaternion[1]:.15g}",
+                "--qz",
+                f"{inverse_quaternion[2]:.15g}",
+                "--qw",
+                f"{inverse_quaternion[3]:.15g}",
+                "--frame-id",
+                child_frame_id,
+                "--child-frame-id",
+                ov_body_frame_id,
+            ],
+        )
+    ]
+
+
+def _build_global_to_uav_map_static_tf(context, *args, **kwargs):
+    enable_relative_position_fusion = LaunchConfiguration(
+        "enable_relative_position_fusion"
+    ).perform(context)
+    publish_global_map_tf = LaunchConfiguration("publish_global_map_tf").perform(context)
+    if not (
+        _launch_bool(enable_relative_position_fusion) or _launch_bool(publish_global_map_tf)
+    ):
+        return []
+
+    global_frame = LaunchConfiguration("global_frame").perform(context).strip()
+    uav_map_frame = LaunchConfiguration("uav_map_frame").perform(context).strip()
+    if not global_frame or not uav_map_frame or global_frame == uav_map_frame:
+        return []
+
+    x, y, z, roll, pitch, yaw = _parse_six_dof(
+        LaunchConfiguration("global_to_uav_map").perform(context),
+        "global_to_uav_map",
+    )
+    qx, qy, qz, qw = _quat_from_rpy(roll, pitch, yaw)
+
+    return [
+        Node(
+            package="tf2_ros",
+            executable="static_transform_publisher",
+            name="uav_global_to_map_static_tf",
+            output="screen",
+            arguments=[
+                "--x",
+                f"{x:.15g}",
+                "--y",
+                f"{y:.15g}",
+                "--z",
+                f"{z:.15g}",
+                "--qx",
+                f"{qx:.15g}",
+                "--qy",
+                f"{qy:.15g}",
+                "--qz",
+                f"{qz:.15g}",
+                "--qw",
+                f"{qw:.15g}",
+                "--frame-id",
+                global_frame,
+                "--child-frame-id",
+                uav_map_frame,
+            ],
+        )
+    ]
+
+
+def _build_uav_state_bridge_node(context, *args, **kwargs):
+    start_uav_state_bridge = LaunchConfiguration("start_uav_state_bridge").perform(context)
+    enable_relative_position_fusion = LaunchConfiguration(
+        "enable_relative_position_fusion"
+    ).perform(context)
+    if not (
+        _launch_bool(start_uav_state_bridge) or _launch_bool(enable_relative_position_fusion)
+    ):
+        return []
+
+    publish_tf = _launch_bool(LaunchConfiguration("state_bridge_publish_tf").perform(context))
+    publish_map_to_odom_tf = _launch_bool(
+        LaunchConfiguration("state_bridge_publish_map_to_odom_tf").perform(context)
+    )
+    if _launch_bool(enable_relative_position_fusion):
+        publish_tf = True
+        publish_map_to_odom_tf = True
+
+    return [
+        Node(
+            package="uav_bridge",
+            executable="uav_state_bridge_node",
+            name="uav_state_bridge",
+            output="screen",
+            parameters=[
+                {"use_sim_time": LaunchConfiguration("use_sim_time")},
+                {
+                    "vehicle_local_position_topic": LaunchConfiguration(
+                        "state_bridge_vehicle_local_position_topic"
+                    )
+                },
+                {
+                    "vehicle_odometry_topic": LaunchConfiguration(
+                        "state_bridge_vehicle_odometry_topic"
+                    )
+                },
+                {
+                    "output_odometry_topic": LaunchConfiguration(
+                        "state_bridge_output_odometry_topic"
+                    )
+                },
+                {"map_frame_id": LaunchConfiguration("uav_map_frame")},
+                {"odom_frame_id": LaunchConfiguration("uav_odom_frame")},
+                {"base_frame_id": LaunchConfiguration("base_frame_id")},
+                {"px4_timestamp_source": LaunchConfiguration("state_bridge_timestamp_source")},
+                {"timesync_status_topic": LaunchConfiguration("state_bridge_timesync_status_topic")},
+                {"timesync_timeout_s": LaunchConfiguration("state_bridge_timesync_timeout_s")},
+                {"publish_tf": publish_tf},
+                {"publish_map_to_odom_tf": publish_map_to_odom_tf},
+                {
+                    "log_state": _launch_bool(
+                        LaunchConfiguration("state_bridge_log_state").perform(context)
+                    )
+                },
+            ],
+        )
+    ]
+
+
 def generate_launch_description():
     bringup_share = get_package_share_directory("uav_bringup")
+    relative_position_fusion_share = get_package_share_directory("relative_position_fusion")
 
     start_orbbec_camera = LaunchConfiguration("start_orbbec_camera")
     start_openvins = LaunchConfiguration("start_openvins")
     start_px4_vision_bridge = LaunchConfiguration("start_px4_vision_bridge")
     start_uav_state_bridge = LaunchConfiguration("start_uav_state_bridge")
+    enable_relative_position_fusion = LaunchConfiguration("enable_relative_position_fusion")
+    enable_relative_tracking = LaunchConfiguration("enable_relative_tracking")
     use_rviz = LaunchConfiguration("use_rviz")
     use_record_bag = LaunchConfiguration("use_record_bag")
     bag_output_dir = LaunchConfiguration("bag_output_dir")
@@ -104,6 +351,12 @@ def generate_launch_description():
         "state_bridge_publish_map_to_odom_tf"
     )
     state_bridge_log_state = LaunchConfiguration("state_bridge_log_state")
+    relative_position_fusion_config = LaunchConfiguration("relative_position_fusion_config")
+    global_frame = LaunchConfiguration("global_frame")
+    uav_map_frame = LaunchConfiguration("uav_map_frame")
+    uav_odom_frame = LaunchConfiguration("uav_odom_frame")
+    global_to_uav_map = LaunchConfiguration("global_to_uav_map")
+    publish_global_map_tf = LaunchConfiguration("publish_global_map_tf")
 
     orbbec_camera_name = LaunchConfiguration("orbbec_camera_name")
     base_frame_id = LaunchConfiguration("base_frame_id")
@@ -285,51 +538,35 @@ def generate_launch_description():
         ],
     )
 
-    openvins_child_frame_static_tf = Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        name="uav_openvins_child_frame_static_tf",
-        output="screen",
-        condition=IfCondition(start_openvins),
-        arguments=[
-            "--x",
-            px4_bridge_sensor_x_in_body_m,
-            "--y",
-            px4_bridge_sensor_y_in_body_m,
-            "--z",
-            px4_bridge_sensor_z_in_body_m,
-            "--roll",
-            px4_bridge_sensor_roll_in_body_rad,
-            "--pitch",
-            px4_bridge_sensor_pitch_in_body_rad,
-            "--yaw",
-            px4_bridge_sensor_yaw_in_body_rad,
-            "--frame-id",
-            base_frame_id,
-            "--child-frame-id",
-            px4_bridge_expected_child_frame_id,
-        ],
+    openvins_ov_body_static_tf = OpaqueFunction(
+        function=_build_openvins_ov_body_static_tf
     )
 
-    uav_state_bridge = Node(
-        package="uav_bridge",
-        executable="uav_state_bridge_node",
-        name="uav_state_bridge",
-        output="screen",
-        condition=IfCondition(start_uav_state_bridge),
-        parameters=[
-            {"use_sim_time": use_sim_time},
-            {"vehicle_local_position_topic": state_bridge_vehicle_local_position_topic},
-            {"vehicle_odometry_topic": state_bridge_vehicle_odometry_topic},
-            {"output_odometry_topic": state_bridge_output_odometry_topic},
-            {"base_frame_id": base_frame_id},
-            {"px4_timestamp_source": state_bridge_timestamp_source},
-            {"timesync_status_topic": state_bridge_timesync_status_topic},
-            {"timesync_timeout_s": state_bridge_timesync_timeout_s},
-            {"publish_tf": state_bridge_publish_tf},
-            {"publish_map_to_odom_tf": state_bridge_publish_map_to_odom_tf},
-            {"log_state": state_bridge_log_state},
-        ],
+    global_to_uav_map_static_tf = OpaqueFunction(
+        function=_build_global_to_uav_map_static_tf
+    )
+
+    uav_state_bridge = OpaqueFunction(function=_build_uav_state_bridge_node)
+
+    relative_position_fusion = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                relative_position_fusion_share,
+                "launch",
+                "relative_position_fusion.launch.py",
+            )
+        ),
+        condition=IfCondition(enable_relative_position_fusion),
+        launch_arguments={
+            "preset": "",
+            "use_sim_time": use_sim_time,
+            "global_frame": global_frame,
+            "uav_body_frame": base_frame_id,
+            "uav_odom_topic": state_bridge_output_odometry_topic,
+            "uav_twist_in_child_frame": "true",
+            "enable_relative_tracking": enable_relative_tracking,
+            "config_overlay": relative_position_fusion_config,
+        }.items(),
     )
 
     record_bag = ExecuteProcess(
@@ -386,6 +623,10 @@ def generate_launch_description():
             DeclareLaunchArgument("start_openvins", default_value="true"),
             DeclareLaunchArgument("start_px4_vision_bridge", default_value="true"),
             DeclareLaunchArgument("start_uav_state_bridge", default_value="true"),
+            DeclareLaunchArgument(
+                "enable_relative_position_fusion", default_value="false"
+            ),
+            DeclareLaunchArgument("enable_relative_tracking", default_value="false"),
             DeclareLaunchArgument("use_rviz", default_value="false"),
             DeclareLaunchArgument("use_record_bag", default_value="false"),
             DeclareLaunchArgument("bag_output_dir", default_value=default_bag_output_dir),
@@ -478,9 +719,17 @@ def generate_launch_description():
                 "state_bridge_publish_map_to_odom_tf", default_value="false"
             ),
             DeclareLaunchArgument("state_bridge_log_state", default_value="false"),
+            DeclareLaunchArgument("relative_position_fusion_config", default_value=""),
+            DeclareLaunchArgument("global_frame", default_value="global"),
+            DeclareLaunchArgument("uav_map_frame", default_value="uav_map"),
+            DeclareLaunchArgument("uav_odom_frame", default_value="uav_odom"),
+            DeclareLaunchArgument("global_to_uav_map", default_value="0,0,0,0,0,0"),
+            DeclareLaunchArgument("publish_global_map_tf", default_value="false"),
             DeclareLaunchArgument("rviz_config", default_value=default_rviz_config),
             DeclareLaunchArgument("orbbec_camera_name", default_value="uav_depth_camera"),
             DeclareLaunchArgument("base_frame_id", default_value="uav_base_link"),
+            DeclareLaunchArgument("ov_body_frame_id", default_value="uav_ov_body"),
+            DeclareLaunchArgument("publish_ov_body_tf", default_value="true"),
             DeclareLaunchArgument(
                 "orbbec_camera_frame_id",
                 default_value="uav_stereo_camera_optical_frame",
@@ -580,8 +829,10 @@ def generate_launch_description():
             orbbec_depth_camera,
             openvins,
             openvins_px4_vision_bridge,
-            openvins_child_frame_static_tf,
+            openvins_ov_body_static_tf,
+            global_to_uav_map_static_tf,
             uav_state_bridge,
+            relative_position_fusion,
             record_bag,
             rviz,
         ]

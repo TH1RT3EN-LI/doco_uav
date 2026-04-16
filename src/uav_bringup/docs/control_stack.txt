@@ -133,13 +133,37 @@ Launch Defaults
   PX4 EV bridge sensor translation defaults are `0.0`.
   PX4 EV bridge sensor attitude defaults are
   `roll=-1.571463229702609`, `pitch=-0.00518215815056702`,
-  `yaw=-1.5744915462193818` radians so `/ov_msckf/odomimu` IMU-pose output is
-  corrected into the UAV body frame before the bridge converts ENU/FLU to PX4
-  NED/FRD.
+  `yaw=-1.5744915462193818` radians.
+  In the current bridge/launch stack these `sensor_*_in_body_*` parameters are
+  interpreted as `body -> sensor`, despite the name. The PX4 EV bridge inverts
+  that transform internally to recover body FLU from the raw OpenVINS
+  `global -> imu` pose before converting ENU/FLU to PX4 NED/FRD.
+  The same exact inverse is also used to publish the derived OV body frame
+  `imu -> uav_ov_body` when `publish_ov_body_tf=true`.
+  `uav_base_link` is not parented under OpenVINS `imu`; it remains the
+  robot/PX4 body frame.
   Use PX4 `EKF2_EV_POS_*` for EV lever-arm compensation.
+
+- `launch/openvins_orbbec_mono_apriltag.launch.py`
+  OV-integrated mono/tag defaults use the derived OV body tree instead of
+  `uav_base_link`.
+  `ov_body_frame_id=uav_ov_body`
+  `camera_frame_id=uav_ov_mono_camera_optical_frame`
+  `tag_output_frame_mode=base`
+  In this launch, the detector's "base-relative" AprilTag output means
+  relative to `uav_ov_body`.
+  Default tag TFs are:
+  `apriltag_<id>` parented by `uav_ov_body`
+  `apriltag_<id>_odom` parented by the OpenVINS odom frame, normally `global`
 
 Important Runtime Semantics
 ---------------------------
+
+- OpenVINS raw semantics are preserved:
+  `/ov_msckf/odomimu` continues to mean `global -> imu`.
+  If a body-like frame is needed for RViz, mono camera integration, or
+  AprilTag output, use the derived `uav_ov_body` frame instead of treating
+  `imu` as body.
 
 - EKF local reset handling:
   `uav_control_node` listens to `/fmu/out/vehicle_local_position`.
