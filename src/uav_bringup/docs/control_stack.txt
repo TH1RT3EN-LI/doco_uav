@@ -132,11 +132,11 @@ Launch Defaults
   `start_px4_vision_bridge=true`
   PX4 EV bridge sensor translation defaults are `0.0`.
   PX4 EV bridge sensor attitude defaults are
-  `roll=0.0`, `pitch=-pi/2`, `yaw=0.0` radians.
+  `roll=0.0`, `pitch=-pi/2`, `yaw=pi/2` radians.
   In the current bridge/launch stack these `sensor_*_in_body_*` parameters are
   interpreted as `body -> /ov_msckf/odomimu child frame`, despite the name.
   The current Orbbec real-hardware defaults assume the raw OpenVINS child frame
-  is approximately `+x=down`, `+y=left`, `+z=forward` relative to UAV body FLU.
+  is approximately `+x=right`, `+y=down`, `+z=forward` relative to UAV body FLU.
   The PX4 EV bridge uses that transform directly when recovering body attitude
   from the raw OpenVINS `global -> imu` pose, and uses the inverse when
   rotating sensor-frame linear velocity back into body FLU before converting

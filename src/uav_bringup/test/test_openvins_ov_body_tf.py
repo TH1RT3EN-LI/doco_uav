@@ -9,7 +9,7 @@ OV_MONO_TAG_LAUNCH = REPO_ROOT / "launch" / "openvins_orbbec_mono_apriltag.launc
 
 DEFAULT_SENSOR_ROLL_IN_BODY_RAD = 0.0
 DEFAULT_SENSOR_PITCH_IN_BODY_RAD = -math.pi / 2.0
-DEFAULT_SENSOR_YAW_IN_BODY_RAD = 0.0
+DEFAULT_SENSOR_YAW_IN_BODY_RAD = math.pi / 2.0
 
 
 def _load_module(module_path: Path, module_name: str):
@@ -106,8 +106,8 @@ def test_default_ov_body_transform_is_exact_inverse_of_body_to_sensor():
     _assert_matrix_close(
         body_to_sensor,
         (
+            (0.0, -1.0, 0.0),
             (0.0, 0.0, -1.0),
-            (0.0, 1.0, 0.0),
             (1.0, 0.0, 0.0),
         ),
     )

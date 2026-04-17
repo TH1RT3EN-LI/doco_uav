@@ -52,17 +52,17 @@ TEST(OpenVinsPx4VisionBridgeLogicTest, VelocityUsesInverseOfBodyToSensor)
 TEST(OpenVinsPx4VisionBridgeLogicTest, DefaultOrbbecRotationMapsSensorAxesIntoBodyFlu)
 {
   tf2::Quaternion body_to_sensor;
-  body_to_sensor.setRPY(0.0, -M_PI_2, 0.0);
+  body_to_sensor.setRPY(0.0, -M_PI_2, M_PI_2);
   body_to_sensor.normalize();
 
   const tf2::Vector3 velocity_forward_sensor(0.0, 0.0, 1.0);
-  const tf2::Vector3 velocity_left_sensor(0.0, 1.0, 0.0);
-  const tf2::Vector3 velocity_down_sensor(1.0, 0.0, 0.0);
+  const tf2::Vector3 velocity_right_sensor(1.0, 0.0, 0.0);
+  const tf2::Vector3 velocity_down_sensor(0.0, 1.0, 0.0);
 
   const tf2::Vector3 velocity_forward_body =
     velocityBodyFluFromSensor(velocity_forward_sensor, body_to_sensor);
-  const tf2::Vector3 velocity_left_body =
-    velocityBodyFluFromSensor(velocity_left_sensor, body_to_sensor);
+  const tf2::Vector3 velocity_right_body =
+    velocityBodyFluFromSensor(velocity_right_sensor, body_to_sensor);
   const tf2::Vector3 velocity_down_body =
     velocityBodyFluFromSensor(velocity_down_sensor, body_to_sensor);
 
@@ -70,9 +70,9 @@ TEST(OpenVinsPx4VisionBridgeLogicTest, DefaultOrbbecRotationMapsSensorAxesIntoBo
   EXPECT_NEAR(velocity_forward_body.y(), 0.0, 1.0e-9);
   EXPECT_NEAR(velocity_forward_body.z(), 0.0, 1.0e-9);
 
-  EXPECT_NEAR(velocity_left_body.x(), 0.0, 1.0e-9);
-  EXPECT_NEAR(velocity_left_body.y(), 1.0, 1.0e-9);
-  EXPECT_NEAR(velocity_left_body.z(), 0.0, 1.0e-9);
+  EXPECT_NEAR(velocity_right_body.x(), 0.0, 1.0e-9);
+  EXPECT_NEAR(velocity_right_body.y(), -1.0, 1.0e-9);
+  EXPECT_NEAR(velocity_right_body.z(), 0.0, 1.0e-9);
 
   EXPECT_NEAR(velocity_down_body.x(), 0.0, 1.0e-9);
   EXPECT_NEAR(velocity_down_body.y(), 0.0, 1.0e-9);

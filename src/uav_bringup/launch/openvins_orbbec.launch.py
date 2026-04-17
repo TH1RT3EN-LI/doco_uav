@@ -680,7 +680,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "px4_bridge_sensor_yaw_in_body_rad",
-                default_value="0.0",
+                default_value=str(math.pi / 2.0),
             ),
             DeclareLaunchArgument(
                 "px4_bridge_timestamp_source", default_value="px4_timesync"

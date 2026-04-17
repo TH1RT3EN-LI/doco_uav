@@ -349,7 +349,7 @@ def generate_launch_description():
         DeclareLaunchArgument("px4_bridge_sensor_z_in_body_m", default_value="0.0"),
         DeclareLaunchArgument("px4_bridge_sensor_roll_in_body_rad", default_value="0.0"),
         DeclareLaunchArgument("px4_bridge_sensor_pitch_in_body_rad", default_value=str(-math.pi / 2.0)),
-        DeclareLaunchArgument("px4_bridge_sensor_yaw_in_body_rad", default_value="0.0"),
+        DeclareLaunchArgument("px4_bridge_sensor_yaw_in_body_rad", default_value=str(math.pi / 2.0)),
         DeclareLaunchArgument("px4_bridge_timestamp_source", default_value="px4_timesync"),
         DeclareLaunchArgument("px4_bridge_timesync_status_topic", default_value="/fmu/out/timesync_status"),
         DeclareLaunchArgument("px4_bridge_timesync_timeout_s", default_value="2.0"),
