@@ -1,0 +1,42 @@
+OpenVINS Orbbec Real-Hardware Frame Validation
+==============================================
+
+Use `px4_in` as the only velocity acceptance source. Ignore `px4_out` velocity
+for this check because the current PX4 params (`EKF2_EV_CTRL=11`) do not fuse
+external-vision velocity.
+
+Preconditions
+-------------
+
+- Keep the UAV close to level and avoid intentional yaw changes during the test.
+- Enable the position monitor and confirm the `px4_in` velocity label reads:
+  `ROS body FLU 速度（由 PX4 BODY_FRD 转换）`
+- Record both topics during the session:
+  - `/ov_msckf/odomimu`
+  - `/fmu/in/vehicle_visual_odometry`
+
+Motion Sequence
+---------------
+
+Perform short, single-axis translations while holding the frame fixed:
+
+1. Move the UAV forward, then backward.
+2. Move the UAV left, then right.
+3. Move the UAV up, then down.
+
+Acceptance Criteria
+-------------------
+
+- In `px4_in`, forward/backward motion is dominated by `vx`.
+- In `px4_in`, left/right motion is dominated by `vy`.
+- In `px4_in`, up/down motion is dominated by `vz`.
+- Secondary-axis components stay noticeably smaller than the primary axis for
+  each motion segment.
+
+Diagnostic Follow-up
+--------------------
+
+- If `px4_in` fails but `/ov_msckf/odomimu` is stable, re-check the configured
+  `px4_bridge_sensor_*_in_body_*` rotation.
+- If the raw OpenVINS axis ordering changes across bags or restarts, escalate
+  to an upstream IMU-normalization fix instead of tuning the bridge again.

@@ -7,9 +7,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 OPENVINS_LAUNCH = REPO_ROOT / "launch" / "openvins_orbbec.launch.py"
 OV_MONO_TAG_LAUNCH = REPO_ROOT / "launch" / "openvins_orbbec_mono_apriltag.launch.py"
 
-DEFAULT_SENSOR_ROLL_IN_BODY_RAD = -1.571463229702609
-DEFAULT_SENSOR_PITCH_IN_BODY_RAD = -0.00518215815056702
-DEFAULT_SENSOR_YAW_IN_BODY_RAD = -1.5744915462193818
+DEFAULT_SENSOR_ROLL_IN_BODY_RAD = 0.0
+DEFAULT_SENSOR_PITCH_IN_BODY_RAD = -math.pi / 2.0
+DEFAULT_SENSOR_YAW_IN_BODY_RAD = 0.0
 
 
 def _load_module(module_path: Path, module_name: str):
@@ -102,6 +102,15 @@ def test_default_ov_body_transform_is_exact_inverse_of_body_to_sensor():
     )
     sensor_to_body_from_quat = _quat_to_matrix(sensor_to_body_quat)
     _assert_matrix_close(sensor_to_body, sensor_to_body_from_quat)
+
+    _assert_matrix_close(
+        body_to_sensor,
+        (
+            (0.0, 0.0, -1.0),
+            (0.0, 1.0, 0.0),
+            (1.0, 0.0, 0.0),
+        ),
+    )
 
 
 def test_launch_files_expose_and_route_ov_body_frame_defaults():

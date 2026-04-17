@@ -14,23 +14,23 @@ The active control path is now PX4-native:
   Produced by `openvins_px4_vision_bridge_node`.
   The bridge no longer applies EV position translation compensation.
   PX4-side lever-arm compensation should be configured with `EKF2_EV_POS_*`.
-  The bridge converts OpenVINS IMU pose into body pose using the configured
-  sensor attitude offset, then converts ENU/FLU attitude into PX4 NED/FRD
-  attitude.
+  The bridge converts the raw OpenVINS `odomimu` child frame into body pose
+  using the configured `body -> odomimu child frame` rotation, then converts
+  ENU/FLU attitude into PX4 NED/FRD attitude.
   Axis mapping used by the bridge:
   world position:
   ENU `x=east, y=north, z=up` -> NED `x=north, y=east, z=down`
   numeric mapping: `[x_ned, y_ned, z_ned] = [y_enu, x_enu, -z_enu]`
   body velocity:
   OpenVINS `odomimu.twist.linear` is IMU-local velocity, so the bridge first
-  removes the configured sensor-to-body rotation and then publishes PX4
+  removes the configured odomimu-child-to-body rotation and then publishes PX4
   `VELOCITY_FRAME_BODY_FRD`
   body axes for attitude:
   FLU `x=forward, y=left, z=up` -> FRD `x=forward, y=right, z=down`
   numeric mapping: `[x_frd, y_frd, z_frd] = [x_flu, -y_flu, -z_flu]`
   yaw mapping: `yaw_ned = pi/2 - yaw_enu`
   If sensor rotation in body is configured, the bridge first removes that
-  sensor-to-body rotation before applying the frame conversion above.
+  raw-child-to-body rotation before applying the frame conversion above.
 
 - PX4 fused local state output:
   `/uav/state/odometry_px4`
@@ -132,13 +132,15 @@ Launch Defaults
   `start_px4_vision_bridge=true`
   PX4 EV bridge sensor translation defaults are `0.0`.
   PX4 EV bridge sensor attitude defaults are
-  `roll=-1.571463229702609`, `pitch=-0.00518215815056702`,
-  `yaw=-1.5744915462193818` radians.
+  `roll=0.0`, `pitch=-pi/2`, `yaw=0.0` radians.
   In the current bridge/launch stack these `sensor_*_in_body_*` parameters are
-  interpreted as `body -> sensor`, despite the name. The PX4 EV bridge uses
-  that transform directly when recovering body attitude from the raw OpenVINS
-  `global -> imu` pose, and uses the inverse when rotating sensor-frame linear
-  velocity back into body FLU before converting ENU/FLU to PX4 NED/FRD.
+  interpreted as `body -> /ov_msckf/odomimu child frame`, despite the name.
+  The current Orbbec real-hardware defaults assume the raw OpenVINS child frame
+  is approximately `+x=down`, `+y=left`, `+z=forward` relative to UAV body FLU.
+  The PX4 EV bridge uses that transform directly when recovering body attitude
+  from the raw OpenVINS `global -> imu` pose, and uses the inverse when
+  rotating sensor-frame linear velocity back into body FLU before converting
+  ENU/FLU to PX4 NED/FRD.
   The same inverse is also used to publish the derived OV body frame
   `imu -> uav_ov_body` when `publish_ov_body_tf=true`.
   `uav_base_link` is not parented under OpenVINS `imu`; it remains the

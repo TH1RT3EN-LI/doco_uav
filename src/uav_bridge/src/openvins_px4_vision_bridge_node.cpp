@@ -171,6 +171,35 @@ public:
       visual_odometry_topic_.c_str(),
       guard_config_.enable ? "enabled" : "disabled",
       guard_config_.hold_last_budget_s);
+
+    if (log_debug_) {
+      double roll = 0.0;
+      double pitch = 0.0;
+      double yaw = 0.0;
+      tf2::Matrix3x3(sensor_rotation_in_body_).getRPY(roll, pitch, yaw);
+      const tf2::Matrix3x3 rotation_sensor_to_body =
+        tf2::Matrix3x3(sensor_rotation_in_body_).transpose();
+      const tf2::Vector3 sensor_x_in_body = rotation_sensor_to_body * tf2::Vector3(1.0, 0.0, 0.0);
+      const tf2::Vector3 sensor_y_in_body = rotation_sensor_to_body * tf2::Vector3(0.0, 1.0, 0.0);
+      const tf2::Vector3 sensor_z_in_body = rotation_sensor_to_body * tf2::Vector3(0.0, 0.0, 1.0);
+      RCLCPP_INFO(
+        this->get_logger(),
+        "debug body->%s rpy=[%.6f %.6f %.6f], sensor axes in body FLU: +x=[%.3f %.3f %.3f] "
+        "+y=[%.3f %.3f %.3f] +z=[%.3f %.3f %.3f]",
+        expected_child_frame_id_.c_str(),
+        roll,
+        pitch,
+        yaw,
+        sensor_x_in_body.x(),
+        sensor_x_in_body.y(),
+        sensor_x_in_body.z(),
+        sensor_y_in_body.x(),
+        sensor_y_in_body.y(),
+        sensor_y_in_body.z(),
+        sensor_z_in_body.x(),
+        sensor_z_in_body.y(),
+        sensor_z_in_body.z());
+    }
   }
 
 private:
@@ -560,8 +589,10 @@ private:
       if (log_debug_) {
         RCLCPP_INFO_THROTTLE(
           this->get_logger(), *this->get_clock(), 1000,
-          "published fresh EV odom: pos_ned=[%.3f %.3f %.3f] vel_body_frd=[%.3f %.3f %.3f] reset=%u",
+          "published fresh EV odom: pos_ned=[%.3f %.3f %.3f] vel_sensor=[%.3f %.3f %.3f] "
+          "vel_body_frd=[%.3f %.3f %.3f] reset=%u",
           fresh_output->position[0], fresh_output->position[1], fresh_output->position[2],
+          msg->twist.twist.linear.x, msg->twist.twist.linear.y, msg->twist.twist.linear.z,
           fresh_output->velocity[0], fresh_output->velocity[1], fresh_output->velocity[2],
           fresh_output->reset_counter);
       }

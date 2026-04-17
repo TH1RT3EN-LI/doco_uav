@@ -131,7 +131,8 @@ def _build_openvins_ov_body_static_tf(context, *args, **kwargs):
     pitch = float(LaunchConfiguration("px4_bridge_sensor_pitch_in_body_rad").perform(context))
     yaw = float(LaunchConfiguration("px4_bridge_sensor_yaw_in_body_rad").perform(context))
 
-    # Bridge parameters encode body -> sensor, so derive sensor -> OV body here.
+    # Bridge parameters encode body -> the raw odomimu child frame, so derive the
+    # inverse transform for the derived OV body frame here.
     rotation_body_to_child = _rotation_matrix_from_rpy(roll, pitch, yaw)
     rotation_child_to_body = tuple(zip(*rotation_body_to_child))
 
@@ -671,15 +672,15 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "px4_bridge_sensor_roll_in_body_rad",
-                default_value="-1.571463229702609",
+                default_value="0.0",
             ),
             DeclareLaunchArgument(
                 "px4_bridge_sensor_pitch_in_body_rad",
-                default_value="-0.00518215815056702",
+                default_value=str(-math.pi / 2.0),
             ),
             DeclareLaunchArgument(
                 "px4_bridge_sensor_yaw_in_body_rad",
-                default_value="-1.5744915462193818",
+                default_value="0.0",
             ),
             DeclareLaunchArgument(
                 "px4_bridge_timestamp_source", default_value="px4_timesync"
