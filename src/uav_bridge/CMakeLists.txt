@@ -67,6 +67,15 @@ ament_target_dependencies(${PROJECT_NAME}_openvins_ev_guard
   px4_msgs
 )
 
+add_library(${PROJECT_NAME}_openvins_px4_vision_bridge_logic
+  src/openvins_px4_vision_bridge_logic.cpp
+)
+target_compile_features(${PROJECT_NAME}_openvins_px4_vision_bridge_logic PUBLIC cxx_std_17)
+target_include_directories(${PROJECT_NAME}_openvins_px4_vision_bridge_logic PUBLIC include)
+ament_target_dependencies(${PROJECT_NAME}_openvins_px4_vision_bridge_logic
+  tf2
+)
+
 add_executable(mono_camera_source_node
   src/mono_camera_source_node.cpp
 )
@@ -235,11 +244,13 @@ ament_target_dependencies(openvins_px4_vision_bridge_node
 )
 target_link_libraries(openvins_px4_vision_bridge_node
   ${PROJECT_NAME}_openvins_ev_guard
+  ${PROJECT_NAME}_openvins_px4_vision_bridge_logic
 )
 
 install(TARGETS
   ${PROJECT_NAME}_px4_odom_adapter_logic
   ${PROJECT_NAME}_openvins_ev_guard
+  ${PROJECT_NAME}_openvins_px4_vision_bridge_logic
   ${PROJECT_NAME}_sim_vio_odometry_logic
   mono_camera_source_node
   mono_video_recorder_node
@@ -279,6 +290,17 @@ if(BUILD_TESTING)
   if(TARGET test_openvins_ev_guard)
     target_link_libraries(test_openvins_ev_guard ${PROJECT_NAME}_openvins_ev_guard)
     ament_target_dependencies(test_openvins_ev_guard px4_msgs)
+  endif()
+
+  ament_add_gtest(test_openvins_px4_vision_bridge_logic
+    test/test_openvins_px4_vision_bridge_logic.cpp
+  )
+  if(TARGET test_openvins_px4_vision_bridge_logic)
+    target_link_libraries(
+      test_openvins_px4_vision_bridge_logic
+      ${PROJECT_NAME}_openvins_px4_vision_bridge_logic
+    )
+    ament_target_dependencies(test_openvins_px4_vision_bridge_logic tf2)
   endif()
 endif()
 

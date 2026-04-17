@@ -22,6 +22,7 @@
 
 #include "uav_bridge/math_utils.hpp"
 #include "uav_bridge/openvins_ev_guard.hpp"
+#include "uav_bridge/openvins_px4_vision_bridge_logic.hpp"
 #include "uav_bridge/uav_control_logic.hpp"
 
 namespace uav_bridge
@@ -389,12 +390,10 @@ private:
       msg.pose.pose.orientation.w);
 
     if (orientation_enu_sensor.length2() > 1.0e-12) {
-      tf2::Quaternion q_enu_sensor = orientation_enu_sensor;
-      q_enu_sensor.normalize();
-      const tf2::Matrix3x3 rotation_enu_sensor(q_enu_sensor);
-      const tf2::Matrix3x3 body_to_sensor(sensor_rotation_in_body_);
-      const tf2::Matrix3x3 sensor_to_body = body_to_sensor.transpose();
-      const tf2::Matrix3x3 rotation_enu_body = rotation_enu_sensor * sensor_to_body;
+      const tf2::Quaternion orientation_enu_body = orientationEnuBodyFromEnuSensor(
+        orientation_enu_sensor,
+        sensor_rotation_in_body_);
+      const tf2::Matrix3x3 rotation_enu_body(orientation_enu_body);
 
       const tf2::Matrix3x3 enu_to_ned(
         0.0, 1.0, 0.0,
@@ -426,13 +425,13 @@ private:
       static_cast<float>(msg.twist.twist.linear.y),
       static_cast<float>(msg.twist.twist.linear.z)};
     if (isFiniteVector(velocity_sensor)) {
-      const tf2::Matrix3x3 body_to_sensor(sensor_rotation_in_body_);
-      const tf2::Matrix3x3 sensor_to_body = body_to_sensor.transpose();
       const tf2::Vector3 velocity_sensor_tf(
         static_cast<double>(velocity_sensor[0]),
         static_cast<double>(velocity_sensor[1]),
         static_cast<double>(velocity_sensor[2]));
-      const tf2::Vector3 velocity_body_flu = sensor_to_body * velocity_sensor_tf;
+      const tf2::Vector3 velocity_body_flu = velocityBodyFluFromSensor(
+        velocity_sensor_tf,
+        sensor_rotation_in_body_);
       out.velocity = {
         static_cast<float>(velocity_body_flu.x()),
         static_cast<float>(-velocity_body_flu.y()),
@@ -561,7 +560,7 @@ private:
       if (log_debug_) {
         RCLCPP_INFO_THROTTLE(
           this->get_logger(), *this->get_clock(), 1000,
-          "published fresh EV odom: pos_ned=[%.3f %.3f %.3f] vel_ned=[%.3f %.3f %.3f] reset=%u",
+          "published fresh EV odom: pos_ned=[%.3f %.3f %.3f] vel_body_frd=[%.3f %.3f %.3f] reset=%u",
           fresh_output->position[0], fresh_output->position[1], fresh_output->position[2],
           fresh_output->velocity[0], fresh_output->velocity[1], fresh_output->velocity[2],
           fresh_output->reset_counter);
@@ -575,7 +574,7 @@ private:
       if (log_debug_) {
         RCLCPP_INFO_THROTTLE(
           this->get_logger(), *this->get_clock(), 1000,
-          "published held EV odom: pos_ned=[%.3f %.3f %.3f] vel_ned=[%.3f %.3f %.3f] sample=%lu",
+          "published held EV odom: pos_ned=[%.3f %.3f %.3f] vel_body_frd=[%.3f %.3f %.3f] sample=%lu",
           held_output.position[0], held_output.position[1], held_output.position[2],
           held_output.velocity[0], held_output.velocity[1], held_output.velocity[2],
           static_cast<unsigned long>(held_output.timestamp_sample));
