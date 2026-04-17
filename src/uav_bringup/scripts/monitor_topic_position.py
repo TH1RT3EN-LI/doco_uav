@@ -51,6 +51,11 @@ class PositionSample:
     z: float
     stamp_s: Optional[float]
     frame_label: str
+    orientation_xyzw: Optional[Tuple[float, float, float, float]] = None
+    rpy_rad: Optional[Tuple[float, float, float]] = None
+    orientation_frame_label: str = "--"
+    velocity_xyz: Optional[Tuple[float, float, float]] = None
+    velocity_frame_label: str = "--"
 
 
 @dataclass(frozen=True)
@@ -143,6 +148,15 @@ class PositionWidgets:
     delta_y_var: tk.StringVar
     delta_z_var: tk.StringVar
     distance_var: tk.StringVar
+    orientation_frame_var: tk.StringVar
+    roll_var: tk.StringVar
+    pitch_var: tk.StringVar
+    yaw_var: tk.StringVar
+    quaternion_var: tk.StringVar
+    velocity_frame_var: tk.StringVar
+    velocity_x_var: tk.StringVar
+    velocity_y_var: tk.StringVar
+    velocity_z_var: tk.StringVar
     badge_label: tk.Label
 
 
@@ -461,7 +475,7 @@ class PositionMonitorGui:
         tk.Label(
             header,
             text=(
-                "同时监视位置链路、OV guard、PX4 local validity 和飞控模式；"
+                "同时监视位置、姿态、速度链路，以及 OV guard、PX4 local validity 和飞控模式；"
                 "所有订阅仅缓存最新快照，GUI 定时刷新，不累计历史曲线。"
             ),
             font=("Sans", 11),
@@ -656,6 +670,15 @@ class PositionMonitorGui:
         delta_y_var = tk.StringVar(value="-- m")
         delta_z_var = tk.StringVar(value="-- m")
         distance_var = tk.StringVar(value="-- m")
+        orientation_frame_var = tk.StringVar(value="--")
+        roll_var = tk.StringVar(value="--")
+        pitch_var = tk.StringVar(value="--")
+        yaw_var = tk.StringVar(value="--")
+        quaternion_var = tk.StringVar(value="--")
+        velocity_frame_var = tk.StringVar(value="--")
+        velocity_x_var = tk.StringVar(value="-- m/s")
+        velocity_y_var = tk.StringVar(value="-- m/s")
+        velocity_z_var = tk.StringVar(value="-- m/s")
 
         badge_label = tk.Label(
             details,
@@ -694,6 +717,15 @@ class PositionMonitorGui:
             delta_y_var=delta_y_var,
             delta_z_var=delta_z_var,
             distance_var=distance_var,
+            orientation_frame_var=orientation_frame_var,
+            roll_var=roll_var,
+            pitch_var=pitch_var,
+            yaw_var=yaw_var,
+            quaternion_var=quaternion_var,
+            velocity_frame_var=velocity_frame_var,
+            velocity_x_var=velocity_x_var,
+            velocity_y_var=velocity_y_var,
+            velocity_z_var=velocity_z_var,
             badge_label=badge_label,
         )
 
@@ -733,6 +765,59 @@ class PositionMonitorGui:
         self._add_big_value_row(relative_box, 1, "ΔY", delta_y_var)
         self._add_big_value_row(relative_box, 2, "ΔZ", delta_z_var)
         self._add_big_value_row(relative_box, 3, "总位移", distance_var)
+
+        attitude_box = tk.LabelFrame(
+            metrics,
+            text="姿态",
+            font=("Sans", 12, "bold"),
+            bg="#f8fafc",
+            fg="#111827",
+            padx=12,
+            pady=10,
+        )
+        attitude_box.pack(fill="x", pady=(0, 8))
+        self._add_info_row(
+            attitude_box,
+            0,
+            "姿态参考",
+            orientation_frame_var,
+            bg="#f8fafc",
+            wraplength=720,
+        )
+        self._add_big_value_row(attitude_box, 1, "Roll", roll_var)
+        self._add_big_value_row(attitude_box, 2, "Pitch", pitch_var)
+        self._add_big_value_row(attitude_box, 3, "Yaw", yaw_var)
+        self._add_info_row(
+            attitude_box,
+            4,
+            "Quaternion",
+            quaternion_var,
+            bg="#f8fafc",
+            wraplength=720,
+            font=("Consolas", 11),
+        )
+
+        velocity_box = tk.LabelFrame(
+            metrics,
+            text="速度",
+            font=("Sans", 12, "bold"),
+            bg="#f8fafc",
+            fg="#111827",
+            padx=12,
+            pady=10,
+        )
+        velocity_box.pack(fill="x", pady=(0, 8))
+        self._add_info_row(
+            velocity_box,
+            0,
+            "速度参考",
+            velocity_frame_var,
+            bg="#f8fafc",
+            wraplength=720,
+        )
+        self._add_big_value_row(velocity_box, 1, "Vx", velocity_x_var)
+        self._add_big_value_row(velocity_box, 2, "Vy", velocity_y_var)
+        self._add_big_value_row(velocity_box, 3, "Vz", velocity_z_var)
 
         tk.Button(
             metrics,
@@ -1052,6 +1137,8 @@ class PositionMonitorGui:
                 widgets.freshness_var.set(f"等待 {format_age(waited_s)}")
             widgets.stamp_var.set("--")
             self._set_position_vars(widgets, None, None)
+            self._set_orientation_vars(widgets, None)
+            self._set_velocity_vars(widgets, None)
             return
 
         widgets.frame_var.set(snapshot.latest_sample.frame_label)
@@ -1060,6 +1147,8 @@ class PositionMonitorGui:
         )
         widgets.stamp_var.set(format_timestamp(snapshot.latest_sample.stamp_s))
         self._set_position_vars(widgets, snapshot.latest_sample, snapshot.first_sample)
+        self._set_orientation_vars(widgets, snapshot.latest_sample)
+        self._set_velocity_vars(widgets, snapshot.latest_sample)
 
     def _refresh_status_card(self, view: StatusSourceView, now: float):
         widgets = self.status_widgets[view.spec.key]
@@ -1113,6 +1202,52 @@ class PositionMonitorGui:
         widgets.delta_y_var.set(format_distance(dy))
         widgets.delta_z_var.set(format_distance(dz))
         widgets.distance_var.set(format_distance(distance))
+
+    def _set_orientation_vars(
+        self,
+        widgets: PositionWidgets,
+        latest_sample: Optional[PositionSample],
+    ):
+        if latest_sample is None or latest_sample.rpy_rad is None:
+            widgets.orientation_frame_var.set(
+                latest_sample.orientation_frame_label if latest_sample is not None else "--"
+            )
+            widgets.roll_var.set("N/A")
+            widgets.pitch_var.set("N/A")
+            widgets.yaw_var.set("N/A")
+            widgets.quaternion_var.set(
+                format_quaternion(latest_sample.orientation_xyzw)
+                if latest_sample is not None
+                else "N/A"
+            )
+            return
+
+        roll, pitch, yaw = latest_sample.rpy_rad
+        widgets.orientation_frame_var.set(latest_sample.orientation_frame_label)
+        widgets.roll_var.set(format_angle_deg(roll))
+        widgets.pitch_var.set(format_angle_deg(pitch))
+        widgets.yaw_var.set(format_angle_deg(yaw))
+        widgets.quaternion_var.set(format_quaternion(latest_sample.orientation_xyzw))
+
+    def _set_velocity_vars(
+        self,
+        widgets: PositionWidgets,
+        latest_sample: Optional[PositionSample],
+    ):
+        if latest_sample is None or latest_sample.velocity_xyz is None:
+            widgets.velocity_frame_var.set(
+                latest_sample.velocity_frame_label if latest_sample is not None else "--"
+            )
+            widgets.velocity_x_var.set("N/A")
+            widgets.velocity_y_var.set("N/A")
+            widgets.velocity_z_var.set("N/A")
+            return
+
+        vx, vy, vz = latest_sample.velocity_xyz
+        widgets.velocity_frame_var.set(latest_sample.velocity_frame_label)
+        widgets.velocity_x_var.set(format_plain_float(vx, unit="m/s", signed=True))
+        widgets.velocity_y_var.set(format_plain_float(vy, unit="m/s", signed=True))
+        widgets.velocity_z_var.set(format_plain_float(vz, unit="m/s", signed=True))
 
 
 def age_since(last_time_s: Optional[float], now_s: float) -> Optional[float]:
@@ -1175,6 +1310,201 @@ def extract_px4_stamp_seconds(msg: Any) -> Optional[float]:
     if timestamp is not None and timestamp > 0:
         return float(timestamp) * 1e-6
     return None
+
+
+def clamp_unit(value: float) -> float:
+    return max(-1.0, min(1.0, value))
+
+
+def normalized_xyzw_quaternion(
+    x: Optional[float],
+    y: Optional[float],
+    z: Optional[float],
+    w: Optional[float],
+) -> Optional[Tuple[float, float, float, float]]:
+    components = (x, y, z, w)
+    if any(component is None or not math.isfinite(component) for component in components):
+        return None
+    norm = math.sqrt(sum(component * component for component in components))
+    if norm <= 1.0e-12:
+        return None
+    return tuple(component / norm for component in components)
+
+
+def ros_quaternion_from_msg(msg: Any) -> Optional[Tuple[float, float, float, float]]:
+    return normalized_xyzw_quaternion(
+        safe_float(getattr(msg, "x", None)),
+        safe_float(getattr(msg, "y", None)),
+        safe_float(getattr(msg, "z", None)),
+        safe_float(getattr(msg, "w", None)),
+    )
+
+
+def px4_quaternion_array_to_xyzw(
+    q: Any,
+) -> Optional[Tuple[float, float, float, float]]:
+    return normalized_xyzw_quaternion(
+        safe_sequence_float(q, 1),
+        safe_sequence_float(q, 2),
+        safe_sequence_float(q, 3),
+        safe_sequence_float(q, 0),
+    )
+
+
+def quaternion_xyzw_to_rpy(
+    quaternion_xyzw: Optional[Tuple[float, float, float, float]],
+) -> Optional[Tuple[float, float, float]]:
+    if quaternion_xyzw is None:
+        return None
+    x, y, z, w = quaternion_xyzw
+    sinr_cosp = 2.0 * ((w * x) + (y * z))
+    cosr_cosp = 1.0 - (2.0 * ((x * x) + (y * y)))
+    roll = math.atan2(sinr_cosp, cosr_cosp)
+
+    sinp = 2.0 * ((w * y) - (z * x))
+    pitch = math.asin(clamp_unit(sinp))
+
+    siny_cosp = 2.0 * ((w * z) + (x * y))
+    cosy_cosp = 1.0 - (2.0 * ((y * y) + (z * z)))
+    yaw = math.atan2(siny_cosp, cosy_cosp)
+    return roll, pitch, yaw
+
+
+def quaternion_xyzw_to_matrix(
+    quaternion_xyzw: Optional[Tuple[float, float, float, float]],
+) -> Optional[Tuple[Tuple[float, float, float], Tuple[float, float, float], Tuple[float, float, float]]]:
+    if quaternion_xyzw is None:
+        return None
+    x, y, z, w = quaternion_xyzw
+    return (
+        (
+            1.0 - (2.0 * ((y * y) + (z * z))),
+            2.0 * ((x * y) - (z * w)),
+            2.0 * ((x * z) + (y * w)),
+        ),
+        (
+            2.0 * ((x * y) + (z * w)),
+            1.0 - (2.0 * ((x * x) + (z * z))),
+            2.0 * ((y * z) - (x * w)),
+        ),
+        (
+            2.0 * ((x * z) - (y * w)),
+            2.0 * ((y * z) + (x * w)),
+            1.0 - (2.0 * ((x * x) + (y * y))),
+        ),
+    )
+
+
+def matrix_multiply(
+    lhs: Tuple[Tuple[float, float, float], Tuple[float, float, float], Tuple[float, float, float]],
+    rhs: Tuple[Tuple[float, float, float], Tuple[float, float, float], Tuple[float, float, float]],
+) -> Tuple[Tuple[float, float, float], Tuple[float, float, float], Tuple[float, float, float]]:
+    return tuple(
+        tuple(sum(lhs[row][k] * rhs[k][col] for k in range(3)) for col in range(3))
+        for row in range(3)
+    )
+
+
+def quaternion_xyzw_from_matrix(
+    matrix: Tuple[Tuple[float, float, float], Tuple[float, float, float], Tuple[float, float, float]],
+) -> Optional[Tuple[float, float, float, float]]:
+    trace = matrix[0][0] + matrix[1][1] + matrix[2][2]
+    if trace > 0.0:
+        scale = math.sqrt(trace + 1.0) * 2.0
+        w = 0.25 * scale
+        x = (matrix[2][1] - matrix[1][2]) / scale
+        y = (matrix[0][2] - matrix[2][0]) / scale
+        z = (matrix[1][0] - matrix[0][1]) / scale
+    elif matrix[0][0] > matrix[1][1] and matrix[0][0] > matrix[2][2]:
+        scale = math.sqrt(1.0 + matrix[0][0] - matrix[1][1] - matrix[2][2]) * 2.0
+        w = (matrix[2][1] - matrix[1][2]) / scale
+        x = 0.25 * scale
+        y = (matrix[0][1] + matrix[1][0]) / scale
+        z = (matrix[0][2] + matrix[2][0]) / scale
+    elif matrix[1][1] > matrix[2][2]:
+        scale = math.sqrt(1.0 + matrix[1][1] - matrix[0][0] - matrix[2][2]) * 2.0
+        w = (matrix[0][2] - matrix[2][0]) / scale
+        x = (matrix[0][1] + matrix[1][0]) / scale
+        y = 0.25 * scale
+        z = (matrix[1][2] + matrix[2][1]) / scale
+    else:
+        scale = math.sqrt(1.0 + matrix[2][2] - matrix[0][0] - matrix[1][1]) * 2.0
+        w = (matrix[1][0] - matrix[0][1]) / scale
+        x = (matrix[0][2] + matrix[2][0]) / scale
+        y = (matrix[1][2] + matrix[2][1]) / scale
+        z = 0.25 * scale
+    return normalized_xyzw_quaternion(x, y, z, w)
+
+
+def convert_px4_quaternion_to_ros_xyzw(
+    q: Any,
+    pose_frame: Optional[int],
+) -> Tuple[Optional[Tuple[float, float, float, float]], str]:
+    quaternion_xyzw = px4_quaternion_array_to_xyzw(q)
+    if quaternion_xyzw is None:
+        return None, "PX4 姿态无效"
+
+    rotation = quaternion_xyzw_to_matrix(quaternion_xyzw)
+    if rotation is None:
+        return None, "PX4 姿态无效"
+
+    flu_to_frd = (
+        (1.0, 0.0, 0.0),
+        (0.0, -1.0, 0.0),
+        (0.0, 0.0, -1.0),
+    )
+
+    if pose_frame == 1:
+        ned_to_enu = (
+            (0.0, 1.0, 0.0),
+            (1.0, 0.0, 0.0),
+            (0.0, 0.0, -1.0),
+        )
+        converted = matrix_multiply(matrix_multiply(ned_to_enu, rotation), flu_to_frd)
+        return quaternion_xyzw_from_matrix(converted), "ROS ENU/FLU（由 PX4 NED/FRD 转换）"
+
+    if pose_frame == 2:
+        frd_to_flu = flu_to_frd
+        converted = matrix_multiply(matrix_multiply(frd_to_flu, rotation), flu_to_frd)
+        return quaternion_xyzw_from_matrix(converted), "ROS FLU/FLU（由 PX4 FRD/FRD 转换）"
+
+    return quaternion_xyzw, f"PX4 原始姿态（{describe_px4_pose_frame(pose_frame or 0)}）"
+
+
+def describe_px4_velocity_frame(velocity_frame: int) -> str:
+    mapping = {
+        0: "PX4 未知速度坐标系",
+        1: "PX4 NED 速度",
+        2: "PX4 FRD 速度",
+        3: "PX4 BODY_FRD 速度",
+    }
+    return mapping.get(velocity_frame, f"PX4 未知 velocity_frame={velocity_frame}")
+
+
+def convert_px4_velocity_to_ros_xyz(
+    x: Optional[float],
+    y: Optional[float],
+    z: Optional[float],
+    velocity_frame: Optional[int],
+) -> Tuple[Optional[Tuple[float, float, float]], str]:
+    if x is None or y is None or z is None:
+        return None, "PX4 速度无效"
+    if velocity_frame == 1:
+        return (y, x, -z), "ROS ENU 世界速度（由 PX4 NED 转换）"
+    if velocity_frame == 2:
+        return (x, -y, -z), "ROS FLU 世界速度（由 PX4 FRD 转换）"
+    if velocity_frame == 3:
+        return (x, -y, -z), "ROS body FLU 速度（由 PX4 BODY_FRD 转换）"
+    return (x, y, z), f"PX4 原始速度（{describe_px4_velocity_frame(velocity_frame or 0)}）"
+
+
+def format_quaternion(
+    quaternion_xyzw: Optional[Tuple[float, float, float, float]],
+) -> str:
+    if quaternion_xyzw is None:
+        return "N/A"
+    x, y, z, w = quaternion_xyzw
+    return f"[{x:+.3f}, {y:+.3f}, {z:+.3f}, {w:+.3f}]"
 
 
 def format_bool(value: Optional[bool]) -> str:
@@ -1356,12 +1686,30 @@ def make_ros_odometry_spec(key: str, source_label: str, topic_name: str) -> Posi
         z = safe_float(getattr(msg.pose.pose.position, "z", None))
         if x is None or y is None or z is None:
             raise ValueError("Odometry 位姿里存在非有限值。")
+        orientation_xyzw = ros_quaternion_from_msg(getattr(msg.pose.pose, "orientation", None))
+        rpy_rad = quaternion_xyzw_to_rpy(orientation_xyzw)
+        velocity_xyz = (
+            safe_float(getattr(msg.twist.twist.linear, "x", None)),
+            safe_float(getattr(msg.twist.twist.linear, "y", None)),
+            safe_float(getattr(msg.twist.twist.linear, "z", None)),
+        )
+        if any(component is None for component in velocity_xyz):
+            velocity_xyz = None
         return PositionSample(
             x=x,
             y=y,
             z=z,
             stamp_s=extract_ros_stamp_seconds(msg.header.stamp),
             frame_label=describe_ros_odometry_frame(msg.header.frame_id, msg.child_frame_id),
+            orientation_xyzw=orientation_xyzw,
+            rpy_rad=rpy_rad,
+            orientation_frame_label=(
+                f"ROS pose（{msg.child_frame_id or '?'} -> {msg.header.frame_id or '?'}）"
+            ),
+            velocity_xyz=velocity_xyz,
+            velocity_frame_label=(
+                f"ROS twist（child={msg.child_frame_id or '未设置'}）"
+            ),
         )
 
     return PositionSourceSpec(
@@ -1385,6 +1733,7 @@ def make_px4_position_spec(key: str, source_label: str, topic_name: str) -> Posi
         y = safe_sequence_float(getattr(msg, "position", None), 1)
         z = safe_sequence_float(getattr(msg, "position", None), 2)
         pose_frame = safe_int(getattr(msg, "pose_frame", None))
+        velocity_frame = safe_int(getattr(msg, "velocity_frame", None))
         if x is None or y is None or z is None:
             raise ValueError("VehicleOdometry position 存在非有限值。")
         if pose_frame is None:
@@ -1395,12 +1744,28 @@ def make_px4_position_spec(key: str, source_label: str, topic_name: str) -> Posi
             z,
             pose_frame,
         )
+        orientation_xyzw, orientation_frame_label = convert_px4_quaternion_to_ros_xyzw(
+            getattr(msg, "q", None),
+            pose_frame,
+        )
+        rpy_rad = quaternion_xyzw_to_rpy(orientation_xyzw)
+        velocity_xyz, velocity_frame_label = convert_px4_velocity_to_ros_xyz(
+            safe_sequence_float(getattr(msg, "velocity", None), 0),
+            safe_sequence_float(getattr(msg, "velocity", None), 1),
+            safe_sequence_float(getattr(msg, "velocity", None), 2),
+            velocity_frame,
+        )
         return PositionSample(
             x=ros_x,
             y=ros_y,
             z=ros_z,
             stamp_s=extract_px4_stamp_seconds(msg),
             frame_label=frame_label,
+            orientation_xyzw=orientation_xyzw,
+            rpy_rad=rpy_rad,
+            orientation_frame_label=orientation_frame_label,
+            velocity_xyz=velocity_xyz,
+            velocity_frame_label=velocity_frame_label,
         )
 
     return PositionSourceSpec(
@@ -1774,7 +2139,7 @@ def vehicle_nav_label(nav_state: Optional[int]) -> str:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="GUI 方式低开销监视位置链路、OV guard 与 PX4 状态。"
+        description="GUI 方式低开销监视位置/姿态/速度全链路、OV guard 与 PX4 状态。"
     )
     parser.add_argument(
         "--sources",
@@ -1880,10 +2245,10 @@ def build_sources(
     source_keys = normalize_source_keys(args)
 
     position_builders = {
-        "openvins": lambda topic: make_ros_odometry_spec("openvins", "OpenVINS 原始位置", topic),
+        "openvins": lambda topic: make_ros_odometry_spec("openvins", "OpenVINS 原始", topic),
         "uav_state": lambda topic: make_ros_odometry_spec("uav_state", "当前 UAV 融合状态", topic),
-        "px4_in": lambda topic: make_px4_position_spec("px4_in", "发给 PX4 的视觉位置", topic),
-        "px4_out": lambda topic: make_px4_position_spec("px4_out", "PX4 输出位置", topic),
+        "px4_in": lambda topic: make_px4_position_spec("px4_in", "发给 PX4 的 VehicleOdometry", topic),
+        "px4_out": lambda topic: make_px4_position_spec("px4_out", "PX4 输出 VehicleOdometry", topic),
     }
     position_default_topics = {
         "openvins": args.openvins_topic,
