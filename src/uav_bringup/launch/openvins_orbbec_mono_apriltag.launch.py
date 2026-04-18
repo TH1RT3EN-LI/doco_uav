@@ -421,10 +421,10 @@ def generate_launch_description():
         DeclareLaunchArgument("camera_x", default_value=DEFAULT_CAMERA_TO_BODY["x"]),
         DeclareLaunchArgument("camera_y", default_value=DEFAULT_CAMERA_TO_BODY["y"]),
         DeclareLaunchArgument("camera_z", default_value=DEFAULT_CAMERA_TO_BODY["z"]),
-        # The current OV-integrated machine TF expects the downward-looking mono
-        # optical axis on the opposite side of the parent Z used by the
-        # non-OV launch, so flip only the mono optical frame here.
-        DeclareLaunchArgument("camera_roll", default_value="0.0"),
+        # Keep the OV-integrated mono mount identical to the original
+        # downward-looking body-mounted mono default. The detector now
+        # consistently uses this configured frame for TF lookups.
+        DeclareLaunchArgument("camera_roll", default_value=str(math.pi)),
         DeclareLaunchArgument("camera_pitch", default_value="0.0"),
         DeclareLaunchArgument("camera_yaw", default_value=str(-math.pi / 2.0)),
         DeclareLaunchArgument("fx", default_value=DEFAULT_CAMERA_INTRINSICS["fx"]),

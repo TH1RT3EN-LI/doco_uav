@@ -893,6 +893,21 @@ private:
 
   std::string resolveCameraFrameId(const std::string & image_frame_id) const
   {
+    // When a camera frame is configured from launch, prefer it over the
+    // incoming image header so the detector follows the same TF that the
+    // static camera mount publishes. This avoids silently bypassing the mono
+    // mount TF when an external driver uses a different frame_id.
+    if (!configured_camera_frame_id_.empty()) {
+      if (!image_frame_id.empty() && image_frame_id != configured_camera_frame_id_) {
+        RCLCPP_WARN(
+          this->get_logger(),
+          "image frame_id '%s' differs from configured camera_frame_id '%s'; "
+          "using configured frame for TF lookups",
+          image_frame_id.c_str(),
+          configured_camera_frame_id_.c_str());
+      }
+      return configured_camera_frame_id_;
+    }
     if (!image_frame_id.empty()) {
       return image_frame_id;
     }
