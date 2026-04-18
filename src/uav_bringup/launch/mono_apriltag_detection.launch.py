@@ -50,6 +50,8 @@ def generate_launch_description():
     tag_family = LaunchConfiguration("tag_family")
     tag_size_m = LaunchConfiguration("tag_size_m")
     tag_camera_roll_offset_rad = LaunchConfiguration("tag_camera_roll_offset_rad")
+    tag_camera_pitch_offset_rad = LaunchConfiguration("tag_camera_pitch_offset_rad")
+    tag_camera_yaw_offset_rad = LaunchConfiguration("tag_camera_yaw_offset_rad")
     tag_frame_yaw_offset_rad = LaunchConfiguration("tag_frame_yaw_offset_rad")
     odometry_topic = LaunchConfiguration("odometry_topic")
     odometry_timeout_s = LaunchConfiguration("odometry_timeout_s")
@@ -116,6 +118,8 @@ def generate_launch_description():
             {"tag_family": tag_family},
             {"tag_size_m": tag_size_m},
             {"tag_camera_roll_offset_rad": tag_camera_roll_offset_rad},
+            {"tag_camera_pitch_offset_rad": tag_camera_pitch_offset_rad},
+            {"tag_camera_yaw_offset_rad": tag_camera_yaw_offset_rad},
             {"tag_frame_yaw_offset_rad": tag_frame_yaw_offset_rad},
             {"odometry_topic": odometry_topic},
             {"odometry_timeout_s": odometry_timeout_s},
@@ -182,6 +186,8 @@ def generate_launch_description():
         DeclareLaunchArgument("tag_family", default_value="36h11"),
         DeclareLaunchArgument("tag_size_m", default_value="0.20"),
         DeclareLaunchArgument("tag_camera_roll_offset_rad", default_value="0.0"),
+        DeclareLaunchArgument("tag_camera_pitch_offset_rad", default_value="0.0"),
+        DeclareLaunchArgument("tag_camera_yaw_offset_rad", default_value="0.0"),
         DeclareLaunchArgument("tag_frame_yaw_offset_rad", default_value="0.0"),
         DeclareLaunchArgument("odometry_topic", default_value="/ov_msckf/odomimu"),
         DeclareLaunchArgument("odometry_timeout_s", default_value="0.20"),

@@ -73,6 +73,8 @@ public:
     this->declare_parameter<std::string>("odometry_topic", "/ov_msckf/odomimu");
     this->declare_parameter<double>("odometry_timeout_s", 0.20);
     this->declare_parameter<double>("tag_camera_roll_offset_rad", 0.0);
+    this->declare_parameter<double>("tag_camera_pitch_offset_rad", 0.0);
+    this->declare_parameter<double>("tag_camera_yaw_offset_rad", 0.0);
     this->declare_parameter<double>("tag_frame_yaw_offset_rad", 0.0);
     this->declare_parameter<double>("mono_in_ov_x_m", 0.0);
     this->declare_parameter<double>("mono_in_ov_y_m", 0.0);
@@ -105,6 +107,10 @@ public:
     odometry_timeout_s_ = std::max(0.0, this->get_parameter("odometry_timeout_s").as_double());
     tag_camera_roll_offset_rad_ =
       this->get_parameter("tag_camera_roll_offset_rad").as_double();
+    tag_camera_pitch_offset_rad_ =
+      this->get_parameter("tag_camera_pitch_offset_rad").as_double();
+    tag_camera_yaw_offset_rad_ =
+      this->get_parameter("tag_camera_yaw_offset_rad").as_double();
     tag_frame_yaw_offset_rad_ =
       this->get_parameter("tag_frame_yaw_offset_rad").as_double();
     mono_in_ov_x_m_ = this->get_parameter("mono_in_ov_x_m").as_double();
@@ -208,7 +214,7 @@ public:
       "aruco_detector_node: image=%s camera_info=%s target_observation=%s tag_detection=%s "
       "tag_pose=%s tag_marker=%s camera_frame=%s base_frame=%s output_frame=%s debug_image=%s "
       "marker_id=%d family=%s tag_size=%.3f "
-      "odom=%s tag_camera_roll_offset=%.3f tag_frame_yaw_offset=%.3f "
+      "odom=%s tag_camera_rpy_offset=(%.3f, %.3f, %.3f) tag_frame_yaw_offset=%.3f "
       "mono_in_ov=(xyz=%.3f, %.3f, %.3f rpy=%.3f, %.3f, %.3f) "
       "tag_tf(base=%s odom=%s prefix=%s)",
       image_topic_.c_str(),
@@ -226,6 +232,8 @@ public:
       tag_size_m_,
       odometry_topic_.empty() ? "<disabled>" : odometry_topic_.c_str(),
       tag_camera_roll_offset_rad_,
+      tag_camera_pitch_offset_rad_,
+      tag_camera_yaw_offset_rad_,
       tag_frame_yaw_offset_rad_,
       mono_in_ov_x_m_,
       mono_in_ov_y_m_,
@@ -417,6 +425,15 @@ private:
         rotation_matrix.at<double>(1, 0), rotation_matrix.at<double>(0, 0))));
   }
 
+  static float computeTransformYawRad(const tf2::Transform & transform)
+  {
+    double roll = 0.0;
+    double pitch = 0.0;
+    double yaw = 0.0;
+    tf2::Matrix3x3(transform.getRotation()).getRPY(roll, pitch, yaw);
+    return normalizeAngle(static_cast<float>(yaw));
+  }
+
   static float computeTagNormalDotView(const cv::Vec3d & rvec, const cv::Vec3d & tvec)
   {
     cv::Mat rotation_matrix;
@@ -513,14 +530,25 @@ private:
 
   static tf2::Transform rotateDetectedPoseInCameraFrame(
     const tf2::Transform & camera_from_tag,
-    double roll_offset_rad)
+    double roll_offset_rad,
+    double pitch_offset_rad,
+    double yaw_offset_rad)
   {
-    if (!std::isfinite(roll_offset_rad) || std::abs(roll_offset_rad) <= 1.0e-12) {
+    const bool apply_roll =
+      std::isfinite(roll_offset_rad) && std::abs(roll_offset_rad) > 1.0e-12;
+    const bool apply_pitch =
+      std::isfinite(pitch_offset_rad) && std::abs(pitch_offset_rad) > 1.0e-12;
+    const bool apply_yaw =
+      std::isfinite(yaw_offset_rad) && std::abs(yaw_offset_rad) > 1.0e-12;
+    if (!(apply_roll || apply_pitch || apply_yaw)) {
       return camera_from_tag;
     }
 
     tf2::Quaternion camera_rotation_offset;
-    camera_rotation_offset.setRPY(roll_offset_rad, 0.0, 0.0);
+    camera_rotation_offset.setRPY(
+      apply_roll ? roll_offset_rad : 0.0,
+      apply_pitch ? pitch_offset_rad : 0.0,
+      apply_yaw ? yaw_offset_rad : 0.0);
     camera_rotation_offset.normalize();
     return tf2::Transform(camera_rotation_offset, tf2::Vector3(0.0, 0.0, 0.0)) * camera_from_tag;
   }
@@ -976,7 +1004,9 @@ private:
     resolved_pose.camera_from_tag = rotateTagFrameInPlane(
       rotateDetectedPoseInCameraFrame(
         transformFromCvPose(camera_rvec, camera_tvec),
-        tag_camera_roll_offset_rad_),
+        tag_camera_roll_offset_rad_,
+        tag_camera_pitch_offset_rad_,
+        tag_camera_yaw_offset_rad_),
       tag_frame_yaw_offset_rad_);
     detection.position_camera_m = pointToMsg(resolved_pose.camera_from_tag.getOrigin());
 
@@ -1271,15 +1301,14 @@ private:
     const float edge_dx = target_corners[1].x - target_corners[0].x;
     const float edge_dy = target_corners[1].y - target_corners[0].y;
     observation.yaw_err_rad = normalizeAngle(
-      std::atan2(edge_dy, edge_dx) + static_cast<float>(tag_frame_yaw_offset_rad_));
+      std::atan2(edge_dy, edge_dx) +
+      static_cast<float>(tag_camera_yaw_offset_rad_ + tag_frame_yaw_offset_rad_));
 
     const float span_conf = computeSpanConfidence(observation.marker_span_px);
     const float span_tag_depth_m = computeTagDepthFromSpanPx(observation.marker_span_px);
 
     std::vector<PoseCandidate> candidates;
     if (estimatePose(target_corners, candidates)) {
-      observation.yaw_err_rad = normalizeAngle(
-        candidates.front().yaw_rad + static_cast<float>(tag_frame_yaw_offset_rad_));
       observation.reproj_err_px = candidates.front().reproj_err_px;
       if (isPositiveFiniteDepth(candidates.front().tag_depth_m)) {
         observation.pose_valid = true;
@@ -1298,6 +1327,9 @@ private:
           candidates.front().tvec,
           detection,
           resolved_pose);
+        if (resolved_pose.camera_valid) {
+          observation.yaw_err_rad = computeTransformYawRad(resolved_pose.camera_from_tag);
+        }
       } else {
         observation.pose_valid = false;
         observation.tag_depth_valid = false;
@@ -1354,6 +1386,8 @@ private:
   double mono_in_ov_y_m_{0.0};
   double mono_in_ov_z_m_{0.0};
   double tag_camera_roll_offset_rad_{0.0};
+  double tag_camera_pitch_offset_rad_{0.0};
+  double tag_camera_yaw_offset_rad_{0.0};
   double tag_frame_yaw_offset_rad_{0.0};
   double mono_in_ov_roll_rad_{0.0};
   double mono_in_ov_pitch_rad_{0.0};

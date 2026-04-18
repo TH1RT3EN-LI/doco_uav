@@ -126,3 +126,8 @@ def test_launch_files_expose_and_route_ov_body_frame_defaults():
         in ov_mono_tag_text
     )
     assert 'DeclareLaunchArgument("camera_roll", default_value=str(math.pi))' in ov_mono_tag_text
+    assert (
+        'DeclareLaunchArgument("tag_camera_yaw_offset_rad", default_value=str(-math.pi / 2.0))'
+        in ov_mono_tag_text
+    )
+    assert 'DeclareLaunchArgument("tag_frame_yaw_offset_rad", default_value="0.0")' in ov_mono_tag_text
