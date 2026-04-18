@@ -8,9 +8,9 @@ DEFAULT_CAMERA_INTRINSICS = {
 }
 
 DEFAULT_CAMERA_TO_BODY = {
-    "x": "0.08",
+    "x": "0.0",
     "y": "0.0",
-    "z": "0.03",
+    "z": "-0.08",
 }
 
 DEFAULT_STEREO_CAMERA_TO_BODY = {
