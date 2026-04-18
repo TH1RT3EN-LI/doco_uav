@@ -34,6 +34,8 @@ def generate_launch_description():
     position_keep_yaw_topic = LaunchConfiguration("position_keep_yaw_topic")
     start_position_delta_node = LaunchConfiguration("start_position_delta_node")
     position_delta_service = LaunchConfiguration("position_delta_service")
+    start_waypoint_delta_service = LaunchConfiguration("start_waypoint_delta_service")
+    waypoint_delta_service = LaunchConfiguration("waypoint_delta_service")
     position_command_frame_id = LaunchConfiguration("position_command_frame_id")
     px4_timestamp_source = LaunchConfiguration("px4_timestamp_source")
     timesync_status_topic = LaunchConfiguration("timesync_status_topic")
@@ -257,6 +259,20 @@ def generate_launch_description():
         ],
     )
 
+    waypoint_delta = Node(
+        package="uav_bridge",
+        executable="position_delta_node",
+        name="waypoint_delta",
+        output="screen",
+        condition=IfCondition(start_waypoint_delta_service),
+        parameters=[
+            {"state_topic": control_state_topic},
+            {"delta_service": waypoint_delta_service},
+            {"output_position_topic": position_keep_yaw_topic},
+            {"odom_frame_id": position_command_frame_id},
+        ],
+    )
+
     trajectory_path_publisher = Node(
         package="uav_bridge",
         executable="trajectory_path_publisher_node",
@@ -315,6 +331,11 @@ def generate_launch_description():
         DeclareLaunchArgument("start_position_delta_node", default_value="true"),
         DeclareLaunchArgument(
             "position_delta_service", default_value="/uav/control/command/position_delta"
+        ),
+        DeclareLaunchArgument("start_waypoint_delta_service", default_value="true"),
+        DeclareLaunchArgument(
+            "waypoint_delta_service",
+            default_value="/uav/demo_search/command/waypoint_delta",
         ),
         DeclareLaunchArgument("position_command_frame_id", default_value="uav_odom"),
         DeclareLaunchArgument("px4_timestamp_source", default_value="px4_timesync"),
@@ -397,6 +418,7 @@ def generate_launch_description():
         uav_state_bridge,
         uav_control,
         position_delta,
+        waypoint_delta,
         rc_safety_mux,
         trajectory_path_publisher,
         mono_video_recorder,

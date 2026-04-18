@@ -198,6 +198,57 @@ def generate_launch_description():
     trajectory_min_sample_period_s = LaunchConfiguration("trajectory_min_sample_period_s")
     start_rc_safety_mux = LaunchConfiguration("start_rc_safety_mux")
     rc_safety_config_path = LaunchConfiguration("rc_safety_config_path")
+    start_demo_search_coordinator = LaunchConfiguration("start_demo_search_coordinator")
+    demo_search_auto_start = LaunchConfiguration("demo_search_auto_start")
+    demo_search_auto_start_delay_s = LaunchConfiguration(
+        "demo_search_auto_start_delay_s"
+    )
+    demo_search_waypoints_body = LaunchConfiguration("demo_search_waypoints_body")
+    demo_search_waypoint_reach_tolerance_m = LaunchConfiguration(
+        "demo_search_waypoint_reach_tolerance_m"
+    )
+    demo_search_waypoint_timeout_s = LaunchConfiguration(
+        "demo_search_waypoint_timeout_s"
+    )
+    demo_search_hold_on_finish = LaunchConfiguration("demo_search_hold_on_finish")
+    demo_search_hold_on_stop = LaunchConfiguration("demo_search_hold_on_stop")
+    demo_search_start_service = LaunchConfiguration("demo_search_start_service")
+    demo_search_stop_service = LaunchConfiguration("demo_search_stop_service")
+    demo_search_manual_waypoint_service = LaunchConfiguration(
+        "demo_search_manual_waypoint_service"
+    )
+    demo_search_hold_service = LaunchConfiguration("demo_search_hold_service")
+    demo_search_ugv_state_topic = LaunchConfiguration("demo_search_ugv_state_topic")
+    demo_search_ugv_go_relative_service = LaunchConfiguration(
+        "demo_search_ugv_go_relative_service"
+    )
+    demo_search_tag_confidence_threshold = LaunchConfiguration(
+        "demo_search_tag_confidence_threshold"
+    )
+    demo_search_relative_pose_global_topic = LaunchConfiguration(
+        "demo_search_relative_pose_global_topic"
+    )
+    demo_search_uav_state_timeout_s = LaunchConfiguration(
+        "demo_search_uav_state_timeout_s"
+    )
+    demo_search_ugv_state_timeout_s = LaunchConfiguration(
+        "demo_search_ugv_state_timeout_s"
+    )
+    demo_search_relative_pose_timeout_s = LaunchConfiguration(
+        "demo_search_relative_pose_timeout_s"
+    )
+    demo_search_transform_timeout_s = LaunchConfiguration(
+        "demo_search_transform_timeout_s"
+    )
+    demo_search_service_wait_timeout_s = LaunchConfiguration(
+        "demo_search_service_wait_timeout_s"
+    )
+    demo_search_ugv_goal_offset_x_m = LaunchConfiguration(
+        "demo_search_ugv_goal_offset_x_m"
+    )
+    demo_search_ugv_goal_offset_y_m = LaunchConfiguration(
+        "demo_search_ugv_goal_offset_y_m"
+    )
     enable_relative_position_fusion = LaunchConfiguration(
         "enable_relative_position_fusion"
     )
@@ -409,6 +460,45 @@ def generate_launch_description():
         parameters=[rc_safety_config_path, {"use_sim_time": use_sim_time}],
     )
 
+    demo_search_coordinator = Node(
+        package="uav_bringup",
+        executable="uav_demo_search_coordinator.py",
+        name="uav_demo_search_coordinator",
+        output="screen",
+        condition=IfCondition(start_demo_search_coordinator),
+        parameters=[
+            {"use_sim_time": use_sim_time},
+            {"global_frame": global_frame},
+            {"uav_local_frame": position_command_frame_id},
+            {"uav_state_topic": control_state_topic},
+            {"position_keep_yaw_topic": position_keep_yaw_topic},
+            {"ugv_state_topic": demo_search_ugv_state_topic},
+            {"relative_pose_global_topic": demo_search_relative_pose_global_topic},
+            {"tag_detection_topic": tag_detection_topic},
+            {"position_delta_service": position_delta_service},
+            {"hold_service": demo_search_hold_service},
+            {"ugv_go_relative_service": demo_search_ugv_go_relative_service},
+            {"start_service": demo_search_start_service},
+            {"stop_service": demo_search_stop_service},
+            {"manual_waypoint_service": demo_search_manual_waypoint_service},
+            {"auto_start": demo_search_auto_start},
+            {"auto_start_delay_s": demo_search_auto_start_delay_s},
+            {"waypoints_body": demo_search_waypoints_body},
+            {"waypoint_reach_tolerance_m": demo_search_waypoint_reach_tolerance_m},
+            {"waypoint_timeout_s": demo_search_waypoint_timeout_s},
+            {"hold_on_finish": demo_search_hold_on_finish},
+            {"hold_on_stop": demo_search_hold_on_stop},
+            {"tag_confidence_threshold": demo_search_tag_confidence_threshold},
+            {"uav_state_timeout_s": demo_search_uav_state_timeout_s},
+            {"ugv_state_timeout_s": demo_search_ugv_state_timeout_s},
+            {"relative_pose_timeout_s": demo_search_relative_pose_timeout_s},
+            {"transform_timeout_s": demo_search_transform_timeout_s},
+            {"service_wait_timeout_s": demo_search_service_wait_timeout_s},
+            {"ugv_goal_offset_x_m": demo_search_ugv_goal_offset_x_m},
+            {"ugv_goal_offset_y_m": demo_search_ugv_goal_offset_y_m},
+        ],
+    )
+
     bag_record_topics = [
         image_topic,
         camera_info_topic,
@@ -575,6 +665,80 @@ def generate_launch_description():
                 "rc_safety_config_path", default_value=default_rc_safety_config
             ),
             DeclareLaunchArgument(
+                "start_demo_search_coordinator", default_value="true"
+            ),
+            DeclareLaunchArgument("demo_search_auto_start", default_value="false"),
+            DeclareLaunchArgument(
+                "demo_search_auto_start_delay_s", default_value="2.0"
+            ),
+            DeclareLaunchArgument(
+                "demo_search_waypoints_body",
+                default_value="",
+                description="Semicolon separated body-frame waypoint deltas x,y[,z], for example '1.0,0.0; 0.0,1.0'",
+            ),
+            DeclareLaunchArgument(
+                "demo_search_waypoint_reach_tolerance_m", default_value="0.12"
+            ),
+            DeclareLaunchArgument(
+                "demo_search_waypoint_timeout_s", default_value="30.0"
+            ),
+            DeclareLaunchArgument(
+                "demo_search_hold_on_finish", default_value="true"
+            ),
+            DeclareLaunchArgument("demo_search_hold_on_stop", default_value="true"),
+            DeclareLaunchArgument(
+                "demo_search_start_service",
+                default_value="/uav/demo_search/command/start",
+            ),
+            DeclareLaunchArgument(
+                "demo_search_stop_service",
+                default_value="/uav/demo_search/command/stop",
+            ),
+            DeclareLaunchArgument(
+                "demo_search_manual_waypoint_service",
+                default_value="/uav/demo_search/command/waypoint_delta",
+            ),
+            DeclareLaunchArgument(
+                "demo_search_hold_service",
+                default_value="/uav/control/command/hold",
+            ),
+            DeclareLaunchArgument(
+                "demo_search_ugv_state_topic",
+                default_value="/ugv/odometry/filtered",
+            ),
+            DeclareLaunchArgument(
+                "demo_search_ugv_go_relative_service",
+                default_value="/ugv/navigation/go_relative_xy",
+            ),
+            DeclareLaunchArgument(
+                "demo_search_relative_pose_global_topic",
+                default_value="/relative_position/estimate/global",
+            ),
+            DeclareLaunchArgument(
+                "demo_search_tag_confidence_threshold", default_value="0.0"
+            ),
+            DeclareLaunchArgument(
+                "demo_search_uav_state_timeout_s", default_value="0.50"
+            ),
+            DeclareLaunchArgument(
+                "demo_search_ugv_state_timeout_s", default_value="0.50"
+            ),
+            DeclareLaunchArgument(
+                "demo_search_relative_pose_timeout_s", default_value="0.50"
+            ),
+            DeclareLaunchArgument(
+                "demo_search_transform_timeout_s", default_value="0.20"
+            ),
+            DeclareLaunchArgument(
+                "demo_search_service_wait_timeout_s", default_value="1.0"
+            ),
+            DeclareLaunchArgument(
+                "demo_search_ugv_goal_offset_x_m", default_value="0.0"
+            ),
+            DeclareLaunchArgument(
+                "demo_search_ugv_goal_offset_y_m", default_value="0.0"
+            ),
+            DeclareLaunchArgument(
                 "enable_relative_position_fusion", default_value="true"
             ),
             DeclareLaunchArgument("enable_relative_tracking", default_value="false"),
@@ -595,6 +759,7 @@ def generate_launch_description():
             uav_control,
             position_delta,
             rc_safety_mux,
+            demo_search_coordinator,
             trajectory_path_publisher,
             record_bag,
         ]

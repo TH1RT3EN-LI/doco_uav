@@ -25,6 +25,7 @@
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>orbbec_camera</exec_depend>
   <exec_depend>relative_position_fusion</exec_depend>
+  <exec_depend>ugv_bringup_interfaces</exec_depend>
   <exec_depend>uav_bridge</exec_depend>
   <exec_depend>uav_description</exec_depend>
   <exec_depend>uav_visual_landing</exec_depend>

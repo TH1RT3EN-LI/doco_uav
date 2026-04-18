@@ -16,6 +16,7 @@ install(DIRECTORY
 install(PROGRAMS
   scripts/monitor_topic_position.py
   scripts/sweep_openvins_orbbec.py
+  scripts/uav_demo_search_coordinator.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -25,6 +26,11 @@ if(BUILD_TESTING)
   ament_add_pytest_test(
     test_openvins_ov_body_tf
     test/test_openvins_ov_body_tf.py
+  )
+
+  ament_add_pytest_test(
+    test_demo_search_coordinator
+    test/test_demo_search_coordinator.py
   )
 endif()
 
