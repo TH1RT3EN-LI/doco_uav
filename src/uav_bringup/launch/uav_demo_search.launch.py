@@ -69,6 +69,21 @@ def _parse_xy(value: str, arg_name: str):
         raise RuntimeError(f"{arg_name} must contain numeric values: x y") from exc
 
 
+def _quat_from_rpy(roll: float, pitch: float, yaw: float):
+    half_roll = 0.5 * roll
+    half_pitch = 0.5 * pitch
+    half_yaw = 0.5 * yaw
+    sin_r, cos_r = math.sin(half_roll), math.cos(half_roll)
+    sin_p, cos_p = math.sin(half_pitch), math.cos(half_pitch)
+    sin_y, cos_y = math.sin(half_yaw), math.cos(half_yaw)
+    return (
+        (sin_r * cos_p * cos_y) - (cos_r * sin_p * sin_y),
+        (cos_r * sin_p * cos_y) + (sin_r * cos_p * sin_y),
+        (cos_r * cos_p * sin_y) - (sin_r * sin_p * cos_y),
+        (cos_r * cos_p * cos_y) + (sin_r * sin_p * sin_y),
+    )
+
+
 def _resolve_global_to_uav_map(context, *args, **kwargs):
     if not _launch_bool(
         LaunchConfiguration("compute_uav_map_from_ugv_relative").perform(context)
@@ -105,6 +120,51 @@ def _resolve_global_to_uav_map(context, *args, **kwargs):
     return [SetLaunchConfiguration("resolved_global_to_uav_map", resolved_value)]
 
 
+def _build_global_to_uav_map_static_tf(context, *args, **kwargs):
+    global_frame_name = LaunchConfiguration("global_frame").perform(context).strip()
+    uav_map_frame_name = LaunchConfiguration("uav_map_frame").perform(context).strip()
+    if (
+        not global_frame_name
+        or not uav_map_frame_name
+        or global_frame_name == uav_map_frame_name
+    ):
+        return []
+
+    x, y, z, roll, pitch, yaw = _parse_six_dof(
+        LaunchConfiguration("resolved_global_to_uav_map").perform(context),
+        "resolved_global_to_uav_map",
+    )
+    qx, qy, qz, qw = _quat_from_rpy(roll, pitch, yaw)
+    return [
+        Node(
+            package="tf2_ros",
+            executable="static_transform_publisher",
+            name="uav_demo_global_to_map_static_tf",
+            output="screen",
+            arguments=[
+                "--x",
+                f"{x:.15g}",
+                "--y",
+                f"{y:.15g}",
+                "--z",
+                f"{z:.15g}",
+                "--qx",
+                f"{qx:.15g}",
+                "--qy",
+                f"{qy:.15g}",
+                "--qz",
+                f"{qz:.15g}",
+                "--qw",
+                f"{qw:.15g}",
+                "--frame-id",
+                global_frame_name,
+                "--child-frame-id",
+                uav_map_frame_name,
+            ],
+        )
+    ]
+
+
 def generate_launch_description():
     bringup_share = get_package_share_directory("uav_bringup")
     description_share = get_package_share_directory("uav_description")
@@ -134,6 +194,7 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration("use_sim_time")
     use_rviz = LaunchConfiguration("use_rviz")
     rviz_config = LaunchConfiguration("rviz_config")
+    start_perception_stack = LaunchConfiguration("start_perception_stack")
     start_orbbec_camera = LaunchConfiguration("start_orbbec_camera")
     start_openvins = LaunchConfiguration("start_openvins")
     start_px4_vision_bridge = LaunchConfiguration("start_px4_vision_bridge")
@@ -262,14 +323,7 @@ def generate_launch_description():
     base_frame_id = LaunchConfiguration("base_frame_id")
     camera_frame_id = LaunchConfiguration("camera_frame_id")
 
-    actual_ov_odom_topic = namespaced_path(openvins_namespace, "odomimu")
-    actual_ov_path_topic = namespaced_path(openvins_namespace, "pathimu")
     actual_ov_trackhist_topic = namespaced_path(openvins_namespace, "trackhist")
-    actual_left_ir_image_topic = namespaced_path(orbbec_camera_name, "left_ir/image_raw")
-    actual_left_ir_info_topic = namespaced_path(orbbec_camera_name, "left_ir/camera_info")
-    actual_right_ir_image_topic = namespaced_path(orbbec_camera_name, "right_ir/image_raw")
-    actual_right_ir_info_topic = namespaced_path(orbbec_camera_name, "right_ir/camera_info")
-    actual_imu_topic = namespaced_path(orbbec_camera_name, "gyro_accel/sample")
 
     model_description = ParameterValue(
         Command(
@@ -285,11 +339,15 @@ def generate_launch_description():
     )
 
     resolve_global_to_uav_map = OpaqueFunction(function=_resolve_global_to_uav_map)
+    global_to_uav_map_static_tf = OpaqueFunction(
+        function=_build_global_to_uav_map_static_tf
+    )
 
     perception_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(bringup_share, "launch", "openvins_orbbec_mono_apriltag.launch.py")
         ),
+        condition=IfCondition(start_perception_stack),
         launch_arguments={
             "use_sim_time": use_sim_time,
             "use_rviz": use_rviz,
@@ -297,20 +355,20 @@ def generate_launch_description():
             "start_orbbec_camera": start_orbbec_camera,
             "start_openvins": start_openvins,
             "start_px4_vision_bridge": start_px4_vision_bridge,
-            "start_uav_state_bridge": start_uav_state_bridge,
+            "start_uav_state_bridge": "false",
             "enable_relative_position_fusion": "false",
             "enable_relative_tracking": "false",
             "openvins_namespace": openvins_namespace,
             "openvins_config_path": openvins_config_path,
             "openvins_verbosity": openvins_verbosity,
             "state_bridge_output_odometry_topic": state_bridge_output_odometry_topic,
-            "state_bridge_publish_tf": "true",
-            "state_bridge_publish_map_to_odom_tf": "true",
+            "state_bridge_publish_tf": "false",
+            "state_bridge_publish_map_to_odom_tf": "false",
             "global_frame": global_frame,
             "uav_map_frame": uav_map_frame,
             "uav_odom_frame": uav_odom_frame,
             "global_to_uav_map": resolved_global_to_uav_map,
-            "publish_global_map_tf": "true",
+            "publish_global_map_tf": "false",
             "orbbec_camera_name": orbbec_camera_name,
             "backend": camera_backend,
             "device": camera_device,
@@ -352,6 +410,27 @@ def generate_launch_description():
             "enable_relative_tracking": enable_relative_tracking,
             "config_overlay": relative_position_fusion_config,
         }.items(),
+    )
+
+    uav_state_bridge = Node(
+        package="uav_bridge",
+        executable="uav_state_bridge_node",
+        name="uav_state_bridge",
+        output="screen",
+        condition=IfCondition(start_uav_state_bridge),
+        parameters=[
+            {"use_sim_time": use_sim_time},
+            {"vehicle_local_position_topic": "/fmu/out/vehicle_local_position"},
+            {"vehicle_odometry_topic": "/fmu/out/vehicle_odometry"},
+            {"output_odometry_topic": state_bridge_output_odometry_topic},
+            {"map_frame_id": uav_map_frame},
+            {"odom_frame_id": uav_odom_frame},
+            {"base_frame_id": base_frame_id},
+            {"px4_timestamp_source": px4_timestamp_source},
+            {"timesync_status_topic": timesync_status_topic},
+            {"publish_tf": True},
+            {"publish_map_to_odom_tf": True},
+        ],
     )
 
     model_root_tf = Node(
@@ -501,14 +580,6 @@ def generate_launch_description():
 
     bag_record_topics = [
         image_topic,
-        camera_info_topic,
-        actual_left_ir_image_topic,
-        actual_left_ir_info_topic,
-        actual_right_ir_image_topic,
-        actual_right_ir_info_topic,
-        actual_imu_topic,
-        actual_ov_odom_topic,
-        actual_ov_path_topic,
         actual_ov_trackhist_topic,
         state_bridge_output_odometry_topic,
         trajectory_output_topic,
@@ -525,8 +596,6 @@ def generate_launch_description():
         "/fmu/in/offboard_control_mode",
         "/fmu/in/trajectory_setpoint",
         "/fmu/in/vehicle_command",
-        "/uav/ov/bridge/health_ok",
-        "/uav/ov/bridge/fault_reason",
         "/uav/model/robot_description",
         "/ugv/odom",
         "/ugv/odometry/filtered",
@@ -550,9 +619,10 @@ def generate_launch_description():
             DeclareLaunchArgument("use_sim_time", default_value="false"),
             DeclareLaunchArgument("use_rviz", default_value="false"),
             DeclareLaunchArgument("rviz_config", default_value=default_rviz_config),
-            DeclareLaunchArgument("start_orbbec_camera", default_value="true"),
-            DeclareLaunchArgument("start_openvins", default_value="true"),
-            DeclareLaunchArgument("start_px4_vision_bridge", default_value="true"),
+            DeclareLaunchArgument("start_perception_stack", default_value="false"),
+            DeclareLaunchArgument("start_orbbec_camera", default_value="false"),
+            DeclareLaunchArgument("start_openvins", default_value="false"),
+            DeclareLaunchArgument("start_px4_vision_bridge", default_value="false"),
             DeclareLaunchArgument("start_uav_state_bridge", default_value="true"),
             DeclareLaunchArgument("openvins_namespace", default_value="ov_msckf"),
             DeclareLaunchArgument("openvins_config_path", default_value=default_openvins_config),
@@ -752,8 +822,10 @@ def generate_launch_description():
                 "bag_output_dir", default_value=default_bag_output_dir
             ),
             resolve_global_to_uav_map,
+            global_to_uav_map_static_tf,
             perception_launch,
             relative_position_fusion_launch,
+            uav_state_bridge,
             model_root_tf,
             model_publisher,
             uav_control,

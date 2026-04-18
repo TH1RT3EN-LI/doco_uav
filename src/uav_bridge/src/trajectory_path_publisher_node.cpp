@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 
+#include <builtin_interfaces/msg/time.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
@@ -12,6 +13,16 @@
 
 namespace uav_bridge
 {
+
+namespace
+{
+
+bool hasNonNegativeStamp(const builtin_interfaces::msg::Time & stamp)
+{
+  return stamp.sec >= 0;
+}
+
+}  // namespace
 
 class TrajectoryPathPublisherNode : public rclcpp::Node
 {
@@ -91,6 +102,17 @@ private:
   {
     const std::string frame_id = path_frame_id_.empty() ? msg->header.frame_id : path_frame_id_;
     if (frame_id.empty()) {
+      return;
+    }
+
+    const bool has_stamp =
+      (msg->header.stamp.sec != 0) || (msg->header.stamp.nanosec != 0);
+    if (has_stamp && !hasNonNegativeStamp(msg->header.stamp)) {
+      RCLCPP_WARN_THROTTLE(
+        this->get_logger(), *this->get_clock(), 1000,
+        "ignoring odometry with negative stamp sec=%d nanosec=%u",
+        msg->header.stamp.sec,
+        msg->header.stamp.nanosec);
       return;
     }
 

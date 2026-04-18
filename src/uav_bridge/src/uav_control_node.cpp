@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 
+#include <builtin_interfaces/msg/time.hpp>
 #include <geometry_msgs/msg/point_stamped.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
@@ -29,6 +30,16 @@
 
 namespace uav_bridge
 {
+
+namespace
+{
+
+bool hasNonNegativeStamp(const builtin_interfaces::msg::Time & stamp)
+{
+  return stamp.sec >= 0;
+}
+
+}  // namespace
 
 class UavControlNode : public rclcpp::Node
 {
@@ -800,6 +811,14 @@ private:
 
     const bool has_stamp =
       (msg.header.stamp.sec != 0) || (msg.header.stamp.nanosec != 0);
+    if (has_stamp && !hasNonNegativeStamp(msg.header.stamp)) {
+      RCLCPP_WARN_THROTTLE(
+        this->get_logger(), *this->get_clock(), 1000,
+        "ignoring control state with negative stamp sec=%d nanosec=%u",
+        msg.header.stamp.sec,
+        msg.header.stamp.nanosec);
+      return;
+    }
     current_state_position_enu_ = position_enu;
     current_state_orientation_enu_flu_ = tf2::Quaternion(
       msg.pose.pose.orientation.x,
@@ -809,7 +828,9 @@ private:
     current_state_orientation_enu_flu_.normalize();
     current_state_yaw_enu_ = quaternionToYaw(msg.pose.pose.orientation);
     current_state_frame_id_ = msg.header.frame_id;
-    last_state_time_ = has_stamp ? rclcpp::Time(msg.header.stamp) : this->now();
+    last_state_time_ = has_stamp ?
+      rclcpp::Time(msg.header.stamp, this->get_clock()->get_clock_type()) :
+      this->now();
     has_state_ = std::isfinite(current_state_yaw_enu_);
   }
 
@@ -829,6 +850,14 @@ private:
 
     const bool has_stamp =
       (msg.header.stamp.sec != 0) || (msg.header.stamp.nanosec != 0);
+    if (has_stamp && !hasNonNegativeStamp(msg.header.stamp)) {
+      RCLCPP_WARN_THROTTLE(
+        this->get_logger(), *this->get_clock(), 1000,
+        "ignoring execution state with negative stamp sec=%d nanosec=%u",
+        msg.header.stamp.sec,
+        msg.header.stamp.nanosec);
+      return;
+    }
     current_execution_orientation_enu_flu_ = tf2::Quaternion(
       msg.pose.pose.orientation.x,
       msg.pose.pose.orientation.y,
@@ -836,7 +865,9 @@ private:
       msg.pose.pose.orientation.w);
     current_execution_orientation_enu_flu_.normalize();
     current_execution_yaw_enu_ = quaternionToYaw(msg.pose.pose.orientation);
-    last_execution_state_time_ = has_stamp ? rclcpp::Time(msg.header.stamp) : this->now();
+    last_execution_state_time_ = has_stamp ?
+      rclcpp::Time(msg.header.stamp, this->get_clock()->get_clock_type()) :
+      this->now();
     has_execution_state_ = std::isfinite(current_execution_yaw_enu_);
   }
 
