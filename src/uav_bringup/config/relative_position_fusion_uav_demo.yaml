@@ -1,0 +1,6 @@
+/**:
+  ros__parameters:
+    assume_ugv_odom_is_global: true
+    pose_timeout_sec: 0.50
+    bootstrap_measurement_sync_tolerance_sec: 0.15
+    startup_relocalize_grace_sec: 2.0

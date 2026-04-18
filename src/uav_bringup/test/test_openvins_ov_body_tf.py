@@ -125,4 +125,4 @@ def test_launch_files_expose_and_route_ov_body_frame_defaults():
         'DeclareLaunchArgument("camera_frame_id", default_value="uav_ov_mono_camera_optical_frame")'
         in ov_mono_tag_text
     )
-    assert 'DeclareLaunchArgument("camera_roll", default_value=str(-math.pi / 2.0))' in ov_mono_tag_text
+    assert 'DeclareLaunchArgument("camera_roll", default_value=str(math.pi))' in ov_mono_tag_text

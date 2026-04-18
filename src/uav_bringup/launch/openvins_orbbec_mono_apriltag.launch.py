@@ -421,9 +421,10 @@ def generate_launch_description():
         DeclareLaunchArgument("camera_x", default_value=DEFAULT_CAMERA_TO_BODY["x"]),
         DeclareLaunchArgument("camera_y", default_value=DEFAULT_CAMERA_TO_BODY["y"]),
         DeclareLaunchArgument("camera_z", default_value=DEFAULT_CAMERA_TO_BODY["z"]),
-        # Keep OV unchanged; restore the mono optical frame to the
-        # standard downward-looking mounting convention used elsewhere.
-        DeclareLaunchArgument("camera_roll", default_value=str(-math.pi / 2.0)),
+        # OV body is already the body-aligned frame reconstructed inside the
+        # OpenVINS tree, so keep the mono optical frame identical to the
+        # standard downward-looking body-mounted mono setup.
+        DeclareLaunchArgument("camera_roll", default_value=str(math.pi)),
         DeclareLaunchArgument("camera_pitch", default_value="0.0"),
         DeclareLaunchArgument("camera_yaw", default_value=str(-math.pi / 2.0)),
         DeclareLaunchArgument("fx", default_value=DEFAULT_CAMERA_INTRINSICS["fx"]),

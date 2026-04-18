@@ -18,12 +18,15 @@
   <exec_depend>px4_msgs</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>rclpy</exec_depend>
+  <exec_depend>xacro</exec_depend>
   <exec_depend>rviz2</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>std_srvs</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>orbbec_camera</exec_depend>
   <exec_depend>relative_position_fusion</exec_depend>
   <exec_depend>uav_bridge</exec_depend>
+  <exec_depend>uav_description</exec_depend>
   <exec_depend>uav_visual_landing</exec_depend>
 
   <test_depend>ament_cmake_pytest</test_depend>
