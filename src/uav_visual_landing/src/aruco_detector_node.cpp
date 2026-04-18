@@ -550,7 +550,12 @@ private:
       apply_pitch ? pitch_offset_rad : 0.0,
       apply_yaw ? yaw_offset_rad : 0.0);
     camera_rotation_offset.normalize();
-    return tf2::Transform(camera_rotation_offset, tf2::Vector3(0.0, 0.0, 0.0)) * camera_from_tag;
+    // These launch-level offsets are intended to redefine the reported tag-frame
+    // orientation, not to rotate the measured tag-center translation in camera
+    // space. Post-multiply so the tag origin stays where solvePnP measured it.
+    return camera_from_tag * tf2::Transform(
+      camera_rotation_offset,
+      tf2::Vector3(0.0, 0.0, 0.0));
   }
 
   static tf2::Transform rotateTagFrameInPlane(

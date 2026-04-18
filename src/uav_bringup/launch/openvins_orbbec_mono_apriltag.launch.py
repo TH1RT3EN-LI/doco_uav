@@ -450,9 +450,9 @@ def generate_launch_description():
         DeclareLaunchArgument("tag_size_m", default_value="0.20"),
         DeclareLaunchArgument("tag_camera_roll_offset_rad", default_value=str(math.pi)),
         DeclareLaunchArgument("tag_camera_pitch_offset_rad", default_value="0.0"),
-        # The OV-integrated mono path already uses the configured optical-frame TF.
-        # Keep the camera-frame yaw correction here so the detected pose rotates
-        # in camera space, which fixes xy and yaw together.
+        # Keep mono-only AprilTag frame offsets separate from the mono camera
+        # mount TF. These offsets now adjust the reported tag-frame orientation
+        # without rotating the measured tag-center translation.
         DeclareLaunchArgument("tag_camera_yaw_offset_rad", default_value=str(-math.pi / 2.0)),
         DeclareLaunchArgument("tag_frame_yaw_offset_rad", default_value="0.0"),
         DeclareLaunchArgument("mono_dx", default_value="0.0"),
