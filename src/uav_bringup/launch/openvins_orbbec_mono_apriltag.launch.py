@@ -423,7 +423,7 @@ def generate_launch_description():
         DeclareLaunchArgument("camera_z", default_value=DEFAULT_CAMERA_TO_BODY["z"]),
         # Mono TF is owned here; keep the OV body tree untouched and only
         # rotate the mono optical frame to the expected optical convention.
-        DeclareLaunchArgument("camera_roll", default_value=str(math.pi / 2.0)),
+        DeclareLaunchArgument("camera_roll", default_value=str(math.pi / 2.0 +math.pi)),
         DeclareLaunchArgument("camera_pitch", default_value="0.0"),
         DeclareLaunchArgument("camera_yaw", default_value=str(-math.pi / 2.0)),
         DeclareLaunchArgument("fx", default_value=DEFAULT_CAMERA_INTRINSICS["fx"]),
