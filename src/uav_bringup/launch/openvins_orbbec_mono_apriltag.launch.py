@@ -50,6 +50,7 @@ def generate_launch_description():
     px4_bridge_timesync_status_topic = LaunchConfiguration("px4_bridge_timesync_status_topic")
     px4_bridge_timesync_timeout_s = LaunchConfiguration("px4_bridge_timesync_timeout_s")
     px4_bridge_log_debug = LaunchConfiguration("px4_bridge_log_debug")
+    guard_enable = LaunchConfiguration("guard_enable")
 
     state_bridge_vehicle_local_position_topic = LaunchConfiguration(
         "state_bridge_vehicle_local_position_topic"
@@ -194,6 +195,7 @@ def generate_launch_description():
             "px4_bridge_timesync_status_topic": px4_bridge_timesync_status_topic,
             "px4_bridge_timesync_timeout_s": px4_bridge_timesync_timeout_s,
             "px4_bridge_log_debug": px4_bridge_log_debug,
+            "guard_enable": guard_enable,
             "state_bridge_vehicle_local_position_topic": state_bridge_vehicle_local_position_topic,
             "state_bridge_vehicle_odometry_topic": state_bridge_vehicle_odometry_topic,
             "state_bridge_output_odometry_topic": state_bridge_output_odometry_topic,
@@ -362,6 +364,7 @@ def generate_launch_description():
         DeclareLaunchArgument("px4_bridge_timesync_status_topic", default_value="/fmu/out/timesync_status"),
         DeclareLaunchArgument("px4_bridge_timesync_timeout_s", default_value="2.0"),
         DeclareLaunchArgument("px4_bridge_log_debug", default_value="false"),
+        DeclareLaunchArgument("guard_enable", default_value="true"),
         DeclareLaunchArgument("state_bridge_vehicle_local_position_topic", default_value="/fmu/out/vehicle_local_position"),
         DeclareLaunchArgument("state_bridge_vehicle_odometry_topic", default_value="/fmu/out/vehicle_odometry"),
         DeclareLaunchArgument("state_bridge_output_odometry_topic", default_value="/uav/state/odometry_px4"),

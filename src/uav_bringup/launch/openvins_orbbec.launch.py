@@ -333,6 +333,7 @@ def generate_launch_description():
     )
     px4_bridge_timesync_timeout_s = LaunchConfiguration("px4_bridge_timesync_timeout_s")
     px4_bridge_log_debug = LaunchConfiguration("px4_bridge_log_debug")
+    guard_enable = LaunchConfiguration("guard_enable")
     state_bridge_vehicle_local_position_topic = LaunchConfiguration(
         "state_bridge_vehicle_local_position_topic"
     )
@@ -525,7 +526,7 @@ def generate_launch_description():
             {"log_debug": px4_bridge_log_debug},
             {"health_ok_topic": "/uav/ov/bridge/health_ok"},
             {"fault_reason_topic": "/uav/ov/bridge/fault_reason"},
-            {"guard_enable": True},
+            {"guard_enable": guard_enable},
             {"guard_auto_recover": True},
             {"guard_nominal_rate_hz": 30.0},
             {"guard_hold_last_budget_s": 0.35},
@@ -693,6 +694,7 @@ def generate_launch_description():
                 "px4_bridge_timesync_timeout_s", default_value="2.0"
             ),
             DeclareLaunchArgument("px4_bridge_log_debug", default_value="false"),
+            DeclareLaunchArgument("guard_enable", default_value="true"),
             DeclareLaunchArgument(
                 "state_bridge_vehicle_local_position_topic",
                 default_value="/fmu/out/vehicle_local_position",

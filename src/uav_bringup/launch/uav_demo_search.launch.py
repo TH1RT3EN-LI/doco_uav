@@ -199,6 +199,7 @@ def generate_launch_description():
     start_openvins = LaunchConfiguration("start_openvins")
     start_px4_vision_bridge = LaunchConfiguration("start_px4_vision_bridge")
     start_uav_state_bridge = LaunchConfiguration("start_uav_state_bridge")
+    guard_enable = LaunchConfiguration("guard_enable")
     openvins_namespace = LaunchConfiguration("openvins_namespace")
     openvins_config_path = LaunchConfiguration("openvins_config_path")
     openvins_verbosity = LaunchConfiguration("openvins_verbosity")
@@ -356,6 +357,7 @@ def generate_launch_description():
             "start_openvins": start_openvins,
             "start_px4_vision_bridge": start_px4_vision_bridge,
             "start_uav_state_bridge": "false",
+            "guard_enable": guard_enable,
             "enable_relative_position_fusion": "false",
             "enable_relative_tracking": "false",
             "openvins_namespace": openvins_namespace,
@@ -580,22 +582,15 @@ def generate_launch_description():
 
     bag_record_topics = [
         image_topic,
-        actual_ov_trackhist_topic,
+        # actual_ov_trackhist_topic,
         state_bridge_output_odometry_topic,
         trajectory_output_topic,
-        position_topic,
-        position_keep_yaw_topic,
+        # position_topic,
+        # position_keep_yaw_topic,
         velocity_body_topic,
         tag_detection_topic,
         tag_pose_topic,
         tag_marker_topic,
-        "/fmu/out/vehicle_local_position",
-        "/fmu/out/vehicle_odometry",
-        "/fmu/out/vehicle_status",
-        "/fmu/out/timesync_status",
-        "/fmu/in/offboard_control_mode",
-        "/fmu/in/trajectory_setpoint",
-        "/fmu/in/vehicle_command",
         "/uav/model/robot_description",
         "/ugv/odom",
         "/ugv/odometry/filtered",
@@ -624,6 +619,7 @@ def generate_launch_description():
             DeclareLaunchArgument("start_openvins", default_value="false"),
             DeclareLaunchArgument("start_px4_vision_bridge", default_value="false"),
             DeclareLaunchArgument("start_uav_state_bridge", default_value="true"),
+            DeclareLaunchArgument("guard_enable", default_value="true"),
             DeclareLaunchArgument("openvins_namespace", default_value="ov_msckf"),
             DeclareLaunchArgument("openvins_config_path", default_value=default_openvins_config),
             DeclareLaunchArgument("openvins_verbosity", default_value="INFO"),
