@@ -72,6 +72,7 @@ public:
     this->declare_parameter<std::string>("base_frame_id", "uav_base_link");
     this->declare_parameter<std::string>("odometry_topic", "/ov_msckf/odomimu");
     this->declare_parameter<double>("odometry_timeout_s", 0.20);
+    this->declare_parameter<double>("tag_camera_roll_offset_rad", 0.0);
     this->declare_parameter<double>("tag_frame_yaw_offset_rad", 0.0);
     this->declare_parameter<double>("mono_in_ov_x_m", 0.0);
     this->declare_parameter<double>("mono_in_ov_y_m", 0.0);
@@ -102,6 +103,8 @@ public:
     target_marker_id_ = this->get_parameter("target_marker_id").as_int();
     tag_size_m_ = static_cast<float>(this->get_parameter("tag_size_m").as_double());
     odometry_timeout_s_ = std::max(0.0, this->get_parameter("odometry_timeout_s").as_double());
+    tag_camera_roll_offset_rad_ =
+      this->get_parameter("tag_camera_roll_offset_rad").as_double();
     tag_frame_yaw_offset_rad_ =
       this->get_parameter("tag_frame_yaw_offset_rad").as_double();
     mono_in_ov_x_m_ = this->get_parameter("mono_in_ov_x_m").as_double();
@@ -205,7 +208,8 @@ public:
       "aruco_detector_node: image=%s camera_info=%s target_observation=%s tag_detection=%s "
       "tag_pose=%s tag_marker=%s camera_frame=%s base_frame=%s output_frame=%s debug_image=%s "
       "marker_id=%d family=%s tag_size=%.3f "
-      "odom=%s tag_frame_yaw_offset=%.3f mono_in_ov=(xyz=%.3f, %.3f, %.3f rpy=%.3f, %.3f, %.3f) "
+      "odom=%s tag_camera_roll_offset=%.3f tag_frame_yaw_offset=%.3f "
+      "mono_in_ov=(xyz=%.3f, %.3f, %.3f rpy=%.3f, %.3f, %.3f) "
       "tag_tf(base=%s odom=%s prefix=%s)",
       image_topic_.c_str(),
       camera_info_topic_.c_str(),
@@ -221,6 +225,7 @@ public:
       tag_family_.c_str(),
       tag_size_m_,
       odometry_topic_.empty() ? "<disabled>" : odometry_topic_.c_str(),
+      tag_camera_roll_offset_rad_,
       tag_frame_yaw_offset_rad_,
       mono_in_ov_x_m_,
       mono_in_ov_y_m_,
@@ -504,6 +509,20 @@ private:
     }
 
     return tf2::Transform(rotation, tf2::Vector3(tvec[0], tvec[1], tvec[2]));
+  }
+
+  static tf2::Transform rotateDetectedPoseInCameraFrame(
+    const tf2::Transform & camera_from_tag,
+    double roll_offset_rad)
+  {
+    if (!std::isfinite(roll_offset_rad) || std::abs(roll_offset_rad) <= 1.0e-12) {
+      return camera_from_tag;
+    }
+
+    tf2::Quaternion camera_rotation_offset;
+    camera_rotation_offset.setRPY(roll_offset_rad, 0.0, 0.0);
+    camera_rotation_offset.normalize();
+    return tf2::Transform(camera_rotation_offset, tf2::Vector3(0.0, 0.0, 0.0)) * camera_from_tag;
   }
 
   static tf2::Transform rotateTagFrameInPlane(
@@ -955,7 +974,9 @@ private:
     resolved_pose = ResolvedTagPose{};
     resolved_pose.camera_valid = true;
     resolved_pose.camera_from_tag = rotateTagFrameInPlane(
-      transformFromCvPose(camera_rvec, camera_tvec),
+      rotateDetectedPoseInCameraFrame(
+        transformFromCvPose(camera_rvec, camera_tvec),
+        tag_camera_roll_offset_rad_),
       tag_frame_yaw_offset_rad_);
     detection.position_camera_m = pointToMsg(resolved_pose.camera_from_tag.getOrigin());
 
@@ -1332,6 +1353,7 @@ private:
   double mono_in_ov_x_m_{0.0};
   double mono_in_ov_y_m_{0.0};
   double mono_in_ov_z_m_{0.0};
+  double tag_camera_roll_offset_rad_{0.0};
   double tag_frame_yaw_offset_rad_{0.0};
   double mono_in_ov_roll_rad_{0.0};
   double mono_in_ov_pitch_rad_{0.0};
