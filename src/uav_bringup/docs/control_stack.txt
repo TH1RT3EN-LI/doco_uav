@@ -152,9 +152,9 @@ Launch Defaults
   `uav_base_link`.
   `ov_body_frame_id=uav_ov_body`
   `camera_frame_id=uav_ov_mono_camera_optical_frame`
-  `tag_output_frame_mode=base`
-  In this launch, the detector's "base-relative" AprilTag output means
-  relative to `uav_ov_body`.
+  `tag_output_frame_mode=odom`
+  In this launch, the detector publishes the AprilTag pose/marker in the
+  OpenVINS odom frame by default, which is normally `global`.
   Default tag TFs are:
   `apriltag_<id>` parented by `uav_ov_body`
   `apriltag_<id>_odom` parented by the OpenVINS odom frame, normally `global`

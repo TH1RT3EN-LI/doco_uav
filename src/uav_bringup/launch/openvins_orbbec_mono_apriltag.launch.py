@@ -438,7 +438,7 @@ def generate_launch_description():
         DeclareLaunchArgument("tag_detection_topic", default_value="/uav/visual_landing/apriltag_detection"),
         DeclareLaunchArgument("tag_pose_topic", default_value="/uav/visual_landing/apriltag_pose"),
         DeclareLaunchArgument("tag_marker_topic", default_value="/uav/visual_landing/apriltag_marker"),
-        DeclareLaunchArgument("tag_output_frame_mode", default_value="base"),
+        DeclareLaunchArgument("tag_output_frame_mode", default_value="odom"),
         DeclareLaunchArgument("target_marker_id", default_value="0"),
         DeclareLaunchArgument("tag_family", default_value="36h11"),
         DeclareLaunchArgument("tag_size_m", default_value="0.20"),
