@@ -72,6 +72,7 @@ public:
     this->declare_parameter<std::string>("base_frame_id", "uav_base_link");
     this->declare_parameter<std::string>("odometry_topic", "/ov_msckf/odomimu");
     this->declare_parameter<double>("odometry_timeout_s", 0.20);
+    this->declare_parameter<double>("tag_frame_yaw_offset_rad", 0.0);
     this->declare_parameter<double>("mono_in_ov_x_m", 0.0);
     this->declare_parameter<double>("mono_in_ov_y_m", 0.0);
     this->declare_parameter<double>("mono_in_ov_z_m", 0.0);
@@ -101,6 +102,8 @@ public:
     target_marker_id_ = this->get_parameter("target_marker_id").as_int();
     tag_size_m_ = static_cast<float>(this->get_parameter("tag_size_m").as_double());
     odometry_timeout_s_ = std::max(0.0, this->get_parameter("odometry_timeout_s").as_double());
+    tag_frame_yaw_offset_rad_ =
+      this->get_parameter("tag_frame_yaw_offset_rad").as_double();
     mono_in_ov_x_m_ = this->get_parameter("mono_in_ov_x_m").as_double();
     mono_in_ov_y_m_ = this->get_parameter("mono_in_ov_y_m").as_double();
     mono_in_ov_z_m_ = this->get_parameter("mono_in_ov_z_m").as_double();
@@ -202,7 +205,7 @@ public:
       "aruco_detector_node: image=%s camera_info=%s target_observation=%s tag_detection=%s "
       "tag_pose=%s tag_marker=%s camera_frame=%s base_frame=%s output_frame=%s debug_image=%s "
       "marker_id=%d family=%s tag_size=%.3f "
-      "odom=%s mono_in_ov=(xyz=%.3f, %.3f, %.3f rpy=%.3f, %.3f, %.3f) "
+      "odom=%s tag_frame_yaw_offset=%.3f mono_in_ov=(xyz=%.3f, %.3f, %.3f rpy=%.3f, %.3f, %.3f) "
       "tag_tf(base=%s odom=%s prefix=%s)",
       image_topic_.c_str(),
       camera_info_topic_.c_str(),
@@ -218,6 +221,7 @@ public:
       tag_family_.c_str(),
       tag_size_m_,
       odometry_topic_.empty() ? "<disabled>" : odometry_topic_.c_str(),
+      tag_frame_yaw_offset_rad_,
       mono_in_ov_x_m_,
       mono_in_ov_y_m_,
       mono_in_ov_z_m_,
@@ -500,6 +504,20 @@ private:
     }
 
     return tf2::Transform(rotation, tf2::Vector3(tvec[0], tvec[1], tvec[2]));
+  }
+
+  static tf2::Transform rotateTagFrameInPlane(
+    const tf2::Transform & parent_from_tag,
+    double yaw_offset_rad)
+  {
+    if (!std::isfinite(yaw_offset_rad) || std::abs(yaw_offset_rad) <= 1.0e-12) {
+      return parent_from_tag;
+    }
+
+    tf2::Quaternion tag_rotation_offset;
+    tag_rotation_offset.setRPY(0.0, 0.0, yaw_offset_rad);
+    tag_rotation_offset.normalize();
+    return parent_from_tag * tf2::Transform(tag_rotation_offset, tf2::Vector3(0.0, 0.0, 0.0));
   }
 
   static geometry_msgs::msg::Point pointToMsg(const tf2::Vector3 & point)
@@ -936,7 +954,9 @@ private:
 
     resolved_pose = ResolvedTagPose{};
     resolved_pose.camera_valid = true;
-    resolved_pose.camera_from_tag = transformFromCvPose(camera_rvec, camera_tvec);
+    resolved_pose.camera_from_tag = rotateTagFrameInPlane(
+      transformFromCvPose(camera_rvec, camera_tvec),
+      tag_frame_yaw_offset_rad_);
     detection.position_camera_m = pointToMsg(resolved_pose.camera_from_tag.getOrigin());
 
     tf2::Transform base_from_camera;
@@ -1229,14 +1249,16 @@ private:
 
     const float edge_dx = target_corners[1].x - target_corners[0].x;
     const float edge_dy = target_corners[1].y - target_corners[0].y;
-    observation.yaw_err_rad = normalizeAngle(std::atan2(edge_dy, edge_dx));
+    observation.yaw_err_rad = normalizeAngle(
+      std::atan2(edge_dy, edge_dx) + static_cast<float>(tag_frame_yaw_offset_rad_));
 
     const float span_conf = computeSpanConfidence(observation.marker_span_px);
     const float span_tag_depth_m = computeTagDepthFromSpanPx(observation.marker_span_px);
 
     std::vector<PoseCandidate> candidates;
     if (estimatePose(target_corners, candidates)) {
-      observation.yaw_err_rad = candidates.front().yaw_rad;
+      observation.yaw_err_rad = normalizeAngle(
+        candidates.front().yaw_rad + static_cast<float>(tag_frame_yaw_offset_rad_));
       observation.reproj_err_px = candidates.front().reproj_err_px;
       if (isPositiveFiniteDepth(candidates.front().tag_depth_m)) {
         observation.pose_valid = true;
@@ -1310,6 +1332,7 @@ private:
   double mono_in_ov_x_m_{0.0};
   double mono_in_ov_y_m_{0.0};
   double mono_in_ov_z_m_{0.0};
+  double tag_frame_yaw_offset_rad_{0.0};
   double mono_in_ov_roll_rad_{0.0};
   double mono_in_ov_pitch_rad_{0.0};
   double mono_in_ov_yaw_rad_{0.0};
